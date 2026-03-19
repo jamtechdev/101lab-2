@@ -115,8 +115,7 @@ const FilterPanel = ({
       {/* Bid Status */}
       <div className="py-3 border-b border-border/60">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Gavel className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">
             {t("browseListings.bidStatus")}
           </span>
           {selectedBidFilter && (
