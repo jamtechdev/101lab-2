@@ -907,6 +907,37 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
+      {/* ── Find Deals In (country pills) ─────────────────────────── */}
+      <section className="bg-muted/40 border-b border-border">
+        <div className="container mx-auto px-4 py-8 text-center">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Expand Your Search</p>
+          <h2 className="text-lg font-bold text-foreground mb-5">Find deals in:</h2>
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {[
+              { flag: "🇹🇼", name: "Taiwan" },
+              { flag: "🇯🇵", name: "Japan" },
+              { flag: "🇨🇳", name: "China" },
+              { flag: "🇰🇷", name: "South Korea" },
+              { flag: "🇮🇳", name: "India" },
+              { flag: "🇹🇭", name: "Thailand" },
+              { flag: "🇻🇳", name: "Vietnam" },
+              { flag: "🇩🇪", name: "Germany" },
+              { flag: "🇺🇸", name: "USA" },
+              { flag: "🇬🇧", name: "UK" },
+            ].map((country) => (
+              <Link
+                key={country.name}
+                to={`/buyer-marketplace?country=${encodeURIComponent(country.name)}`}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded bg-card text-sm text-foreground hover:border-primary hover:shadow-sm transition-all"
+              >
+                <span className="text-base">{country.flag}</span>
+                {country.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Auctions Closing Soon — by Category ──────────────────── */}
       <CategorySection
         title={t("landing.auctionsClosingSoon")}
