@@ -132,9 +132,60 @@ const getBidStatus = (item: any) => {
   return "none";
 };
 
+// ── Wishlist Heart Button ─────────────────────────────────────────────────────
+const WishlistButton = ({ productId, userId }: { productId: number; userId: number }) => {
+  const [inWishlist, setInWishlist] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    axiosInstance
+      .get(`/wishlist/${userId}/${productId}`)
+      .then((res) => {
+        if (res.data?.data?.inWishlist !== undefined) {
+          setInWishlist(res.data.data.inWishlist);
+        }
+      })
+      .catch(() => {});
+  }, [userId, productId]);
+
+  const handleToggle = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (loading) return;
+      const prev = inWishlist;
+      setInWishlist(!prev);
+      setLoading(true);
+      try {
+        const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
+        const action = res.data?.data?.action;
+        if (action === "added") {
+          setInWishlist(true);
+          toastSuccess("Added to wishlist");
+        } else if (action === "removed") {
+          setInWishlist(false);
+          toastSuccess("Removed from wishlist");
+        }
+      } catch {
+        setInWishlist(prev);
+        toastError("Failed to update wishlist");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userId, productId, loading, inWishlist]
+  );
+
+  return (
+    <button onClick={handleToggle} className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:bg-card transition-colors">
+      <Heart className={`h-4 w-4 transition-colors ${inWishlist ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+    </button>
+  );
+};
+
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
+  const { isAuthenticated, user } = useAuth();
   const currentLang = i18n.language as 'en' | 'zh';
   const images: string[] = item.images || (item.image ? [item.image] : []);
   const bidStatus = getBidStatus(item);
