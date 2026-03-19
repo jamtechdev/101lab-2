@@ -628,38 +628,36 @@ const BrowseByCategorySection = () => {
     : (categoriesData as any)?.data ?? [];
 
   return (
-    <section className="py-8 bg-background border-b border-border">
-      <div className="container mx-auto px-4">
-        <h2 className="text-base font-bold text-foreground mb-5">{t("landing.browseByCat")}</h2>
+    <section className="py-10 bg-secondary/30 border-b border-border">
+      <div className="container mx-auto px-4 text-center">
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">TOP PICKS</p>
+        <h2 className="text-lg font-bold text-foreground mb-6">{t("landing.browseByCat") || "Popular Categories"}</h2>
 
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="flex flex-wrap justify-center gap-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center gap-2 p-4 border border-border bg-card animate-pulse">
-                <div className="w-10 h-10 bg-secondary rounded" />
-                <div className="h-3 w-16 bg-secondary rounded" />
-              </div>
+              <div key={i} className="h-10 w-32 bg-secondary animate-pulse rounded-md" />
             ))}
           </div>
         )}
 
         {!isLoading && categories.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {categories.slice(0, 11).map((cat) => {
-              const Icon = categoryIconMap[cat.slug] ?? Tag;
-              return (
-                <Link
-                  key={cat.slug}
-                  to={`/buyer-marketplace?category=${cat.slug}`}
-                  className="group flex flex-col items-center gap-2 p-4 border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all text-center"
-                >
-                  <div className="w-10 h-10 bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs font-medium text-foreground leading-tight">{cat.name}</span>
-                </Link>
-              );
-            })}
+          <div className="flex flex-wrap justify-center gap-3">
+            {categories.slice(0, 6).map((cat) => (
+              <Link
+                key={cat.slug}
+                to={`/buyer-marketplace?category=${cat.slug}`}
+                className="px-5 py-2.5 border border-destructive/30 rounded-md text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+              >
+                {cat.name}
+              </Link>
+            ))}
+            <Link
+              to="/buyer-marketplace"
+              className="px-5 py-2.5 border border-destructive/30 rounded-md text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+            >
+              More industrial categories
+            </Link>
           </div>
         )}
       </div>
