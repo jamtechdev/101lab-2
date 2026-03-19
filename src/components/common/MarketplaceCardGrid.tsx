@@ -133,11 +133,12 @@ const getBidStatus = (item: any) => {
 };
 
 // ── Wishlist Heart Button ─────────────────────────────────────────────────────
-const WishlistButton = ({ productId, userId }: { productId: number; userId: number }) => {
+const WishlistButton = ({ productId, userId }: { productId: number; userId?: number | null }) => {
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
     axiosInstance
       .get(`/wishlist/${userId}/${productId}`)
       .then((res) => {
@@ -151,6 +152,10 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId: numb
   const handleToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!userId) {
+        toastError("Please login to add to wishlist");
+        return;
+      }
       if (loading) return;
       const prev = inWishlist;
       setInWishlist(!prev);
@@ -181,7 +186,6 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId: numb
     </button>
   );
 };
-
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
@@ -201,10 +205,10 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
       <div className="relative overflow-hidden">
         <MosaicImages images={images} itemId={item.id} />
 
-        {/* Wishlist heart — top left, only when logged in */}
-        {isAuthenticated && user?.id && item.id && (
+        {/* Wishlist heart — top left, always visible */}
+        {item.id && (
           <div className="absolute top-2 left-2 z-10">
-            <WishlistButton productId={item.id} userId={user.id} />
+            <WishlistButton productId={item.id} userId={isAuthenticated ? user?.id : null} />
           </div>
         )}
 
