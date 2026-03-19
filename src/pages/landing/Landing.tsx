@@ -981,25 +981,51 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* ── Sell CTA Banner ──────────────────────────────────────── */}
-      <section className="bg-primary">
-        <div className="container mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold text-primary-foreground mb-1">
-              {t("landing.sellTitle")}
-            </h2>
-            <p className="text-sm text-primary-foreground/80">
-              {t("landing.sellDesc")}
-            </p>
+      {/* ── Sell & Direct Sales Section (Surplex style) ─────────── */}
+      <section className="bg-muted/50 border-y border-border">
+        <div className="container mx-auto px-4 py-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Expand Your Reach</p>
+            <h2 className="text-xl font-bold text-foreground">Sell Your Industrial Assets with 101Machines</h2>
           </div>
-          <Button
-            size="lg"
-            className="bg-card text-primary hover:bg-card/90 font-semibold px-6 rounded flex-shrink-0"
-            onClick={() => setSellModalOpen(true)}
-          >
-            {t("landing.startSelling")}
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
+
+          {/* Two cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Sell with GreenBidz */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-base text-foreground">Sell with GreenBidz</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                Turn your used machinery, tools, and surplus inventory into capital. From individual items to entire production plants, 101machines ensures you get maximum value through expert auctions and strategic marketing.
+              </p>
+              <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded"
+                onClick={() => setSellModalOpen(true)}
+              >
+                Sell with GreenBidz <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+
+            {/* Direct Sales */}
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+                <h3 className="font-bold text-base text-foreground">Direct Sales</h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                Premium machines at fixed prices. Explore our direct sales for high-quality equipment, available immediately for your business.
+              </p>
+              <Link
+                to="/buyer-marketplace?type=direct"
+                className="flex items-center justify-center w-full py-2 border border-primary text-primary text-sm font-semibold rounded hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                Direct Sale <ArrowRight className="h-4 w-4 ml-2" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
