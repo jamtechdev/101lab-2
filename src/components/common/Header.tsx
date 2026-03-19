@@ -36,6 +36,48 @@ const Header = () => {
   const [visibleCatCount, setVisibleCatCount] = useState(5);
 
   const userId = localStorage.getItem("userId");
+  const [favOpen, setFavOpen] = useState(false);
+  const [favItems, setFavItems] = useState<any[]>([]);
+  const [favLoading, setFavLoading] = useState(false);
+  const favRef = useRef<HTMLDivElement>(null);
+
+  // Close favourites panel on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (favRef.current && !favRef.current.contains(e.target as Node)) setFavOpen(false);
+    };
+    if (favOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [favOpen]);
+
+  const fetchFavourites = async () => {
+    setFavLoading(true);
+    try {
+      const res = await axiosInstance.get(`/wishlist/${userId}`);
+      setFavItems(res.data?.data?.wishlist || []);
+    } catch {
+      toastError("Failed to load favourites");
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
+  const openFavourites = () => {
+    if (!userId) { toastError("Please login to view favourites"); return; }
+    setFavOpen((prev) => {
+      if (!prev) fetchFavourites();
+      return !prev;
+    });
+  };
+
+  const removeFavourite = async (productId: number) => {
+    try {
+      await axiosInstance.delete(`/wishlist/${userId}/${productId}`);
+      setFavItems((prev) => prev.filter((item: any) => item.product?.product_id !== productId));
+    } catch {
+      toastError("Failed to remove");
+    }
+  };
 
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
