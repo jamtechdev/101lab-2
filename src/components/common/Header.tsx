@@ -148,7 +148,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50">
+      <header className="relative z-50">
         {/* ── Row 1: Utility Bar ─────────────────────────────────── */}
         <div className="bg-muted/60 border-b border-border hidden md:block">
           <div className="container mx-auto px-4 flex items-center justify-between h-7">
