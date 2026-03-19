@@ -149,22 +149,6 @@ const SearchPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with Search */}
-      <div className="bg-card shadow-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-foreground mb-4">Search Products</h1>
-          <div className="relative max-w-2xl">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              type="text"
-              placeholder="Search by equipment or batch ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 text-lg"
-            />
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="flex gap-6">
