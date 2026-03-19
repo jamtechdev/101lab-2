@@ -278,8 +278,37 @@ export default function BuyerBatchDetails() {
 
     return (
             <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+                {/* Breadcrumb */}
+                <div className="mx-auto px-4 pt-3 pb-0">
+                    <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Home className="w-3.5 h-3.5" />
+                        <span className="text-muted-foreground/40">/</span>
+                        <span
+                            className="hover:text-primary cursor-pointer transition-colors hover:underline"
+                            onClick={() => navigate("/buyer-marketplace")}
+                        >
+                            All auctions
+                        </span>
+                        {batch?.category && (
+                            <>
+                                <span className="text-muted-foreground/40">/</span>
+                                <span
+                                    className="hover:text-primary cursor-pointer transition-colors hover:underline capitalize"
+                                    onClick={() => navigate(`/buyer-marketplace?category=${batch.category}`)}
+                                >
+                                    {batch.category.replace(/-/g, " ")}
+                                </span>
+                            </>
+                        )}
+                        <span className="text-muted-foreground/40">/</span>
+                        <span className="text-foreground font-medium">
+                            {batch?.title || `Batch #${batchId}`}
+                        </span>
+                    </nav>
+                </div>
+
                 {/* Main Content */}
-                <div className=" mx-auto px-4 py-2">
+                <div className="mx-auto px-4 py-2">
                     {/* Page Header Section */}
                     <div className="mb-8">
                         <div className="flex items-start justify-between flex-wrap gap-4">

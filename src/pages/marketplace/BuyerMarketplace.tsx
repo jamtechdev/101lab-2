@@ -367,22 +367,30 @@ const BuyerMarketplace = () => {
         onCategoryChange={handleCategoryChange}
       />
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb — Surplex style */}
       <div className="container mx-auto px-4 pt-3 pb-0">
-        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Home className="w-3.5 h-3.5 text-muted-foreground/70" />
+        <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Home className="w-3.5 h-3.5" />
           <span className="text-muted-foreground/40">/</span>
           <span
-            className="hover:text-primary cursor-pointer transition-colors"
-            onClick={() => { handleCategoryChange(""); }}
+            className="hover:text-primary cursor-pointer transition-colors hover:underline"
+            onClick={() => navigate("/buyer-marketplace")}
           >
-            {t("buyer.categories")}
+            All auctions
           </span>
           {selectedCategory && (
             <>
               <span className="text-muted-foreground/40">/</span>
-              <span className="text-primary font-medium capitalize">
+              <span className="text-foreground font-medium capitalize">
                 {selectedCategory.replace(/-/g, " ")}
+              </span>
+            </>
+          )}
+          {debouncedSearch && (
+            <>
+              <span className="text-muted-foreground/40">/</span>
+              <span className="text-foreground font-medium">
+                "{debouncedSearch}"
               </span>
             </>
           )}
