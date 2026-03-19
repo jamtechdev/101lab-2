@@ -133,11 +133,12 @@ const getBidStatus = (item: any) => {
 };
 
 // ── Wishlist Heart Button ─────────────────────────────────────────────────────
-const WishlistButton = ({ productId, userId }: { productId: number; userId: number }) => {
+const WishlistButton = ({ productId, userId }: { productId: number; userId?: number | null }) => {
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
     axiosInstance
       .get(`/wishlist/${userId}/${productId}`)
       .then((res) => {
@@ -151,6 +152,10 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId: numb
   const handleToggle = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!userId) {
+        toastError("Please login to add to wishlist");
+        return;
+      }
       if (loading) return;
       const prev = inWishlist;
       setInWishlist(!prev);
@@ -181,7 +186,6 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId: numb
     </button>
   );
 };
-
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
