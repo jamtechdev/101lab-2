@@ -218,7 +218,7 @@ const Header = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-primary hover:text-primary/80 text-xs h-9 gap-1.5 font-medium"
+                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
                     onClick={() => window.open("/auth?type=buyer", "_blank")}
                   >
                     <UserPlus className="h-3.5 w-3.5" />
