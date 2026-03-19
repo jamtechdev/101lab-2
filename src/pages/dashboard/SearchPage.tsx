@@ -168,7 +168,7 @@ const SearchPage: React.FC = () => {
                     onClick={() => setCategoryOpen(!categoryOpen)}
                     className="flex items-center justify-between w-full px-4 py-3 text-left hover:bg-muted/50 transition-colors"
                   >
-                    <span className="font-semibold text-sm text-foreground">Category</span>
+                    <span className="font-semibold text-sm text-foreground">Categories</span>
                     {categoryOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </button>
                   {categoryOpen && (
