@@ -409,36 +409,38 @@ const Header = () => {
                       ))}
                     </div>
 
-                    {/* Right panel — subcategories for hovered category */}
+                    {/* Right panel — category detail */}
                     <div className="flex-1 p-6 overflow-y-auto">
                       {categories[hoveredCatIdx] && (
                         <>
-                          <h3 className="text-base font-bold text-foreground mb-1">{categories[hoveredCatIdx].name}</h3>
+                          <h3 className="text-lg font-bold text-foreground mb-1">{categories[hoveredCatIdx].name}</h3>
                           <Link
                             to={`/buyer-marketplace?category=${categories[hoveredCatIdx].slug}`}
                             onClick={() => setIsCategoryOpen(false)}
-                            className="text-sm font-semibold text-primary hover:underline mb-4 inline-block"
+                            className="text-sm font-semibold text-primary hover:underline inline-block mb-5"
                           >
                             SHOW ALL
                           </Link>
-                          {categories[hoveredCatIdx].subcategories && categories[hoveredCatIdx].subcategories.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-x-10 gap-y-2 mt-2">
-                              {categories[hoveredCatIdx].subcategories.map((sub: any) => (
+
+                          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                            Browse all available {categories[hoveredCatIdx].name.toLowerCase()} listings. Find auctions, direct sales, and verified equipment from trusted sellers worldwide.
+                          </p>
+
+                          <div className="border-t border-border pt-4">
+                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3 font-medium">More categories</p>
+                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+                              {categories.filter((_, i) => i !== hoveredCatIdx).slice(0, 10).map((cat) => (
                                 <Link
-                                  key={sub.slug || sub.name}
-                                  to={`/buyer-marketplace?category=${sub.slug || categories[hoveredCatIdx].slug}&subcategory=${sub.slug || ''}`}
+                                  key={cat.slug}
+                                  to={`/buyer-marketplace?category=${cat.slug}`}
                                   onClick={() => setIsCategoryOpen(false)}
-                                  className="text-sm text-popover-foreground hover:text-primary transition-colors py-1"
+                                  className="text-sm text-popover-foreground hover:text-primary transition-colors py-1 truncate"
                                 >
-                                  {sub.name}
+                                  {cat.name}
                                 </Link>
                               ))}
                             </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Browse all {categories[hoveredCatIdx].name} listings
-                            </p>
-                          )}
+                          </div>
                         </>
                       )}
                     </div>
