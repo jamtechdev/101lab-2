@@ -153,8 +153,7 @@ const FilterPanel = ({
       {/* Country */}
       <div className="py-3 border-b border-border/60">
         <button type="button" onClick={() => setIsCountryExpanded(!isCountryExpanded)} className="flex items-center justify-between w-full text-left py-1 group">
-          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
-            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
             {t("browseListings.country")}
           </span>
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isCountryExpanded ? "rotate-180" : ""}`} />
