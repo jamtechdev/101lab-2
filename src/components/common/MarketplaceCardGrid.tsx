@@ -201,6 +201,13 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
       <div className="relative overflow-hidden">
         <MosaicImages images={images} itemId={item.id} />
 
+        {/* Wishlist heart — top left, only when logged in */}
+        {isAuthenticated && user?.id && item.id && (
+          <div className="absolute top-2 left-2 z-10">
+            <WishlistButton productId={item.id} userId={user.id} />
+          </div>
+        )}
+
         {/* Bid status badge — bottom left */}
         <div className="absolute bottom-2 left-2 z-10">
           {bidStatus === "live" && item.bid_end_date && (
