@@ -673,7 +673,7 @@ const BrowseByCategorySection = () => {
   );
 };
 
-// ─── Category Product Card (bigger, professional) ───────────────────────────
+// ─── Category Product Card (Surplex style) ──────────────────────────────────
 const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => void }) => {
   const { t } = useTranslation();
   const isLive = batch.status === "live_for_bids";
@@ -684,51 +684,54 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
   return (
     <div
       onClick={onClick}
-      className="flex-shrink-0 w-[70vw] sm:w-[260px] md:w-[280px] lg:w-[300px] cursor-pointer group border border-border rounded overflow-hidden bg-card"
+      className="flex-shrink-0 w-[70vw] sm:w-[220px] md:w-[230px] lg:w-[240px] cursor-pointer group border border-border rounded-lg overflow-hidden bg-card hover:shadow-medium transition-shadow"
     >
       {/* Image */}
-      <div className="relative h-[180px] overflow-hidden">
+      <div className="relative h-[160px] overflow-hidden">
         <ImageCarousel images={images} batchId={batch.batchId} />
+
+        {bids > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+              <Heart className="h-3 w-3 text-primary" /> {bids}
+            </span>
+          </div>
+        )}
+
         {/* Countdown */}
         <div className="absolute bottom-2 left-2 z-10">
           {isLive && batch.bid_end_date ? (
             <CountdownTimer endDate={batch.bid_end_date} />
           ) : isLive ? (
-            <span className="inline-flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+            <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
               {t("landing.live")}
             </span>
           ) : null}
         </div>
-        {/* Bid count */}
-        <div className="absolute bottom-0 right-0 z-10">
-          <span className="inline-flex items-center gap-1 bg-foreground/85 text-card text-[11px] font-semibold pl-2.5 pr-2.5 py-1.5 rounded-tl-lg">
-            <Gavel className="h-3 w-3" /> {bids}
-          </span>
-        </div>
       </div>
 
       {/* Details */}
-      <div className="px-3 pt-2 pb-2.5">
-        <h4 className="font-bold text-[13px] text-foreground leading-snug line-clamp-2 uppercase group-hover:text-primary transition-colors">
+      <div className="px-3 pt-2.5 pb-3">
+        <p className="text-[10px] text-muted-foreground font-mono mb-1">
+          {t("landing.batchId")} #{batch.batchId}
+        </p>
+        <h4 className="font-bold text-[12px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
           {batch.title || `${batch.category || "Industrial"} Lot #${batch.batchId}`}
         </h4>
-        <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
-          <p className="flex items-center gap-1">
-            <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
-            {location || t("landing.verifiedSeller")}
-          </p>
-          <p className="font-mono">{t("landing.batchId")} #{batch.batchId}</p>
-        </div>
-        <div className="flex items-center justify-between mt-2">
+        <p className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
+          {location || t("landing.verifiedSeller")}
+        </p>
+        <div className="mt-1.5">
           {batch.value ? (
-            <span className="text-[13px] font-bold text-foreground">${Number(batch.value).toLocaleString()}</span>
+            <span className="text-sm font-bold text-foreground">${Number(batch.value).toLocaleString()}</span>
           ) : (
             <span className="text-[11px] text-muted-foreground italic">{t("landing.priceOnRequest")}</span>
           )}
-          <span className="text-[10px] font-semibold text-primary-foreground bg-primary px-2.5 py-1 rounded uppercase tracking-wide">
-            {t("landing.viewDetails")}
-          </span>
         </div>
+        <button className="w-full mt-2.5 py-1.5 border border-primary text-primary text-xs font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
+          View now
+        </button>
       </div>
     </div>
   );
