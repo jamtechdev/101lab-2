@@ -63,6 +63,52 @@ const insightKeys = [
   { tagKey: "landing.insights.trends.tag", titleKey: "landing.insights.trends.title", descKey: "landing.insights.trends.desc" },
 ];
 
+// ─── Wishlist Heart Button ────────────────────────────────────────────────────
+const WishlistHeartButton = ({ batchId }: { batchId: string | number }) => {
+  const userId = localStorage.getItem("userId");
+  const [inWishlist, setInWishlist] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId || !batchId) return;
+    axiosInstance
+      .get(`/wishlist/${userId}/${batchId}`)
+      .then((res) => {
+        if (res.data?.data?.inWishlist !== undefined) setInWishlist(res.data.data.inWishlist);
+      })
+      .catch(() => {});
+  }, [userId, batchId]);
+
+  const handleToggle = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) {
+      toastError("Please login to save items");
+      return;
+    }
+    if (loading) return;
+    const prev = inWishlist;
+    setInWishlist(!prev);
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId: batchId });
+      const action = res.data?.data?.action;
+      if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
+      else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+    } catch {
+      setInWishlist(prev);
+      toastError("Failed to update wishlist");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, batchId, loading, inWishlist]);
+
+  return (
+    <button onClick={handleToggle} className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:bg-card transition-colors">
+      <Heart className={`h-4 w-4 transition-colors ${inWishlist ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+    </button>
+  );
+};
+
 // ─── Live Countdown Timer ─────────────────────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
