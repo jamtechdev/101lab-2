@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import MakeOfferModal from './MakeOfferModal';
-import ProductESGCard from '../Esg/ProductESGCard';
+import ProductESGCard from '../esg/ProductESGCard';
 import ChatSidebarWrapper from '@/components/common/ChatSidebarWrapper';
 import BuyerOfferSection from './BuyerOfferSection';
 
