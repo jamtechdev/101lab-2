@@ -30,6 +30,8 @@ const categoryIconMap: Record<string, React.ElementType> = {
   "scrap": Trash2,
 };
 import SellLeadModal from "@/components/common/SellLeadModal";
+import axiosInstance from "@/rtk/api/axiosInstance";
+import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import i18n from "@/i18n/config";
 import { useGetCategoriesQuery } from "@/rtk/slices/apiSlice";
 
