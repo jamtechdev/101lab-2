@@ -34,7 +34,7 @@ const Header = () => {
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
   const [hoveredCatIdx, setHoveredCatIdx] = useState(0);
-  const [visibleCatCount, setVisibleCatCount] = useState(5);
+  const [visibleCatCount, setVisibleCatCount] = useState(3);
 
   const userId = localStorage.getItem("userId");
   const [favOpen, setFavOpen] = useState(false);
