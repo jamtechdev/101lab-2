@@ -286,7 +286,7 @@ const HighlightCard = ({
   const { t } = useTranslation();
   const images: string[] = (batch.firstProductImages as string[]) || [];
   const mainImg = images[0] || "/placeholder.svg";
-  const sideImgs = images.slice(1, 4);
+  const sideImgs = images.slice(1, 3);
   const isLive = batch.status === "live_for_bids";
   const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
@@ -294,76 +294,77 @@ const HighlightCard = ({
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer group border border-border rounded overflow-hidden bg-card"
+      className="cursor-pointer group border border-border rounded-lg overflow-hidden bg-card hover:shadow-medium transition-shadow"
     >
-      <div className="relative rounded overflow-hidden">
+      <div className="relative">
         {sideImgs.length > 0 ? (
-          <div className="flex h-[220px]">
+          <div className="flex h-[200px] gap-[2px]">
             <div className="flex-[3] min-w-0 overflow-hidden">
               <img src={mainImg} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
             </div>
-            <div className="flex-[1] min-w-0 flex flex-col gap-[2px] ml-[2px]">
-              {[0, 1, 2].map((i) => (
+            <div className="flex-[1] min-w-0 flex flex-col gap-[2px]">
+              {sideImgs.map((img, i) => (
                 <div key={i} className="flex-1 min-h-0 overflow-hidden">
-                  <img src={sideImgs[i] || mainImg} alt="" className="w-full h-full object-cover" />
+                  <img src={img} alt="" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="h-[220px] overflow-hidden">
+          <div className="h-[200px] overflow-hidden">
             <img src={mainImg} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+          </div>
+        )}
+
+        {bids > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+              <Heart className="h-3 w-3 text-primary" /> {bids}
+            </span>
+          </div>
+        )}
+
+        {isLive && (
+          <div className="absolute top-2 left-2 z-10">
+            <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
+              {t("landing.live")}
+            </span>
           </div>
         )}
 
         <div className="absolute bottom-2 left-2 z-10">
           {isLive && batch.bid_end_date ? (
             <CountdownTimer endDate={batch.bid_end_date} />
-          ) : (
-            <span className="inline-flex items-center gap-1 bg-destructive text-destructive-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm">
+          ) : batch.status === "bid_schedule" ? (
+            <span className="inline-flex items-center gap-1 bg-foreground/80 text-card text-[11px] font-bold px-2 py-0.5 rounded-sm">
               <Clock className="h-3 w-3" />
-              {batch.status === "bid_schedule" ? t("landing.upcoming") : t("landing.ended")}
+              {t("landing.upcoming")}
             </span>
-          )}
+          ) : null}
         </div>
-
-        <div className="absolute bottom-0 right-0 z-10">
-          <span className="inline-flex items-center gap-1 bg-foreground/85 text-card text-[12px] font-semibold pl-3 pr-3 py-2 rounded-tl-lg">
-            <Gavel className="h-3.5 w-3.5" /> {bids}
-          </span>
-        </div>
-
-        {isLive && (
-          <div className="absolute top-0 right-0 z-10">
-            <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-wide">
-              {t("landing.live")}
-            </span>
-          </div>
-        )}
       </div>
 
-      <div className="px-3 pt-2.5 pb-2.5">
-        <h3 className="font-bold text-[14px] text-foreground leading-snug line-clamp-2 uppercase group-hover:text-primary transition-colors">
+      <div className="px-3 pt-3 pb-3">
+        <p className="text-[11px] text-muted-foreground font-mono mb-1">
+          {t("landing.batchId")} #{batch.batchId}
+        </p>
+        <h3 className="font-bold text-[13px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
           {batch.title || `${batch.category || "Industrial"} Equipment`}
         </h3>
-        <div className="mt-1 space-y-0.5 text-[12px] text-muted-foreground">
-          <p className="flex items-center gap-1">
-            <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
-            {location || t("landing.verifiedSeller")}
-          </p>
-          {batch.category && <p>{batch.category}</p>}
-          <p className="font-mono text-[11px]">{t("landing.batchId")} #{batch.batchId}</p>
-        </div>
-        <div className="flex items-center justify-between mt-2">
+        <p className="flex items-center gap-1 mt-1.5 text-[12px] text-muted-foreground">
+          <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
+          {location || t("landing.verifiedSeller")}
+        </p>
+        <div className="mt-2">
           {batch.value ? (
-            <span className="text-sm font-bold text-foreground">${Number(batch.value).toLocaleString()}</span>
+            <span className="text-base font-bold text-foreground">${Number(batch.value).toLocaleString()}</span>
           ) : (
             <span className="text-[12px] text-muted-foreground italic">{t("landing.priceOnRequest")}</span>
           )}
-          <span className="text-[11px] font-semibold text-primary-foreground bg-primary px-3 py-1 rounded uppercase tracking-wide">
-            {t("landing.viewDetails")}
-          </span>
         </div>
+        <button className="w-full mt-3 py-2 border border-primary text-primary text-sm font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
+          View now
+        </button>
       </div>
     </div>
   );
