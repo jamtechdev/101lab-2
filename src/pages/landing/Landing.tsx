@@ -734,11 +734,9 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
       <div className="relative h-[160px] overflow-hidden">
         <ImageCarousel images={images} batchId={batch.batchId} />
 
-        {bids > 0 && (
+        {batch.firstProductId && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
-              <Heart className="h-3 w-3 text-primary" /> {bids}
-            </span>
+            <WishlistHeartButton batchId={batch.firstProductId} />
           </div>
         )}
 
