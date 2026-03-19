@@ -7,8 +7,9 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus,
+  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, Loader2,
 } from "lucide-react";
+import axiosInstance from "@/rtk/api/axiosInstance";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
 
