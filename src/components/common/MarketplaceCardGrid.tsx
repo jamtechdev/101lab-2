@@ -205,10 +205,10 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
       <div className="relative overflow-hidden">
         <MosaicImages images={images} itemId={item.id} />
 
-        {/* Wishlist heart — top left, only when logged in */}
-        {isAuthenticated && user?.id && item.id && (
+        {/* Wishlist heart — top left, always visible */}
+        {item.id && (
           <div className="absolute top-2 left-2 z-10">
-            <WishlistButton productId={item.id} userId={user.id} />
+            <WishlistButton productId={item.id} userId={isAuthenticated ? user?.id : null} />
           </div>
         )}
 
