@@ -375,7 +375,7 @@ const Header = () => {
               All auctions
             </Link>
 
-            {/* All categories dropdown */}
+            {/* All categories mega-menu */}
             <div
               className="relative flex-shrink-0 h-full"
               onMouseEnter={() => setIsCategoryOpen(true)}
@@ -387,18 +387,61 @@ const Header = () => {
               </button>
               {isCategoryOpen && <div className="absolute left-0 top-full w-full h-1 z-50" />}
               {isCategoryOpen && (
-                <div className="absolute left-0 top-full z-50 bg-popover border border-border shadow-xl rounded-b min-w-[240px] max-h-[70vh] overflow-y-auto">
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.slug}
-                      to={`/buyer-marketplace?category=${cat.slug}`}
-                      className="flex items-center justify-between px-4 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                      onClick={() => setIsCategoryOpen(false)}
-                    >
-                      <span>{cat.name}</span>
-                      <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0" />
-                    </Link>
-                  ))}
+                <div className="fixed left-0 right-0 top-auto z-50 bg-popover border-t border-border shadow-xl" style={{ marginTop: '1px' }}>
+                  <div className="container mx-auto px-4 flex min-h-[320px] max-h-[70vh]">
+                    {/* Left sidebar — category list */}
+                    <div className="w-[260px] border-r border-border overflow-y-auto py-2 flex-shrink-0">
+                      {categories.map((cat, idx) => (
+                        <button
+                          key={cat.slug}
+                          onMouseEnter={() => setHoveredCatIdx(idx)}
+                          onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                            hoveredCatIdx === idx
+                              ? "bg-secondary text-primary font-medium"
+                              : "text-popover-foreground hover:bg-secondary/50"
+                          }`}
+                        >
+                          <span>{cat.name}</span>
+                          <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Right panel — subcategories for hovered category */}
+                    <div className="flex-1 p-6 overflow-y-auto">
+                      {categories[hoveredCatIdx] && (
+                        <>
+                          <h3 className="text-base font-bold text-foreground mb-1">{categories[hoveredCatIdx].name}</h3>
+                          <Link
+                            to={`/buyer-marketplace?category=${categories[hoveredCatIdx].slug}`}
+                            onClick={() => setIsCategoryOpen(false)}
+                            className="text-sm font-semibold text-primary hover:underline mb-4 inline-block"
+                          >
+                            SHOW ALL
+                          </Link>
+                          {categories[hoveredCatIdx].subcategories && categories[hoveredCatIdx].subcategories.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-x-10 gap-y-2 mt-2">
+                              {categories[hoveredCatIdx].subcategories.map((sub: any) => (
+                                <Link
+                                  key={sub.slug || sub.name}
+                                  to={`/buyer-marketplace?category=${sub.slug || categories[hoveredCatIdx].slug}&subcategory=${sub.slug || ''}`}
+                                  onClick={() => setIsCategoryOpen(false)}
+                                  className="text-sm text-popover-foreground hover:text-primary transition-colors py-1"
+                                >
+                                  {sub.name}
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Browse all {categories[hoveredCatIdx].name} listings
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
