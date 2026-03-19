@@ -30,6 +30,8 @@ const categoryIconMap: Record<string, React.ElementType> = {
   "scrap": Trash2,
 };
 import SellLeadModal from "@/components/common/SellLeadModal";
+import axiosInstance from "@/rtk/api/axiosInstance";
+import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import i18n from "@/i18n/config";
 import { useGetCategoriesQuery } from "@/rtk/slices/apiSlice";
 
@@ -60,6 +62,52 @@ const insightKeys = [
   { tagKey: "landing.insights.market.tag", titleKey: "landing.insights.market.title", descKey: "landing.insights.market.desc" },
   { tagKey: "landing.insights.trends.tag", titleKey: "landing.insights.trends.title", descKey: "landing.insights.trends.desc" },
 ];
+
+// ─── Wishlist Heart Button ────────────────────────────────────────────────────
+const WishlistHeartButton = ({ batchId }: { batchId: string | number }) => {
+  const userId = localStorage.getItem("userId");
+  const [inWishlist, setInWishlist] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId || !batchId) return;
+    axiosInstance
+      .get(`/wishlist/${userId}/${batchId}`)
+      .then((res) => {
+        if (res.data?.data?.inWishlist !== undefined) setInWishlist(res.data.data.inWishlist);
+      })
+      .catch(() => {});
+  }, [userId, batchId]);
+
+  const handleToggle = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) {
+      toastError("Please login to save items");
+      return;
+    }
+    if (loading) return;
+    const prev = inWishlist;
+    setInWishlist(!prev);
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId: batchId });
+      const action = res.data?.data?.action;
+      if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
+      else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+    } catch {
+      setInWishlist(prev);
+      toastError("Failed to update wishlist");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, batchId, loading, inWishlist]);
+
+  return (
+    <button onClick={handleToggle} className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:bg-card transition-colors">
+      <Heart className={`h-4 w-4 transition-colors ${inWishlist ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+    </button>
+  );
+};
 
 // ─── Live Countdown Timer ─────────────────────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
@@ -208,12 +256,10 @@ const AuctionMosaicCard = ({
           </div>
         )}
 
-        {/* Favorite count — top right */}
-        {bids > 0 && (
+        {/* Wishlist heart — top right */}
+        {batch.firstProductId && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
-              <Heart className="h-3 w-3 text-primary" /> {bids}
-            </span>
+            <WishlistHeartButton batchId={batch.firstProductId} />
           </div>
         )}
 
@@ -316,11 +362,9 @@ const HighlightCard = ({
           </div>
         )}
 
-        {bids > 0 && (
+        {batch.firstProductId && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
-              <Heart className="h-3 w-3 text-primary" /> {bids}
-            </span>
+            <WishlistHeartButton batchId={batch.firstProductId} />
           </div>
         )}
 
@@ -690,11 +734,9 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
       <div className="relative h-[160px] overflow-hidden">
         <ImageCarousel images={images} batchId={batch.batchId} />
 
-        {bids > 0 && (
+        {batch.firstProductId && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
-              <Heart className="h-3 w-3 text-primary" /> {bids}
-            </span>
+            <WishlistHeartButton batchId={batch.firstProductId} />
           </div>
         )}
 
