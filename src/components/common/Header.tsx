@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -7,12 +7,12 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe,
+  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
 
-const VISIBLE_CAT_COUNT = 5;
+const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
 
 const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -32,6 +32,7 @@ const Header = () => {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [visibleCatCount, setVisibleCatCount] = useState(5);
 
   const userId = localStorage.getItem("userId");
 
@@ -41,7 +42,21 @@ const Header = () => {
     ? categoriesData
     : (categoriesData as any)?.data ?? [];
 
-  const visibleCategories = categories.slice(0, VISIBLE_CAT_COUNT);
+  // Responsive: show fewer categories on smaller screens
+  useEffect(() => {
+    const updateCount = () => {
+      const w = window.innerWidth;
+      if (w < 1100) setVisibleCatCount(2);
+      else if (w < 1280) setVisibleCatCount(3);
+      else if (w < 1440) setVisibleCatCount(4);
+      else setVisibleCatCount(5);
+    };
+    updateCount();
+    window.addEventListener("resize", updateCount);
+    return () => window.removeEventListener("resize", updateCount);
+  }, []);
+
+  const visibleCategories = categories.slice(0, visibleCatCount);
 
   const currentLang = languages.find((l) => l.code === lang) || languages[0];
 
@@ -92,10 +107,10 @@ const Header = () => {
     <>
       <header className="sticky top-0 z-50">
         {/* ── Row 1: Utility Bar ─────────────────────────────────── */}
-        <div className="bg-foreground text-primary-foreground hidden md:block">
+        <div className="bg-muted/60 border-b border-border hidden md:block">
           <div className="container mx-auto px-4 flex items-center justify-between h-7">
             <div className="flex items-center gap-4">
-              <a href="#" className="flex items-center gap-1 text-[11px] text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+              <a href="#" className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                 <Headphones className="h-3 w-3" />
                 FAQ
               </a>
@@ -107,7 +122,7 @@ const Header = () => {
                 onMouseEnter={() => setIsLangOpen(true)}
                 onMouseLeave={() => setIsLangOpen(false)}
               >
-                <button className="flex items-center gap-1 text-[11px] text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+                <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                   <Globe className="h-3 w-3" />
                   <span>{currentLang.flag} {currentLang.code.toUpperCase()}</span>
                   <ChevronDown className={`h-2.5 w-2.5 transition-transform ${isLangOpen ? "rotate-180" : ""}`} />
@@ -140,13 +155,21 @@ const Header = () => {
         {/* ── Row 2: Main Header — Logo + Search + Actions ────────── */}
         <div className="bg-card border-b border-border">
           <div className="container mx-auto px-4 flex items-center gap-3 h-14 sm:h-16">
-            {/* Logo */}
-            <img
-              src={logo}
-              alt="GreenBidz"
-              className="h-7 sm:h-8 w-auto cursor-pointer flex-shrink-0"
+            {/* Logo + brand name */}
+            <div
+              className="flex items-center gap-2 cursor-pointer flex-shrink-0"
               onClick={() => navigate("/")}
-            />
+            >
+              <img
+                src={logo}
+                alt="GreenBidz"
+                className="h-7 sm:h-8 w-auto"
+              />
+              <div className="hidden sm:block leading-tight">
+                <span className="text-sm font-bold text-foreground">101machines</span>
+                <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
+              </div>
+            </div>
 
             {/* Search — hidden on mobile (shown in mobile menu) */}
             <div className="hidden sm:flex flex-1 max-w-2xl mx-auto relative">
@@ -169,7 +192,7 @@ const Header = () => {
             </div>
 
             {/* Desktop right actions */}
-            <div className="hidden lg:flex items-center gap-1 flex-shrink-0 ml-auto">
+            <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
               {userId ? (
                 <>
                   <Button
@@ -191,39 +214,50 @@ const Header = () => {
                   </Button>
                 </>
               ) : (
-                <div
-                  className="relative"
-                  onMouseEnter={() => setIsSignInOpen(true)}
-                  onMouseLeave={() => setIsSignInOpen(false)}
-                >
+                <>
                   <Button
+                    variant="ghost"
                     size="sm"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 text-xs h-9 rounded"
+                    className="text-primary hover:text-primary/80 text-xs h-9 gap-1.5 font-medium"
+                    onClick={() => window.open("/auth?type=buyer", "_blank")}
                   >
-                    <LogIn className="h-3.5 w-3.5" />
-                    Sign in
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Create account
                   </Button>
-                  {isSignInOpen && (
-                    <div className="absolute right-0 top-full pt-0.5 z-50">
-                      <div className="bg-popover border border-border rounded shadow-lg min-w-[160px] py-0.5">
-                        <button
-                          onClick={() => window.open("/auth?type=buyer", "_blank")}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                        >
-                          <User className="h-3.5 w-3.5 text-muted-foreground" />
-                          Buyer Portal
-                        </button>
-                        <button
-                          onClick={() => window.open("/auth", "_blank")}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                        >
-                          <Store className="h-3.5 w-3.5 text-muted-foreground" />
-                          Seller Portal
-                        </button>
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setIsSignInOpen(true)}
+                    onMouseLeave={() => setIsSignInOpen(false)}
+                  >
+                    <Button
+                      size="sm"
+                      className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5 text-xs h-9 rounded"
+                    >
+                      <LogIn className="h-3.5 w-3.5" />
+                      Sign in
+                    </Button>
+                    {isSignInOpen && (
+                      <div className="absolute right-0 top-full pt-0.5 z-50">
+                        <div className="bg-popover border border-border rounded shadow-lg min-w-[160px] py-0.5">
+                          <button
+                            onClick={() => window.open("/auth?type=buyer", "_blank")}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
+                          >
+                            <User className="h-3.5 w-3.5 text-muted-foreground" />
+                            Buyer Portal
+                          </button>
+                          <button
+                            onClick={() => window.open("/auth", "_blank")}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
+                          >
+                            <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                            Seller Portal
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
 
@@ -280,13 +314,13 @@ const Header = () => {
             {/* Divider */}
             <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
-            {/* Quick category tabs */}
-            <div className="flex items-center overflow-x-auto flex-1 h-full" style={{ scrollbarWidth: "none" }}>
+            {/* Quick category tabs — responsive count */}
+            <div className="flex items-center flex-1 h-full min-w-0">
               {visibleCategories.map((cat) => (
                 <Link
                   key={cat.slug}
                   to={`/buyer-marketplace?category=${cat.slug}`}
-                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap"
+                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap flex-shrink-0"
                 >
                   {cat.name}
                 </Link>
@@ -294,7 +328,7 @@ const Header = () => {
             </div>
 
             {/* Right-side action buttons */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
               <Button
                 size="sm"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-7 rounded px-3"
@@ -413,11 +447,11 @@ const Header = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
                       onClick={() => { window.open("/auth?type=buyer", "_blank"); setOpenMenu(false); }}>
-                      Buyer Portal
+                      Create account
                     </Button>
-                    <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
+                    <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
                       onClick={() => { window.open("/auth", "_blank"); setOpenMenu(false); }}>
-                      Seller Portal
+                      Sign in
                     </Button>
                   </div>
                 )}
