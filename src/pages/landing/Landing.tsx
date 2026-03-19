@@ -989,23 +989,23 @@ const Landing = () => {
           <h2 className="text-lg font-bold text-foreground mb-5">Find deals in:</h2>
           <div className="flex flex-wrap justify-center gap-2.5">
             {[
-              { flag: "🇹🇼", name: "Taiwan" },
-              { flag: "🇯🇵", name: "Japan" },
-              { flag: "🇨🇳", name: "China" },
-              { flag: "🇰🇷", name: "South Korea" },
-              { flag: "🇮🇳", name: "India" },
-              { flag: "🇹🇭", name: "Thailand" },
-              { flag: "🇻🇳", name: "Vietnam" },
-              { flag: "🇩🇪", name: "Germany" },
-              { flag: "🇺🇸", name: "USA" },
-              { flag: "🇬🇧", name: "UK" },
+              { code: "tw", name: "Taiwan" },
+              { code: "jp", name: "Japan" },
+              { code: "cn", name: "China" },
+              { code: "kr", name: "South Korea" },
+              { code: "in", name: "India" },
+              { code: "th", name: "Thailand" },
+              { code: "vn", name: "Vietnam" },
+              { code: "de", name: "Germany" },
+              { code: "us", name: "USA" },
+              { code: "gb", name: "UK" },
             ].map((country) => (
               <Link
                 key={country.name}
                 to={`/buyer-marketplace?country=${encodeURIComponent(country.name)}`}
                 className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded bg-card text-sm text-foreground hover:border-primary hover:shadow-sm transition-all"
               >
-                <span className="text-base">{country.flag}</span>
+                <img src={`https://flagcdn.com/20x15/${country.code}.png`} alt={country.name} className="w-5 h-[15px] object-cover rounded-[2px]" />
                 {country.name}
               </Link>
             ))}
