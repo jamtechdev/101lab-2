@@ -256,12 +256,10 @@ const AuctionMosaicCard = ({
           </div>
         )}
 
-        {/* Favorite count — top right */}
-        {bids > 0 && (
+        {/* Wishlist heart — top right */}
+        {batch.firstProductId && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
-              <Heart className="h-3 w-3 text-primary" /> {bids}
-            </span>
+            <WishlistHeartButton batchId={batch.firstProductId} />
           </div>
         )}
 
