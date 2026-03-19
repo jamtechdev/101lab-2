@@ -67,9 +67,6 @@ const FilterPanel = ({
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-border">
         <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Filter className="h-3.5 w-3.5 text-primary" />
-          </div>
           {t("browseListings.filters")}
           {activeCount > 0 && (
             <span className="ml-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
@@ -118,8 +115,7 @@ const FilterPanel = ({
       {/* Bid Status */}
       <div className="py-3 border-b border-border/60">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Gavel className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground">
             {t("browseListings.bidStatus")}
           </span>
           {selectedBidFilter && (
@@ -157,8 +153,7 @@ const FilterPanel = ({
       {/* Country */}
       <div className="py-3 border-b border-border/60">
         <button type="button" onClick={() => setIsCountryExpanded(!isCountryExpanded)} className="flex items-center justify-between w-full text-left py-1 group">
-          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
-            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
             {t("browseListings.country")}
           </span>
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isCountryExpanded ? "rotate-180" : ""}`} />
