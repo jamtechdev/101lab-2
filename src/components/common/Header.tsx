@@ -236,6 +236,55 @@ const Header = () => {
 
             {/* Desktop right actions */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
+
+              {/* ── Favourites button + dropdown ── */}
+              <div className="relative" ref={favRef}>
+                <button onClick={openFavourites} className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors px-2 py-1.5">
+                  <Heart className="h-4 w-4" />
+                  Favourites
+                </button>
+
+                {favOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                      <span className="text-sm font-semibold text-foreground">My Favourites</span>
+                      <button onClick={() => setFavOpen(false)} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {favLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : favItems.length === 0 ? (
+                      <div className="flex flex-col items-center py-8 text-muted-foreground">
+                        <Heart className="h-8 w-8 mb-2" />
+                        <p className="text-sm">No favourites yet</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-72 overflow-y-auto">
+                        {favItems.map((item: any) => {
+                          const p = item.product;
+                          return (
+                            <Link key={p?.product_id} to={`/buyer-marketplace/${p?.product_id}`} onClick={() => setFavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors">
+                              <img src={p?.thumbnail || "/placeholder.svg"} alt="" className="h-10 w-10 rounded object-cover bg-muted flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">{p?.title || "Product"}</p>
+                                <span className="text-xs text-primary">View listing →</span>
+                              </div>
+                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFavourite(p?.product_id); }} className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1" title="Remove">
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {userId ? (
                 <>
                   <Button
