@@ -19,7 +19,10 @@ import {
   Share2,
   Copy,
   Check,
+  Heart,
 } from "lucide-react";
+import axiosInstance from "@/rtk/api/axiosInstance";
+import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -230,6 +233,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showInspectionDialog, setShowInspectionDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inFavourite, setInFavourite] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [userBid, setUserBid] = useState<any>(null);
 
@@ -706,6 +711,38 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     }
   };
 
+  // Check wishlist status when first product ID is known
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    const firstProductId = products[0]?.id;
+    if (!userId || !firstProductId) return;
+    axiosInstance
+      .get(`/wishlist/${userId}/${firstProductId}`)
+      .then((res) => { if (res.data?.data?.inWishlist !== undefined) setInFavourite(res.data.data.inWishlist); })
+      .catch(() => {});
+  }, [products]);
+
+  const handleToggleFavourite = async () => {
+    const userId = localStorage.getItem("userId");
+    const firstProductId = products[0]?.id;
+    if (!userId) { toastError("Please login to save items"); return; }
+    if (!firstProductId || favLoading) return;
+    const prev = inFavourite;
+    setInFavourite(!prev);
+    setFavLoading(true);
+    try {
+      const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId: firstProductId });
+      const action = res.data?.data?.action;
+      if (action === "added") { setInFavourite(true); toastSuccess(t("buyer.addToFavourite") || "Added to Favourites"); }
+      else if (action === "removed") { setInFavourite(false); toastSuccess(t("buyer.savedToFavourite") || "Removed from Favourites"); }
+    } catch {
+      setInFavourite(prev);
+      toastError("Failed to update favourites");
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
   // Compute bid phase directly from bidDetail dates — ignores backend status field
   // so expired auctions always show as ended even if batch.status is still "live_for_bids"
   const now = new Date();
@@ -1090,20 +1127,32 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     <div className="border-t border-border" />
 
                     {/* Quick Actions Row */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => setShowMessageDialog(true)}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors font-medium text-sm"
+                        className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors font-medium text-xs"
                       >
                         <MessageCircle className="w-4 h-4 flex-shrink-0" />
                         {t("buyer.messageSeller")}
                       </button>
                       <button
                         onClick={handleShare}
-                        className="flex items-center justify-center gap-2 px-3 py-2.5 rounded border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-medium text-sm"
+                        className="flex items-center justify-center gap-1.5 px-2 py-2.5 rounded border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors font-medium text-xs"
                       >
                         {copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Share2 className="w-4 h-4 flex-shrink-0" />}
                         {copied ? (t("buyer.linkCopied") || "Copied!") : (t("buyer.share") || "Share")}
+                      </button>
+                      <button
+                        onClick={handleToggleFavourite}
+                        disabled={favLoading}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-2.5 rounded border transition-colors font-medium text-xs ${
+                          inFavourite
+                            ? "border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                            : "border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                        } ${favLoading ? "opacity-60 cursor-wait" : ""}`}
+                      >
+                        <Heart className={`w-4 h-4 flex-shrink-0 ${inFavourite ? "fill-destructive text-destructive" : ""}`} />
+                        {inFavourite ? (t("buyer.savedToFavourite") || "Saved") : (t("buyer.addToFavourite") || "Favourite")}
                       </button>
                     </div>
 

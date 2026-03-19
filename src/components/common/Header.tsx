@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -7,12 +7,13 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus,
+  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, Loader2,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
+import axiosInstance from "@/rtk/api/axiosInstance";
 
-const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
+const MONDAY_FORM_URL = "https://forms.monday.com/";
 
 const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -35,6 +36,48 @@ const Header = () => {
   const [visibleCatCount, setVisibleCatCount] = useState(5);
 
   const userId = localStorage.getItem("userId");
+  const [favOpen, setFavOpen] = useState(false);
+  const [favItems, setFavItems] = useState<any[]>([]);
+  const [favLoading, setFavLoading] = useState(false);
+  const favRef = useRef<HTMLDivElement>(null);
+
+  // Close favourites panel on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (favRef.current && !favRef.current.contains(e.target as Node)) setFavOpen(false);
+    };
+    if (favOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [favOpen]);
+
+  const openFavourites = async () => {
+    if (!userId) { toastError("Please login to view favourites"); return; }
+    setFavOpen((prev) => {
+      if (!prev) fetchFavourites();
+      return !prev;
+    });
+  };
+
+  const fetchFavourites = async () => {
+    setFavLoading(true);
+    try {
+      const res = await axiosInstance.get(`/wishlist/${userId}`);
+      setFavItems(res.data?.data?.wishlist || []);
+    } catch {
+      toastError("Failed to load favourites");
+    } finally {
+      setFavLoading(false);
+    }
+  };
+
+  const removeFavourite = async (productId: number) => {
+    try {
+      await axiosInstance.delete(`/wishlist/${userId}/${productId}`);
+      setFavItems((prev) => prev.filter((item) => item.product?.product_id !== productId));
+    } catch {
+      toastError("Failed to remove");
+    }
+  };
 
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
@@ -193,6 +236,71 @@ const Header = () => {
 
             {/* Desktop right actions */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
+
+              {/* ── Favourites button + dropdown ── */}
+              <div className="relative" ref={favRef}>
+                <button
+                  onClick={openFavourites}
+                  className="flex items-center gap-1.5 text-sm text-foreground hover:text-destructive transition-colors px-2 py-1.5 rounded hover:bg-secondary"
+                >
+                  <Heart className={`h-4 w-4 ${favOpen ? "fill-destructive text-destructive" : ""}`} />
+                  <span className="font-medium">Favourites</span>
+                </button>
+
+                {favOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded shadow-xl w-80">
+                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-border">
+                      <span className="font-semibold text-sm text-foreground">My Favourites</span>
+                      <button onClick={() => setFavOpen(false)} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {favLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : favItems.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <Heart className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No favourites yet</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-[360px] overflow-y-auto divide-y divide-border">
+                        {favItems.map((item) => {
+                          const p = item.product;
+                          return (
+                            <Link
+                              key={item.wishlist_id}
+                              to={`/buyer-marketplace/${p?.product_id}`}
+                              onClick={() => setFavOpen(false)}
+                              className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors"
+                            >
+                              <img
+                                src={p?.image1 || "/placeholder.svg"}
+                                alt={p?.title}
+                                className="w-12 h-12 object-cover rounded border border-border flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-foreground line-clamp-2 leading-snug">{p?.title || "Product"}</p>
+                                <span className="text-[10px] text-primary mt-0.5 inline-block">View listing →</span>
+                              </div>
+                              <button
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFavourite(p?.product_id); }}
+                                className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1"
+                                title="Remove"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {userId ? (
                 <>
                   <Button
