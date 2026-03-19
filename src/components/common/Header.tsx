@@ -33,6 +33,7 @@ const Header = () => {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
+  const [hoveredCatIdx, setHoveredCatIdx] = useState(0);
   const [visibleCatCount, setVisibleCatCount] = useState(5);
 
   const userId = localStorage.getItem("userId");
