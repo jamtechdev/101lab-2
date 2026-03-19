@@ -647,14 +647,14 @@ const BrowseByCategorySection = () => {
               <Link
                 key={cat.slug}
                 to={`/buyer-marketplace?category=${cat.slug}`}
-                className="px-5 py-2.5 border border-destructive/30 rounded-md text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+                className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
               >
                 {cat.name}
               </Link>
             ))}
             <Link
               to="/buyer-marketplace"
-              className="px-5 py-2.5 border border-destructive/30 rounded-md text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground transition-all"
+              className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
             >
               More industrial categories
             </Link>
