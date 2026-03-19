@@ -1,8 +1,11 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
-import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { translateCategoryName } from "@/utils/categoryTranslations";
+import { useAuth } from "@/context/AuthContext";
+import axiosInstance from "@/rtk/api/axiosInstance";
+import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
 // ── Live countdown (ticks every second) ──────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
