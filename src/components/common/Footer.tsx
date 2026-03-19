@@ -3,22 +3,20 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 
+const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
+
 const shopLinks = [
   { label: "Machining Centers", to: "/buyer-marketplace?category=machining-centers" },
-  { label: "Lathes", to: "/buyer-marketplace?category=lathes" },
+  { label: "Lathes (CNC & Conventional)", to: "/buyer-marketplace?category=lathes" },
   { label: "Milling Machines", to: "/buyer-marketplace?category=milling-machines" },
-  { label: "Boring & Drilling", to: "/buyer-marketplace?category=boring-drilling" },
+  { label: "Boring & Drilling Machines", to: "/buyer-marketplace?category=boring-drilling" },
   { label: "Grinding & Finishing", to: "/buyer-marketplace?category=grinding-finishing" },
+  { label: "Sawing Machines", to: "/buyer-marketplace?category=sawing-machines" },
   { label: "Press Brakes & Shears", to: "/buyer-marketplace?category=press-brakes-shears" },
-  { label: "Laser & Plasma", to: "/buyer-marketplace?category=laser-plasma" },
-  { label: "Welding", to: "/buyer-marketplace?category=welding" },
+  { label: "Punching & Forging", to: "/buyer-marketplace?category=punching-forging" },
+  { label: "Laser & Plasma Cutting", to: "/buyer-marketplace?category=laser-plasma" },
+  { label: "Welding Equipment", to: "/buyer-marketplace?category=welding" },
   { label: "Scrap", to: "/buyer-marketplace?category=scrap" },
-];
-
-const sellLinks = [
-  { label: "List a Machine", href: "#" },
-  { label: "Valuation Services", href: "#" },
-  { label: "Liquidations", href: "#" },
 ];
 
 const supportLinks = [
@@ -36,25 +34,49 @@ const companyLinks = [
 
 const Footer = () => {
   return (
-    <footer className="bg-[hsl(220_20%_12%)] text-[hsl(0_0%_85%)]">
+    <footer className="bg-foreground text-card">
+      {/* CTA banner */}
+      <div className="border-b border-card/10">
+        <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="GreenBidz" className="h-6 w-auto brightness-200" />
+            <p className="text-sm text-card/80">
+              Purchase and auction off of used machinery for you | <span className="font-semibold text-card">GreenBidz</span>
+            </p>
+          </div>
+          <a
+            href={MONDAY_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 rounded px-4">
+              Make the most of your used machinery
+            </Button>
+          </a>
+        </div>
+      </div>
+
       <div className="container mx-auto px-4 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <img src={logo} alt="GreenBidz" className="h-7 w-auto mb-4 brightness-200" />
-            <p className="text-sm text-[hsl(0_0%_60%)] leading-relaxed mb-6">
+            <div className="mb-4">
+              <img src={logo} alt="GreenBidz" className="h-7 w-auto brightness-200" />
+              <p className="text-xs text-card/50 mt-1">101machines by Greenbidz</p>
+            </div>
+            <p className="text-sm text-card/60 leading-relaxed mb-6">
               Asia's leading B2B marketplace for used industrial metalworking machinery.
             </p>
             {/* Newsletter */}
             <div>
-              <p className="text-sm font-semibold text-[hsl(0_0%_90%)] mb-2">Newsletter</p>
+              <p className="text-sm font-semibold text-card/90 mb-2">Newsletter</p>
               <div className="flex gap-2">
                 <div className="relative flex-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(0_0%_45%)]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-card/30" />
                   <input
                     type="email"
                     placeholder="Your email"
-                    className="w-full h-9 pl-9 pr-3 rounded-md border border-[hsl(220_15%_22%)] bg-[hsl(220_18%_16%)] text-sm text-[hsl(0_0%_85%)] placeholder:text-[hsl(0_0%_40%)] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className="w-full h-9 pl-9 pr-3 rounded-md border border-card/10 bg-card/5 text-sm text-card/85 placeholder:text-card/30 focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
                 <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs">
@@ -64,15 +86,15 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Shop */}
-          <div>
-            <h4 className="text-sm font-semibold text-[hsl(0_0%_95%)] mb-4 uppercase tracking-wide">Shop</h4>
-            <ul className="space-y-2">
+          {/* Shop — categories list */}
+          <div className="lg:col-span-2">
+            <h4 className="text-sm font-semibold text-card/95 mb-4 uppercase tracking-wide">Shop by Category</h4>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
               {shopLinks.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.to}
-                    className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors"
+                    className="text-sm text-card/55 hover:text-card/90 transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -81,27 +103,13 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Sell */}
-          <div>
-            <h4 className="text-sm font-semibold text-[hsl(0_0%_95%)] mb-4 uppercase tracking-wide">Sell</h4>
-            <ul className="space-y-2">
-              {sellLinks.map((link) => (
-                <li key={link.label}>
-                  <a href={link.href} className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
           {/* Support */}
           <div>
-            <h4 className="text-sm font-semibold text-[hsl(0_0%_95%)] mb-4 uppercase tracking-wide">Support</h4>
+            <h4 className="text-sm font-semibold text-card/95 mb-4 uppercase tracking-wide">Support</h4>
             <ul className="space-y-2">
               {supportLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors">
+                  <a href={link.href} className="text-sm text-card/55 hover:text-card/90 transition-colors">
                     {link.label}
                   </a>
                 </li>
@@ -111,11 +119,11 @@ const Footer = () => {
 
           {/* Company */}
           <div>
-            <h4 className="text-sm font-semibold text-[hsl(0_0%_95%)] mb-4 uppercase tracking-wide">Company</h4>
+            <h4 className="text-sm font-semibold text-card/95 mb-4 uppercase tracking-wide">Company</h4>
             <ul className="space-y-2">
               {companyLinks.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-[hsl(0_0%_55%)] hover:text-[hsl(0_0%_90%)] transition-colors">
+                  <a href={link.href} className="text-sm text-card/55 hover:text-card/90 transition-colors">
                     {link.label}
                   </a>
                 </li>
@@ -126,15 +134,15 @@ const Footer = () => {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-[hsl(220_15%_18%)]">
+      <div className="border-t border-card/10">
         <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-xs text-[hsl(0_0%_40%)]">
-            © {new Date().getFullYear()} GreenBidz. All rights reserved.
+          <p className="text-xs text-card/40">
+            © {new Date().getFullYear()} GreenBidz — 101machines. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-xs text-[hsl(0_0%_40%)]">
-            <a href="#" className="hover:text-[hsl(0_0%_70%)] transition-colors">Privacy</a>
-            <a href="#" className="hover:text-[hsl(0_0%_70%)] transition-colors">Terms</a>
-            <a href="#" className="hover:text-[hsl(0_0%_70%)] transition-colors">Cookies</a>
+          <div className="flex items-center gap-4 text-xs text-card/40">
+            <a href="#" className="hover:text-card/70 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-card/70 transition-colors">Terms</a>
+            <a href="#" className="hover:text-card/70 transition-colors">Cookies</a>
           </div>
         </div>
       </div>
