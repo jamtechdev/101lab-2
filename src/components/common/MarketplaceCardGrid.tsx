@@ -1,11 +1,8 @@
 // @ts-nocheck
-import { useEffect, useState, useCallback } from "react";
-import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { translateCategoryName } from "@/utils/categoryTranslations";
-import { useAuth } from "@/context/AuthContext";
-import axiosInstance from "@/rtk/api/axiosInstance";
-import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
 // ── Live countdown (ticks every second) ──────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
@@ -132,70 +129,9 @@ const getBidStatus = (item: any) => {
   return "none";
 };
 
-// ── Wishlist Heart Button ─────────────────────────────────────────────────────
-const WishlistButton = ({ productId, userId }: { productId: number; userId: number }) => {
-  const [inWishlist, setInWishlist] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    axiosInstance
-      .get(`/wishlist/${userId}/${productId}`)
-      .then((res) => {
-        if (res.data?.data?.inWishlist !== undefined) {
-          setInWishlist(res.data.data.inWishlist);
-        }
-      })
-      .catch(() => {});
-  }, [userId, productId]);
-
-  const handleToggle = useCallback(
-    async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (loading) return;
-      // Optimistic update — toggle immediately
-      const prev = inWishlist;
-      setInWishlist(!prev);
-      setLoading(true);
-      try {
-        const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
-        const action = res.data?.data?.action;
-        if (action === "added") {
-          setInWishlist(true);
-          toastSuccess("Added to wishlist");
-        } else if (action === "removed") {
-          setInWishlist(false);
-          toastSuccess("Removed from wishlist");
-        }
-      } catch {
-        // Revert on failure
-        setInWishlist(prev);
-        toastError("Failed to update wishlist");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userId, productId, loading, inWishlist]
-  );
-
-  return (
-    <button
-      onClick={handleToggle}
-      className={`absolute top-2 left-2 z-20 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow transition-all duration-150 ${loading ? "opacity-50 cursor-wait scale-95" : "hover:scale-110"}`}
-      aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-    >
-      <Heart
-        className={`h-4 w-4 transition-colors ${
-          inWishlist ? "fill-red-500 text-red-500" : "text-gray-500"
-        }`}
-      />
-    </button>
-  );
-};
-
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
-  const { isAuthenticated, user } = useAuth();
   const currentLang = i18n.language as 'en' | 'zh';
   const images: string[] = item.images || (item.image ? [item.image] : []);
   const bidStatus = getBidStatus(item);
@@ -210,11 +146,6 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
       {/* Image area */}
       <div className="relative overflow-hidden">
         <MosaicImages images={images} itemId={item.id} />
-
-        {/* Wishlist heart — top left, only when logged in */}
-        {isAuthenticated && user?.id && item.id && (
-          <WishlistButton productId={item.id} userId={user.id} />
-        )}
 
         {/* Bid status badge — bottom left */}
         <div className="absolute bottom-2 left-2 z-10">

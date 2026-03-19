@@ -3,16 +3,35 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
-import axiosInstance from "@/rtk/api/axiosInstance";
-import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight, Clock, ShieldCheck, ChevronRight, ChevronLeft,
-  TrendingUp, Leaf, BarChart3, Gavel, Sparkles, Star, Heart,
+  TrendingUp, Leaf, BarChart3, Gavel, Sparkles, Tag, Star,
+  Cog, CircleDot, Wrench, Drill, Disc3, Scissors, SquareStack,
+  Hammer, Zap, Flame, Trash2, Heart,
 } from "lucide-react";
+
+// ─── Slug → Icon map ─────────────────────────────────────────────────────────
+const categoryIconMap: Record<string, React.ElementType> = {
+  "machining-centers": Cog,
+  "lathes": CircleDot,
+  "milling-machines": Wrench,
+  "boring-drilling": Drill,
+  "grinding-finishing": Disc3,
+  "sawing-machines": Scissors,
+  "press-brakes-shears": SquareStack,
+  "punching-forging": Hammer,
+  "laser-plasma": Zap,
+  "laser-plasma-cutting": Zap,
+  "welding": Flame,
+  "welding-equipment": Flame,
+  "scrap": Trash2,
+};
 import SellLeadModal from "@/components/common/SellLeadModal";
+import i18n from "@/i18n/config";
+import { useGetCategoriesQuery } from "@/rtk/slices/apiSlice";
 
 // ─── Brand Trust Bar ─────────────────────────────────────────────────────────
 const trustedBrands = [
@@ -41,56 +60,6 @@ const insightKeys = [
   { tagKey: "landing.insights.market.tag", titleKey: "landing.insights.market.title", descKey: "landing.insights.market.desc" },
   { tagKey: "landing.insights.trends.tag", titleKey: "landing.insights.trends.title", descKey: "landing.insights.trends.desc" },
 ];
-
-// ─── Wishlist Heart Button ────────────────────────────────────────────────────
-const WishlistHeartButton = ({ batchId }: { batchId: string | number }) => {
-  const userId = localStorage.getItem("userId");
-  const [inWishlist, setInWishlist] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!userId || !batchId) return;
-    axiosInstance
-      .get(`/wishlist/${userId}/${batchId}`)
-      .then((res) => {
-        if (res.data?.data?.inWishlist !== undefined) setInWishlist(res.data.data.inWishlist);
-      })
-      .catch(() => {});
-  }, [userId, batchId]);
-
-  const handleToggle = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!userId) {
-      toastError("Please login to save items");
-      return;
-    }
-    if (loading) return;
-    const prev = inWishlist;
-    setInWishlist(!prev);
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId: batchId });
-      const action = res.data?.data?.action;
-      if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
-      else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
-    } catch {
-      setInWishlist(prev);
-      toastError("Failed to update wishlist");
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, batchId, loading, inWishlist]);
-
-  return (
-    <button
-      onClick={handleToggle}
-      className={`absolute top-2 right-2 z-20 bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow transition-all duration-150 ${loading ? "opacity-50 cursor-wait scale-95" : "hover:scale-110"}`}
-      aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-    >
-      <Heart className={`h-3.5 w-3.5 transition-colors ${inWishlist ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
-    </button>
-  );
-};
 
 // ─── Live Countdown Timer ─────────────────────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
@@ -126,7 +95,7 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
 };
 
 // ─── Image Carousel (hover arrows + dots) ────────────────────────────────────
-const ImageCarousel = ({ images }: { images: string[] }) => {
+const ImageCarousel = ({ images, batchId }: { images: string[]; batchId: string }) => {
   const allImages = images.length > 0 ? images : ["/placeholder.svg"];
   const [current, setCurrent] = useState(0);
 
@@ -210,6 +179,7 @@ const AuctionMosaicCard = ({
   const mainImg = images[0] || "/placeholder.svg";
   const sideImgs = images.slice(1, 3);
   const isLive = batch.status === "live_for_bids";
+  const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
 
   return (
@@ -239,7 +209,13 @@ const AuctionMosaicCard = ({
         )}
 
         {/* Favorite count — top right */}
-        {batch.firstProductId && <WishlistHeartButton batchId={batch.firstProductId} />}
+        {bids > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+              <Heart className="h-3 w-3 text-primary" /> {bids}
+            </span>
+          </div>
+        )}
 
         {/* LIVE badge — top right below heart */}
         {isLive && (
@@ -312,6 +288,7 @@ const HighlightCard = ({
   const mainImg = images[0] || "/placeholder.svg";
   const sideImgs = images.slice(1, 3);
   const isLive = batch.status === "live_for_bids";
+  const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
 
   return (
@@ -339,7 +316,13 @@ const HighlightCard = ({
           </div>
         )}
 
-        {batch.firstProductId && <WishlistHeartButton batchId={batch.firstProductId} />}
+        {bids > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+              <Heart className="h-3 w-3 text-primary" /> {bids}
+            </span>
+          </div>
+        )}
 
         {isLive && (
           <div className="absolute top-2 left-2 z-10">
@@ -695,6 +678,7 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
   const { t } = useTranslation();
   const isLive = batch.status === "live_for_bids";
   const images: string[] = (batch.firstProductImages as string[]) || [];
+  const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
 
   return (
@@ -704,9 +688,15 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
     >
       {/* Image */}
       <div className="relative h-[160px] overflow-hidden">
-        <ImageCarousel images={images} />
+        <ImageCarousel images={images} batchId={batch.batchId} />
 
-        {batch.firstProductId && <WishlistHeartButton batchId={batch.firstProductId} />}
+        {bids > 0 && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-card/90 backdrop-blur-sm text-foreground text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+              <Heart className="h-3 w-3 text-primary" /> {bids}
+            </span>
+          </div>
+        )}
 
         {/* Countdown */}
         <div className="absolute bottom-2 left-2 z-10">
