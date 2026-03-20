@@ -340,11 +340,18 @@ const Header = () => {
                             Buyer Portal
                           </button>
                           <button
-                            onClick={() => window.open("/auth", "_blank")}
+                            onClick={() => window.open("/auth?type=seller", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
                             Seller Portal
+                          </button>
+                                <button
+                            onClick={() => window.open("/auth?type=admin", "_blank")}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
+                          >
+                            <Store className="h-3.5 w-3.5 text-muted-foreground" />
+                            Admin Portal
                           </button>
                         </div>
                       </div>
