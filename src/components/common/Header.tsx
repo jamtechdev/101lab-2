@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
+import { useLoginModal } from "@/context/LoginModalContext";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import {
   Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, Loader2,
 } from "lucide-react";
-import axiosInstance from "@/rtk/api/axiosInstance";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
 
@@ -36,50 +36,19 @@ const Header = () => {
   const [hoveredCatIdx, setHoveredCatIdx] = useState(0);
   const [visibleCatCount, setVisibleCatCount] = useState(3);
 
-  const userId = localStorage.getItem("userId");
-  const [favOpen, setFavOpen] = useState(false);
-  const [favItems, setFavItems] = useState<any[]>([]);
-  const [favLoading, setFavLoading] = useState(false);
-  const favRef = useRef<HTMLDivElement>(null);
+  const [userId, setUserId] = useState(localStorage.getItem("userId"));
+  const { openLoginModal } = useLoginModal();
 
-  // Close favourites panel on outside click
+  // Re-read userId whenever login/logout happens (same tab or other tabs)
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (favRef.current && !favRef.current.contains(e.target as Node)) setFavOpen(false);
+    const syncAuth = () => setUserId(localStorage.getItem("userId"));
+    window.addEventListener("auth-changed", syncAuth);
+    window.addEventListener("storage", syncAuth);
+    return () => {
+      window.removeEventListener("auth-changed", syncAuth);
+      window.removeEventListener("storage", syncAuth);
     };
-    if (favOpen) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [favOpen]);
-
-  const fetchFavourites = async () => {
-    setFavLoading(true);
-    try {
-      const res = await axiosInstance.get(`/wishlist/${userId}`);
-      setFavItems(res.data?.data?.wishlist || []);
-    } catch {
-      toastError("Failed to load favourites");
-    } finally {
-      setFavLoading(false);
-    }
-  };
-
-  const openFavourites = () => {
-    if (!userId) { toastError("Please login to view favourites"); return; }
-    setFavOpen((prev) => {
-      if (!prev) fetchFavourites();
-      return !prev;
-    });
-  };
-
-  const removeFavourite = async (productId: number) => {
-    try {
-      await axiosInstance.delete(`/wishlist/${userId}/${productId}`);
-      setFavItems((prev) => prev.filter((item: any) => item.product?.product_id !== productId));
-    } catch {
-      toastError("Failed to remove");
-    }
-  };
-
+  }, []);
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
   const categories: any[] = Array.isArray(categoriesData)
@@ -128,6 +97,7 @@ const Header = () => {
       localStorage.removeItem("refreshToken");
 
       toastSuccess(t("common.logoutSuccess") || "Logged out successfully");
+      window.dispatchEvent(new Event("auth-changed"));
       window.location.href = "/";
     } catch (error: any) {
       console.error("Logout failed:", error);
@@ -178,11 +148,10 @@ const Header = () => {
                         <button
                           key={l.code}
                           onClick={() => changeLanguage(l.code)}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
-                            lang === l.code
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${lang === l.code
                               ? "text-primary bg-primary/5 font-medium"
                               : "text-popover-foreground hover:bg-secondary"
-                          }`}
+                            }`}
                         >
                           <span>{l.flag}</span>
                           <span>{l.label}</span>
@@ -238,53 +207,17 @@ const Header = () => {
             {/* Desktop right actions */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
 
-              {/* ── Favourites button + dropdown ── */}
-              <div className="relative" ref={favRef}>
-                <button onClick={openFavourites} className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors px-2 py-1.5">
-                  <Heart className="h-4 w-4" />
-                  Favourites
-                </button>
-
-                {favOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                      <span className="text-sm font-semibold text-foreground">My Favourites</span>
-                      <button onClick={() => setFavOpen(false)} className="text-muted-foreground hover:text-foreground">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {favLoading ? (
-                      <div className="flex justify-center py-8">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : favItems.length === 0 ? (
-                      <div className="flex flex-col items-center py-8 text-muted-foreground">
-                        <Heart className="h-8 w-8 mb-2" />
-                        <p className="text-sm">No favourites yet</p>
-                      </div>
-                    ) : (
-                      <div className="max-h-72 overflow-y-auto">
-                        {favItems.map((item: any) => {
-                          const p = item.product;
-                          return (
-                            <Link key={p?.product_id} to={`/buyer-marketplace/${p?.product_id}`} onClick={() => setFavOpen(false)} className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors">
-                              <img src={p?.thumbnail || "/placeholder.svg"} alt="" className="h-10 w-10 rounded object-cover bg-muted flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">{p?.title || "Product"}</p>
-                                <span className="text-xs text-primary">View listing →</span>
-                              </div>
-                              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFavourite(p?.product_id); }} className="flex-shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1" title="Remove">
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* ── Favourites button ── */}
+              <button
+                onClick={() => {
+                  if (!userId) { toastError("Please login to view favourites"); return; }
+                  navigate("/my-lots");
+                }}
+                className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors px-2 py-1.5"
+              >
+                <Heart className="h-4 w-4" />
+                Favourites
+              </button>
 
               {userId ? (
                 <>
@@ -312,7 +245,7 @@ const Header = () => {
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive-foreground hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
-                    onClick={() => window.open("/auth?type=buyer", "_blank")}
+                    onClick={() => navigate("/auth?type=buyer")}
                   >
                     <UserPlus className="h-3.5 w-3.5" />
                     Create account
@@ -333,21 +266,21 @@ const Header = () => {
                       <div className="absolute right-0 top-full pt-0.5 z-50">
                         <div className="bg-popover border border-border rounded shadow-lg min-w-[160px] py-0.5">
                           <button
-                            onClick={() => window.open("/auth?type=buyer", "_blank")}
+                            onClick={() => navigate("/auth?type=buyer")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <User className="h-3.5 w-3.5 text-muted-foreground" />
                             Buyer Portal
                           </button>
                           <button
-                            onClick={() => window.open("/auth?type=seller", "_blank")}
+                            onClick={() => navigate("/auth?type=seller")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
                             Seller Portal
                           </button>
-                                <button
-                            onClick={() => window.open("/auth?type=admin", "_blank")}
+                          <button
+                            onClick={() => navigate("/auth?type=admin")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
@@ -404,11 +337,10 @@ const Header = () => {
                           key={cat.slug}
                           onMouseEnter={() => setHoveredCatIdx(idx)}
                           onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
-                            hoveredCatIdx === idx
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${hoveredCatIdx === idx
                               ? "bg-secondary text-primary font-medium"
                               : "text-popover-foreground hover:bg-secondary/50"
-                          }`}
+                            }`}
                         >
                           <span>{cat.name}</span>
                           <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0" />
@@ -477,15 +409,16 @@ const Header = () => {
               <Button
                 size="sm"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-7 rounded px-3"
-                onClick={() => setSellModalOpen(true)}
+                onClick={() => navigate("/sell-with-greenbidz")}
               >
                 Sell with GreenBidz
               </Button>
-              <Link to="/buyer-marketplace">
+              <Link to="/direct-sales">
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-border text-foreground hover:bg-secondary text-xs h-7 rounded px-3"
+              
                 >
                   Direct sales
                 </Button>
@@ -530,11 +463,10 @@ const Header = () => {
                     <button
                       key={l.code}
                       onClick={() => changeLanguage(l.code)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded border transition-colors ${
-                        lang === l.code
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded border transition-colors ${lang === l.code
                           ? "border-primary text-primary bg-primary/5 font-medium"
                           : "border-border text-foreground hover:bg-secondary"
-                      }`}
+                        }`}
                     >
                       <span>{l.flag}</span>
                       <span>{l.label}</span>

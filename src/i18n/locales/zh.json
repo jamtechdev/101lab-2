@@ -405,7 +405,17 @@
     "totalBids": "總出價數",
     "bidHistory": "出價記錄",
     "total": "共",
-    "you": "您"
+    "you": "您",
+    "makeOffer": "提交報價",
+    "makeOfferTitle": "提交報價",
+    "buyNow": "立即購買",
+    "buyNowTitle": "立即購買",
+    "submitting": "提交中...",
+    "updateBid": "更新出價",
+    "submitOffer": "提交報價",
+    "offerAmount": "您的報價金額",
+    "enterAmount": "輸入金額",
+    "price": "價格"
   },
   "factories": {
     "hero": {

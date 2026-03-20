@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { store } from "./rtk/store";
+import { LoginModalProvider } from "./context/LoginModalContext";
 
 import Landing from "./pages/landing/Landing";
 import Factories from "./pages/landing/Factories";
@@ -110,6 +111,9 @@ import AutoApprovalPage from "./pages/dashboard/AutoApprovalPage";
 import Marketplace from "./pages/marketplace/Marketplace";
 import TestRendeer from "./Test/TestRendeer.jsx";
 import SellerBatchDetails from "./pages/dashboard/SellerBatchDetails";
+import SellerLandingPage from "./pages/sellerLanding/SellerLandingPage.js";
+import DirectSalesPage from "./pages/DirectSalesPage/DirectSalesPage.js";
+import MyLots from "./pages/buyer/MyLots";
 
 const queryClient = new QueryClient();
 
@@ -149,11 +153,14 @@ const App = () => {
           <SellerNotificationListener sellerId={userId} isSeller={true} />
 
           <BrowserRouter>
+            <LoginModalProvider>
             <Routes>
               {/* PUBLIC */}
               <Route path="/" element={<Landing />} />
               <Route path="/factories" element={<Factories />} />
                <Route path="/resellers" element={<Resellers />} />
+               <Route path="/sell-with-greenbidz" element={<SellerLandingPage/>} />
+               <Route path="/direct-sales" element={<DirectSalesPage/>} />
                <Route path="/contact-inquiry-test" element={<ContactInquiryTest />} />
 
               <Route element={<GuestRoute />}>
@@ -167,6 +174,7 @@ const App = () => {
               <Route path="/buyer-marketplace/:id" element={<ListingDetail />} />
               <Route path="/buyer-marketplace/details/:name" element={<BrowserListingDetail />} />
               <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/my-lots" element={<MyLots />} />
 
               {/* DASHBOARD (seller + buyer) */}
               <Route element={<ProtectedRoute allowedRoles={["seller", "buyer"]} />}>
@@ -303,6 +311,7 @@ const App = () => {
               <Route path="/forbidden" element={<Unauthorized403 />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </LoginModalProvider>
           </BrowserRouter>
         </Provider>
       </TooltipProvider>

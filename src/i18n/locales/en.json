@@ -392,7 +392,17 @@
     "totalBids": "Total bids",
     "bidHistory": "Bid History",
     "total": "total",
-    "you": "You"
+    "you": "You",
+    "makeOffer": "Make Offer",
+    "makeOfferTitle": "Make Offer",
+    "buyNow": "Buy Now",
+    "buyNowTitle": "Buy Now",
+    "submitting": "Submitting...",
+    "updateBid": "Update Bid",
+    "submitOffer": "Submit Offer",
+    "offerAmount": "Your Offer Amount",
+    "enterAmount": "Enter amount",
+    "price": "Price"
   },
   "factories": {
     "hero": {

@@ -51,6 +51,7 @@ interface MediaFile {
 interface Location {
   id: string;
   address: string;
+  country?: string;
 }
 
 interface InventoryItem {
@@ -185,7 +186,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
   const [items, setItems] = useState<InventoryItem[]>([
     {
       id: "1",
-      category: "123",
+      category: "",
       title: "",
       description: "",
       condition: [],
@@ -249,19 +250,22 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       .filter(Boolean)
       .join(", ");
   })();
+  const savedCountry = profileData?.data?.personalInfo?.address?.country || "";
 
-  // Auto-fill address for all items that have an empty address when profile loads
+  // Auto-fill address and country for all items when profile loads
   useEffect(() => {
-    if (!savedAddress) return;
+    if (!savedAddress && !savedCountry) return;
     setItems((prev) =>
       prev.map((item) => ({
         ...item,
-        locations: item.locations.map((loc) =>
-          loc.address ? loc : { ...loc, address: savedAddress }
-        ),
+        locations: item.locations.map((loc) => ({
+          ...loc,
+          address: loc.address ? loc.address : savedAddress,
+          country: loc.country ? loc.country : savedCountry,
+        })),
       }))
     );
-  }, [savedAddress]);
+  }, [savedAddress, savedCountry]);
 
   const [aiPreview, setAiPreview] = useState<{
     ai: any;
@@ -688,6 +692,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
         (Array.isArray(item?.locations) ? item.locations : []).forEach((loc) =>
           formData.append("location[]", loc?.address)
         );
+        formData.append("country", item.locations[0]?.country || "");
 
         (Array.isArray(item?.operationStatus) ? item.operationStatus : []).forEach((status) =>
           formData.append("operation_status[]", status)
@@ -789,6 +794,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
             visibility: batchVisibility,
             networkSellers: batchVisibility === 'NETWORK' ? networkSellers.map(s => s.buyer_id) : [],
             type: SITE_TYPE,
+            country: items[0]?.locations[0]?.country || "",
           }).unwrap();
 
           const newBatchId = batchResult?.data?.batch_id;
@@ -1517,9 +1523,13 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
                         <Select
                           value={item.category}
-                          onValueChange={(value) =>
-                            updateItem(item.id, "category", value)
-                          }
+                          onValueChange={(value) => {
+                            const matched = data?.data?.find((cat: any) =>
+                              (cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString() === value
+                            );
+                            updateItem(item.id, "category", value);
+                            updateItem(item.id, "category_name", matched?.name || "");
+                          }}
                         >
                           <SelectTrigger
                             id={`category-${item.id}`}
@@ -1537,8 +1547,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                               data?.data.length > 0 &&
                               data.data.map((cat: any) => (
                                 <SelectItem
-                                  key={cat.term_id}
-                                  value={cat.term_taxonomy_id.toString()}
+                                  key={cat.id ?? cat.term_id}
+                                  value={(cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString()}
                                 >
                                   {cat.name}
                                 </SelectItem>
@@ -1899,6 +1909,36 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                       "border-destructive focus-visible:ring-destructive"
                                   )}
                                 />
+                                {/* Country select */}
+                                <div className="mt-2">
+                                  <Label htmlFor={`country-${item.id}-${location.id}`}>
+                                    Country
+                                  </Label>
+                                  <Select
+                                    value={location.country || ""}
+                                    onValueChange={(val) =>
+                                      updateLocation(item.id, location.id, "country", val)
+                                    }
+                                  >
+                                    <SelectTrigger id={`country-${item.id}-${location.id}`} className="mt-1 border-border/50 focus:border-accent">
+                                      <SelectValue placeholder="Select country" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {[
+                                        "Taiwan","China","Japan","South Korea","India","United States","United Kingdom",
+                                        "Germany","France","Australia","Canada","Singapore","Malaysia","Thailand",
+                                        "Vietnam","Indonesia","Philippines","Hong Kong","Netherlands","Italy",
+                                        "Spain","Brazil","Mexico","United Arab Emirates","Saudi Arabia","Turkey",
+                                        "Poland","Sweden","Switzerland","Belgium","Austria","Denmark","Finland",
+                                        "Norway","Portugal","Czech Republic","Hungary","Romania","New Zealand",
+                                        "South Africa","Egypt","Nigeria","Kenya","Bangladesh","Pakistan","Sri Lanka",
+                                        "Nepal","Cambodia","Myanmar","Laos","Mongolia","Kazakhstan","Other"
+                                      ].map((c) => (
+                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                               {multipleLocations[item.id] && item.locations.length > 1 && (
                                 <div className="flex items-end">

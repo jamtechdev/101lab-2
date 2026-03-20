@@ -16,6 +16,7 @@ interface BatchCreateRequest {
   visibility?: 'PUBLIC' | 'PRIVATE' | 'NETWORK';
   networkSellers?: number[];
   type?: string;
+  country?: string;
 }
 
 interface BatchCreateResponse {

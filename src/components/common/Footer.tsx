@@ -1,23 +1,11 @@
-import { Link } from "react-router-dom";
+// @ts-nocheck
+import { Link, useNavigate } from "react-router-dom";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
-const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
-
-const shopLinks = [
-  { label: "Machining Centers", to: "/buyer-marketplace?category=machining-centers" },
-  { label: "Lathes (CNC & Conventional)", to: "/buyer-marketplace?category=lathes" },
-  { label: "Milling Machines", to: "/buyer-marketplace?category=milling-machines" },
-  { label: "Boring & Drilling Machines", to: "/buyer-marketplace?category=boring-drilling" },
-  { label: "Grinding & Finishing", to: "/buyer-marketplace?category=grinding-finishing" },
-  { label: "Sawing Machines", to: "/buyer-marketplace?category=sawing-machines" },
-  { label: "Press Brakes & Shears", to: "/buyer-marketplace?category=press-brakes-shears" },
-  { label: "Punching & Forging", to: "/buyer-marketplace?category=punching-forging" },
-  { label: "Laser & Plasma Cutting", to: "/buyer-marketplace?category=laser-plasma" },
-  { label: "Welding Equipment", to: "/buyer-marketplace?category=welding" },
-  { label: "Scrap", to: "/buyer-marketplace?category=scrap" },
-];
+const MONDAY_FORM_URL = "https://forms.monday.com/";
 
 const supportLinks = [
   { label: "FAQ", href: "#" },
@@ -33,6 +21,12 @@ const companyLinks = [
 ];
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const { data: categoriesData } = useLanguageAwareCategories();
+  const categories: any[] = Array.isArray(categoriesData)
+    ? categoriesData
+    : (categoriesData as any)?.data ?? [];
+
   return (
     <footer className="bg-foreground text-card">
       {/* CTA banner */}
@@ -44,11 +38,7 @@ const Footer = () => {
               Purchase and auction off of used machinery for you | <span className="font-semibold text-card">GreenBidz</span>
             </p>
           </div>
-          <a
-            href={MONDAY_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={MONDAY_FORM_URL} target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-8 rounded px-4">
               Make the most of your used machinery
             </Button>
@@ -58,6 +48,7 @@ const Footer = () => {
 
       <div className="container mx-auto px-4 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="mb-4">
@@ -86,20 +77,25 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Shop — categories list */}
+          {/* Shop by Category — dynamic */}
           <div className="lg:col-span-2">
             <h4 className="text-sm font-semibold text-card/95 mb-4 uppercase tracking-wide">Shop by Category</h4>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-              {shopLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.to}
-                    className="text-sm text-card/55 hover:text-card/90 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              {categories.slice(0, 12).map((cat: any) => {
+                const label = cat.name || cat.label || cat.term || cat.category_name || "";
+                const slug = cat.slug || cat.term_slug || label.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+                if (!label) return null;
+                return (
+                  <li key={cat.term_id || cat.id || slug}>
+                    <button
+                      onClick={() => navigate(`/buyer-marketplace?category=${slug}`)}
+                      className="text-sm text-card/55 hover:text-card/90 transition-colors text-left"
+                    >
+                      {label}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
 

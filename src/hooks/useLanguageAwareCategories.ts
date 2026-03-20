@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetCategoriesQuery } from '@/rtk/slices/apiSlice';
+import { useGetMachinesCategoriesQuery } from '@/rtk/slices/apiSlice';
 import { useGetCategorySummaryQuery as useBatchCategorySummary } from '@/rtk/slices/batchApiSlice';
 import { processCategories, processCategorySummary } from '@/utils/categoryTranslations';
 
@@ -8,24 +8,24 @@ import { processCategories, processCategorySummary } from '@/utils/categoryTrans
  * Custom hook for language-aware category fetching
  * Automatically refetches categories when language changes and translates them
  */
-export const useLanguageAwareCategories = () => {
+export const useLanguageAwareCategories = (_platform?: string) => {
   const { i18n } = useTranslation();
   const currentLang = i18n.language as 'en' | 'zh';
 
-  const categoriesQuery = useGetCategoriesQuery(currentLang);
+  const machinesCategoriesQuery = useGetMachinesCategoriesQuery(currentLang);
 
   // Refetch when language changes
   useEffect(() => {
-    categoriesQuery.refetch();
+    machinesCategoriesQuery.refetch();
   }, [currentLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Process the data to ensure proper language
-  const processedData = categoriesQuery.data ? 
-    processCategories(categoriesQuery.data, currentLang) : 
-    categoriesQuery.data;
+  const processedData = machinesCategoriesQuery.data ?
+    processCategories(machinesCategoriesQuery.data, currentLang) :
+    machinesCategoriesQuery.data;
 
   return {
-    ...categoriesQuery,
+    ...machinesCategoriesQuery,
     data: processedData,
     currentLanguage: currentLang,
   };

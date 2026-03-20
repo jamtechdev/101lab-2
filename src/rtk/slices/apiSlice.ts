@@ -211,6 +211,16 @@ export const apiSlice = createApi({
         };
       },
     }),
+    getMachinesCategories: builder.query<Category[], string | void>({
+      query: (lang) => {
+        const rawLang = lang || localStorage.getItem('language') || 'en';
+        const currentLang = rawLang === 'zh' ? 'zh-hant' : rawLang;
+        return {
+          url: `/product/machines/category?language=${currentLang}`,
+          method: "GET",
+        };
+      },
+    }),
 
     // -------------------- OTP / Forgot Password --------------------
     sendOtp: builder.mutation<SendOtpResponse, SendOtpRequest>({
@@ -411,6 +421,7 @@ export const {
   useVerifyUserQuery,
   useLogoutMutation,
   useGetCategoriesQuery,
+  useGetMachinesCategoriesQuery,
   useSendOtpMutation,
   useVerifyOtpMutation,
   useResetPasswordMutation,

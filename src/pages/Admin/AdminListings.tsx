@@ -479,6 +479,9 @@ const AdminListings = () => {
                   <TabsTrigger value="LabGreenbidz" className="px-4 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                     Lab-GreenBidz
                   </TabsTrigger>
+                  <TabsTrigger value="machines" className="px-4 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    Machines
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>

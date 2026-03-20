@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Loader2, Search, Home, Store, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
+import { SITE_TYPE } from "@/config/site";
 import Header from "@/components/common/Header";
 import CategoryBar from "@/components/common/CategoryBar";
 import BuyerMarketplaceFilters from "@/components/common/BuyerMarketplaceFilters";
@@ -126,6 +127,7 @@ const Marketplace = () => {
     bidFilter: (selectedBidFilter as any) || undefined,
     bidDate: (selectedBidFilter === "custom" && selectedBidDate) ? selectedBidDate : undefined,
     lang: currentLang,
+    type: SITE_TYPE,
   });
 
   const pagination = batchData?.pagination;
@@ -152,6 +154,11 @@ const Marketplace = () => {
         city: "N/A",
         image: batch.firstProductImages?.[0] || null,
         images: batch.firstProductImages || [],
+        firstProductId: batch.firstProductId || null,
+        country: batch.country || null,
+        bid_type: batch.bid_type || null,
+        target_price: batch.target_price || null,
+        currency: batch.currency || null,
       })) || [],
     [batchData?.data]
   );

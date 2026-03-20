@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useLoginModal } from "@/context/LoginModalContext";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
@@ -38,7 +39,7 @@ import logo from "@/assets/greenbidz_logo.png";
 import { useGetBatchByIdQuery, useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { translateCategoryName } from "@/utils/categoryTranslations";
 import { useRegisterCompanyForInspectionMutation, useCheckInspectionMutation, useUpdateCompanyRegistrationMutation } from "@/rtk/slices/productSlice";
-import { useCheckBidStatusMutation, usePlaceBidMutation, useGetBuyerBidsQuery } from "@/rtk/slices/bidApiSlice";
+import { useCheckBidStatusMutation, usePlaceBidMutation, useGetBuyerBidsQuery, useSubmitOfferMutation } from "@/rtk/slices/bidApiSlice";
 import { getSocket } from "@/services/socket";
 import { useAuth } from "@/context/AuthContext";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,28 @@ import i18n from "@/i18n/config";
 
 
 
+
+// Country name → ISO 3166-1 alpha-2 code → flag emoji
+const COUNTRY_TO_ISO: Record<string, string> = {
+  "Afghanistan": "AF", "Albania": "AL", "Algeria": "DZ", "Argentina": "AR", "Australia": "AU",
+  "Austria": "AT", "Bangladesh": "BD", "Belgium": "BE", "Brazil": "BR", "Canada": "CA",
+  "Chile": "CL", "China": "CN", "Colombia": "CO", "Croatia": "HR", "Czech Republic": "CZ",
+  "Denmark": "DK", "Egypt": "EG", "Finland": "FI", "France": "FR", "Germany": "DE",
+  "Ghana": "GH", "Greece": "GR", "Hong Kong": "HK", "Hungary": "HU", "India": "IN",
+  "Indonesia": "ID", "Iran": "IR", "Iraq": "IQ", "Ireland": "IE", "Israel": "IL",
+  "Italy": "IT", "Japan": "JP", "Jordan": "JO", "Kenya": "KE", "South Korea": "KR",
+  "Kuwait": "KW", "Lebanon": "LB", "Malaysia": "MY", "Mexico": "MX", "Morocco": "MA",
+  "Netherlands": "NL", "New Zealand": "NZ", "Nigeria": "NG", "Norway": "NO", "Oman": "OM",
+  "Pakistan": "PK", "Peru": "PE", "Philippines": "PH", "Poland": "PL", "Portugal": "PT",
+  "Qatar": "QA", "Romania": "RO", "Russia": "RU", "Saudi Arabia": "SA", "Singapore": "SG",
+  "South Africa": "ZA", "Spain": "ES", "Sri Lanka": "LK", "Sweden": "SE", "Switzerland": "CH",
+  "Taiwan": "TW", "Thailand": "TH", "Turkey": "TR", "UAE": "AE", "United Arab Emirates": "AE",
+  "United Kingdom": "GB", "UK": "GB", "United States": "US", "USA": "US", "Vietnam": "VN",
+};
+
+const getCountryIso = (countryName: string): string => {
+  return (COUNTRY_TO_ISO[countryName] || "").toLowerCase();
+};
 
 const getRealFileUrl = (doc: any) => {
   // If URL contains serialized attachment_id
@@ -178,6 +201,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const { id } = useParams();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { openLoginModal } = useLoginModal();
 
   const {
     data,
@@ -221,6 +245,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
   // Place bid mutation
   const [placeBid, { isLoading: isPlacingBid }] = usePlaceBidMutation();
+  const [submitOffer, { isLoading: isSubmittingOffer }] = useSubmitOfferMutation();
   const [checkBidStatus, { isLoading: isCheckingBidStatus }] = useCheckBidStatusMutation();
 
   const [products, setProducts] = useState<any[]>([]);
@@ -229,6 +254,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [inspectionSchedule, setInspectionSchedule] = useState<any>(null);
   const [userInspectionRegistration, setUserInspectionRegistration] = useState<any>(null);
   const [showBidDialog, setShowBidDialog] = useState(false);
+  const [bidDialogMode, setBidDialogMode] = useState<"place_bid" | "make_offer" | "buy_now">("place_bid");
   const [showBidSuccessDialog, setShowBidSuccessDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showInspectionDialog, setShowInspectionDialog] = useState(false);
@@ -255,6 +281,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
   const [sellerData, setSellerData] = useState()
   const [bidDetail, setBidDetail] = useState()
+  const [batchCountry, setBatchCountry] = useState<string | null>(null)
 
   const [documentFile, setDocumentFile] = useState<File | null>(null);
 
@@ -528,6 +555,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       if (responseData?.sellerData) {
         setSellerData(responseData?.sellerData)
       }
+      if (responseData?.batch?.country) {
+        setBatchCountry(responseData.batch.country)
+      }
 
       if (responseData?.biddingDetails) {
         setBidDetail(responseData?.biddingDetails)
@@ -555,7 +585,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
 
 
-  const openDialogFor = (product: any, type: "bid" | "inspect" | "message" | "bidding") => {
+  const openDialogFor = (product: any, type: "bid" | "inspect" | "message" | "bidding", mode?: "place_bid" | "make_offer" | "buy_now") => {
     setSelectedProduct(product);
 
     // If opening bid dialog, prefill from user if available
@@ -567,6 +597,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       setIsTaxInclusive(bidDetail.taxInclusive ?? true);
       // setBidAmount(""); // clear any old amount
       setBidNotes("");
+      setBidDialogMode(mode || "place_bid");
       setShowBidDialog(true);
       return;
     }
@@ -839,6 +870,39 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   };
 
 
+  const handleMakeOffer = async () => {
+    const buyerId = user?.id || Number(localStorage.getItem("userId"));
+    const batchId = Number(id);
+    if (!buyerId) { toast.error("Please login to make an offer"); return; }
+    if (!batchId) { toast.error("Invalid batch ID"); return; }
+
+    const formData = new FormData();
+    formData.append("batch_id", String(batchId));
+    formData.append("buyer_id", String(buyerId));
+    formData.append("company_name", companyBuyerName?.trim() || "");
+    formData.append("contact_person", contactPerson?.trim() || "");
+    formData.append("country", bidCountry?.trim() || "");
+    formData.append("notes", bidNotes ?? "");
+    if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
+    if (documentFile) formData.append("document_image", documentFile);
+
+    try {
+      const result: any = await submitOffer(formData).unwrap();
+      if (result?.success) {
+        toast.success("Offer submitted successfully!");
+        setShowBidDialog(false);
+        setBidAmount("");
+        setBidNotes("");
+        setDocumentFile(null);
+        setShowBidSuccessDialog(true);
+      } else {
+        toast.error(result?.message || "Failed to submit offer");
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || error?.message || "Failed to submit offer");
+    }
+  };
+
   const updateWeightPrice = (
     e: React.ChangeEvent<HTMLInputElement>,
     key: string
@@ -1024,18 +1088,69 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     {products.length > 0 && batchStep < 6 && (
                       <div>
                         {isLiveBidding && (
-                          <Button
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
-                            onClick={() => {
-                              if (!canPlaceBid) {
-                                toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
-                                return;
-                              }
-                              openDialogFor(products[0], "bidding");
-                            }}
-                          >
-                            {t("buyer.placeBid")}
-                          </Button>
+                          <div className="space-y-2">
+                            {/* Price display for fixed_price */}
+                            {bidDetail?.type === "fixed_price" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
+                              <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded border border-border text-sm">
+                                <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
+                                <span className="font-bold text-primary text-base">
+                                  {bidDetail.currency || "TWD"} {Number(bidDetail.target_price).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Place Bid — always shown */}
+                            <Button
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
+                              onClick={() => {
+                                if (!localStorage.getItem("userId")) {
+                                  openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
+                                  return;
+                                }
+                                if (!canPlaceBid) {
+                                  toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
+                                  return;
+                                }
+                                openDialogFor(products[0], "bidding", "place_bid");
+                              }}
+                            >
+                              {t("buyer.placeBid")}
+                            </Button>
+
+                            {/* Make Offer — conditional */}
+                            {bidDetail?.type === "make_offer" && (
+                              <Button
+                                variant="outline"
+                                className="w-full font-bold text-base py-5 rounded"
+                                onClick={() => {
+                                  if (!localStorage.getItem("userId")) {
+                                    openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                    return;
+                                  }
+                                  openDialogFor(products[0], "bidding", "make_offer");
+                                }}
+                              >
+                                {t("buyer.makeOffer") || "Make Offer"}
+                              </Button>
+                            )}
+
+                            {/* Buy Now — conditional */}
+                            {bidDetail?.type === "fixed_price" && (
+                              <Button
+                                variant="outline"
+                                className="w-full font-bold text-base py-5 rounded"
+                                onClick={() => {
+                                  if (!localStorage.getItem("userId")) {
+                                    openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
+                                    return;
+                                  }
+                                  openDialogFor(products[0], "bidding", "buy_now");
+                                }}
+                              >
+                                {t("buyer.buyNow") || "Buy Now"}
+                              </Button>
+                            )}
+                          </div>
                         )}
                         {isBidScheduled && (
                           <div className="space-y-2">
@@ -1122,6 +1237,25 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           </p>
                         </div>
                       </div>
+
+                      {/* Country */}
+                      {batchCountry && (
+                        <div className="flex items-center gap-3 px-3 py-2.5">
+                          {getCountryIso(batchCountry) ? (
+                            <img
+                              src={`https://flagcdn.com/24x18/${getCountryIso(batchCountry)}.png`}
+                              alt={batchCountry}
+                              className="w-6 h-4 object-cover rounded-sm flex-shrink-0"
+                            />
+                          ) : (
+                            <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("buyer.country") || "Country"}</p>
+                            <p className="text-sm font-medium text-foreground">{batchCountry}</p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Bid Type */}
                       {bidDetail && (
@@ -1435,7 +1569,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       <Dialog open={showBidDialog} onOpenChange={(open) => { setShowBidDialog(open); }}>
         <DialogContent className="max-h-[90vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>{t("buyer.placeBidTitle")}</DialogTitle>
+            <DialogTitle>
+              {bidDialogMode === "make_offer"
+                ? (t("buyer.makeOfferTitle") || "Make Offer")
+                : bidDialogMode === "buy_now"
+                  ? (t("buyer.buyNowTitle") || "Buy Now")
+                  : t("buyer.placeBidTitle")}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="overflow-y-auto max-h-[calc(90vh-80px)] pr-2">
@@ -1474,32 +1614,34 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
               </div>
 
 
-              {/* Quotation Type */}
-              <div className="space-y-2">
-                <Label>{t("buyer.quotationType")}</Label>
+              {/* Quotation Type — only for fixed_price / place bid */}
+              {bidDialogMode !== "make_offer" && (
+                <div className="space-y-2">
+                  <Label>{t("buyer.quotationType")}</Label>
 
-                {allowWholePrice && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={useWholePrice}
-                      onChange={(e) => setUseWholePrice(e.target.checked)}
-                    />
-                    <span>{t("buyer.wholeItemPrice")}</span>
-                  </div>
-                )}
+                  {allowWholePrice && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={useWholePrice}
+                        onChange={(e) => setUseWholePrice(e.target.checked)}
+                      />
+                      <span>{t("buyer.wholeItemPrice")}</span>
+                    </div>
+                  )}
 
-                {allowWeightPrice && (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={useWeightPrice}
-                      onChange={(e) => setUseWeightPrice(e.target.checked)}
-                    />
-                    <span>{t("buyer.priceByWeight")}</span>
-                  </div>
-                )}
-              </div>
+                  {allowWeightPrice && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={useWeightPrice}
+                        onChange={(e) => setUseWeightPrice(e.target.checked)}
+                      />
+                      <span>{t("buyer.priceByWeight")}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Whole Item Price */}
               {useWholePrice && (
@@ -1553,17 +1695,56 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
               </div>
 
               {/* Document Upload */}
-              <div>
+              {/* <div>
                 <Label>
                   {t("buyer.supportingDocument")} <span className="text-xs text-muted-foreground ml-1">{t("buyer.optional")}</span>
                 </Label>
                 <Input type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => setDocumentFile(e.target.files?.[0] || null)} />
                 {documentFile && <p className="text-xs text-muted-foreground mt-1">Selected file: <span className="font-medium">{documentFile.name}</span></p>}
-              </div>
+              </div> */}
+
+              {/* Fixed price info */}
+              {bidDialogMode === "buy_now" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded border border-border text-sm">
+                  <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
+                  <span className="font-bold text-primary text-base">
+                    {bidDetail.currency || "TWD"} {Number(bidDetail.target_price).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {/* Offer amount for make_offer (optional) */}
+              {bidDialogMode === "make_offer" && (
+                <div>
+                  <Label>{t("buyer.offerAmount") || "Your Offer Amount"} <span className="text-xs text-muted-foreground ml-1">({t("buyer.optional") || "optional"})</span></Label>
+                  <Input
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(e.target.value)}
+                    placeholder={`${t("buyer.enterAmount") || "Enter amount"} (${bidDetail?.currency || "TWD"})`}
+                  />
+                </div>
+              )}
 
               {/* Submit */}
-              <Button className="w-full" onClick={selectedBid ? handleUpdateBid : handlePlaceBid} disabled={isPlacingBid}>
-                {isPlacingBid ? t("buyer.submitting") : selectedBid ? t("buyer.updateBid") : t("buyer.submitBid")}
+              <Button
+                className="w-full"
+                disabled={isPlacingBid || isSubmittingOffer}
+                onClick={() => {
+                  if (bidDialogMode === "make_offer") {
+                    handleMakeOffer();
+                  } else {
+                    selectedBid ? handleUpdateBid() : handlePlaceBid();
+                  }
+                }}
+              >
+                {(isPlacingBid || isSubmittingOffer)
+                  ? t("buyer.submitting")
+                  : bidDialogMode === "make_offer"
+                    ? (t("buyer.submitOffer") || "Submit Offer")
+                    : bidDialogMode === "buy_now"
+                      ? (t("buyer.buyNow") || "Buy Now")
+                      : selectedBid ? t("buyer.updateBid") : t("buyer.submitBid")}
               </Button>
             </div>
           </div>

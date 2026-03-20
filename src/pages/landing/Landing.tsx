@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
+import { SITE_TYPE } from "@/config/site";
 import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,6 +13,39 @@ import {
   Cog, CircleDot, Wrench, Drill, Disc3, Scissors, SquareStack,
   Hammer, Zap, Flame, Trash2, Heart,
 } from "lucide-react";
+
+// ─── Currency formatter ───────────────────────────────────────────────────────
+const formatPrice = (amount: string | number, currency: string | null) => {
+  const num = Number(amount);
+  if (isNaN(num) || num === 0) return "";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency || "USD",
+      maximumFractionDigits: 0,
+    }).format(num);
+  } catch {
+    return `${currency || "USD"} ${num.toLocaleString()}`;
+  }
+};
+
+// ─── Country name → ISO code map ─────────────────────────────────────────────
+const COUNTRY_ISO_MAP: Record<string, string> = {
+  "Afghanistan": "af", "Albania": "al", "Algeria": "dz", "Argentina": "ar", "Australia": "au",
+  "Austria": "at", "Bangladesh": "bd", "Belgium": "be", "Brazil": "br", "Canada": "ca",
+  "Chile": "cl", "China": "cn", "Colombia": "co", "Croatia": "hr", "Czech Republic": "cz",
+  "Denmark": "dk", "Egypt": "eg", "Finland": "fi", "France": "fr", "Germany": "de",
+  "Ghana": "gh", "Greece": "gr", "Hong Kong": "hk", "Hungary": "hu", "India": "in",
+  "Indonesia": "id", "Iran": "ir", "Iraq": "iq", "Ireland": "ie", "Israel": "il",
+  "Italy": "it", "Japan": "jp", "Jordan": "jo", "Kenya": "ke", "South Korea": "kr",
+  "Kuwait": "kw", "Lebanon": "lb", "Malaysia": "my", "Mexico": "mx", "Morocco": "ma",
+  "Netherlands": "nl", "New Zealand": "nz", "Nigeria": "ng", "Norway": "no", "Oman": "om",
+  "Pakistan": "pk", "Peru": "pe", "Philippines": "ph", "Poland": "pl", "Portugal": "pt",
+  "Qatar": "qa", "Romania": "ro", "Russia": "ru", "Saudi Arabia": "sa", "Singapore": "sg",
+  "South Africa": "za", "Spain": "es", "Sri Lanka": "lk", "Sweden": "se", "Switzerland": "ch",
+  "Taiwan": "tw", "Thailand": "th", "Turkey": "tr", "UAE": "ae", "United Arab Emirates": "ae",
+  "United Kingdom": "gb", "UK": "gb", "United States": "us", "USA": "us", "Vietnam": "vn",
+};
 
 // ─── Slug → Icon map ─────────────────────────────────────────────────────────
 const categoryIconMap: Record<string, React.ElementType> = {
@@ -760,16 +794,26 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
         <h4 className="font-bold text-[12px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
           {batch.title || `${batch.category || "Industrial"} Lot #${batch.batchId}`}
         </h4>
-        <p className="flex items-center gap-1 mt-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1.5 mt-1">
           <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
-          {location || t("landing.verifiedSeller")}
-        </p>
-        <div className="mt-1.5">
-          {batch.value ? (
-            <span className="text-sm font-bold text-foreground">${Number(batch.value).toLocaleString()}</span>
-          ) : (
-            <span className="text-[11px] text-muted-foreground italic">{t("landing.priceOnRequest")}</span>
+          <span className="text-[11px] text-muted-foreground truncate">{location || t("landing.verifiedSeller")}</span>
+          {batch.country && COUNTRY_ISO_MAP[batch.country] && (
+            <img
+              src={`https://flagcdn.com/20x15/${COUNTRY_ISO_MAP[batch.country]}.png`}
+              alt={batch.country}
+              title={batch.country}
+              className="w-5 h-[15px] object-cover rounded-[2px] flex-shrink-0"
+            />
           )}
+        </div>
+        <div className="mt-1.5">
+          {batch.bid_type === "fixed_price" && batch.target_price && Number(batch.target_price) > 0 ? (
+            <span className="text-sm font-bold text-foreground">
+              {formatPrice(batch.target_price, batch.currency)}
+            </span>
+          ) : batch.bid_type === "make_offer" ? null : batch.value ? (
+            <span className="text-sm font-bold text-foreground">{formatPrice(batch.value, "USD")}</span>
+          ) : null}
         </div>
         <button className="w-full mt-2.5 py-1.5 border border-primary text-primary text-xs font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
           View now
@@ -791,6 +835,7 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
     category: category.slug,
     page: 1,
     limit: 10,
+    type: SITE_TYPE,
   });
   const batches: any[] = data?.data ?? [];
 

@@ -3,9 +3,42 @@ import { useEffect, useState, useCallback } from "react";
 import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { translateCategoryName } from "@/utils/categoryTranslations";
-import { useAuth } from "@/context/AuthContext";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
+
+// ── Country ISO lookup ────────────────────────────────────────────────────────
+const COUNTRY_TO_ISO: Record<string, string> = {
+  "Afghanistan": "af", "Albania": "al", "Algeria": "dz", "Argentina": "ar", "Australia": "au",
+  "Austria": "at", "Bangladesh": "bd", "Belgium": "be", "Brazil": "br", "Canada": "ca",
+  "Chile": "cl", "China": "cn", "Colombia": "co", "Croatia": "hr", "Czech Republic": "cz",
+  "Denmark": "dk", "Egypt": "eg", "Finland": "fi", "France": "fr", "Germany": "de",
+  "Ghana": "gh", "Greece": "gr", "Hong Kong": "hk", "Hungary": "hu", "India": "in",
+  "Indonesia": "id", "Iran": "ir", "Iraq": "iq", "Ireland": "ie", "Israel": "il",
+  "Italy": "it", "Japan": "jp", "Jordan": "jo", "Kenya": "ke", "South Korea": "kr",
+  "Kuwait": "kw", "Lebanon": "lb", "Malaysia": "my", "Mexico": "mx", "Morocco": "ma",
+  "Netherlands": "nl", "New Zealand": "nz", "Nigeria": "ng", "Norway": "no", "Oman": "om",
+  "Pakistan": "pk", "Peru": "pe", "Philippines": "ph", "Poland": "pl", "Portugal": "pt",
+  "Qatar": "qa", "Romania": "ro", "Russia": "ru", "Saudi Arabia": "sa", "Singapore": "sg",
+  "South Africa": "za", "Spain": "es", "Sri Lanka": "lk", "Sweden": "se", "Switzerland": "ch",
+  "Taiwan": "tw", "Thailand": "th", "Turkey": "tr", "UAE": "ae", "United Arab Emirates": "ae",
+  "United Kingdom": "gb", "UK": "gb", "United States": "us", "USA": "us", "Vietnam": "vn",
+};
+const getCountryIso = (name: string) => COUNTRY_TO_ISO[name] || "";
+
+// ── Currency formatter ────────────────────────────────────────────────────────
+const formatPrice = (amount: string | number, currency: string | null) => {
+  const num = Number(amount);
+  if (isNaN(num)) return "";
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: currency || "USD",
+      maximumFractionDigits: 0,
+    }).format(num);
+  } catch {
+    return `${currency || "USD"} ${num.toLocaleString()}`;
+  }
+};
 
 // ── Live countdown (ticks every second) ──────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
@@ -133,18 +166,27 @@ const getBidStatus = (item: any) => {
 };
 
 // ── Wishlist Heart Button ─────────────────────────────────────────────────────
-const WishlistButton = ({ productId, userId }: { productId: number; userId?: number | null }) => {
+const WishlistButton = ({ productId }: { productId: number }) => {
+  const [userId, setUserId] = useState(localStorage.getItem("userId"));
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
+    const sync = () => setUserId(localStorage.getItem("userId"));
+    window.addEventListener("auth-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("auth-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!userId || !productId) return;
     axiosInstance
       .get(`/wishlist/${userId}/${productId}`)
       .then((res) => {
-        if (res.data?.data?.inWishlist !== undefined) {
-          setInWishlist(res.data.data.inWishlist);
-        }
+        if (res.data?.data?.inWishlist !== undefined) setInWishlist(res.data.data.inWishlist);
       })
       .catch(() => {});
   }, [userId, productId]);
@@ -163,13 +205,9 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId?: num
       try {
         const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
         const action = res.data?.data?.action;
-        if (action === "added") {
-          setInWishlist(true);
-          toastSuccess("Added to wishlist");
-        } else if (action === "removed") {
-          setInWishlist(false);
-          toastSuccess("Removed from wishlist");
-        }
+        if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
+        else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+        window.dispatchEvent(new Event("wishlist-changed"));
       } catch {
         setInWishlist(prev);
         toastError("Failed to update wishlist");
@@ -189,7 +227,6 @@ const WishlistButton = ({ productId, userId }: { productId: number; userId?: num
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
-  const { isAuthenticated, user } = useAuth();
   const currentLang = i18n.language as 'en' | 'zh';
   const images: string[] = item.images || (item.image ? [item.image] : []);
   const bidStatus = getBidStatus(item);
@@ -206,9 +243,9 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
         <MosaicImages images={images} itemId={item.id} />
 
         {/* Wishlist heart — top left, always visible */}
-        {item.id && (
+        {item.firstProductId && (
           <div className="absolute top-2 left-2 z-10">
-            <WishlistButton productId={item.id} userId={isAuthenticated ? user?.id : null} />
+            <WishlistButton productId={item.firstProductId} />
           </div>
         )}
 
@@ -238,6 +275,8 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
           </div>
         )}
 
+
+
       </div>
 
       {/* Details */}
@@ -252,20 +291,37 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
               {location}
             </p>
           )}
-          <p className="flex items-center gap-1">
-            <span className="bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm">
+          <div className="flex items-center gap-2">
+            <span
+              onClick={(e) => { e.stopPropagation(); window.location.href = `/buyer-marketplace/${item.id}`; }}
+              className="bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
               #{item.id}
             </span>
             {item.category && item.category !== "N/A" && (
               <span className="truncate">{translateCategoryName(item.category, currentLang)}</span>
             )}
-          </p>
+            {item.country && getCountryIso(item.country) && (
+              <img
+                src={`https://flagcdn.com/20x15/${getCountryIso(item.country)}.png`}
+                alt={item.country}
+                title={item.country}
+                className="w-5 h-[15px] object-cover rounded-[2px] flex-shrink-0"
+              />
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-between mt-2">
-          {item.askingPrice && item.askingPrice !== "$0" ? (
+          {item.bid_type === "fixed_price" && item.target_price && Number(item.target_price) > 0 ? (
+            <span className="text-sm font-bold text-foreground">
+              {formatPrice(item.target_price, item.currency)}
+            </span>
+          ) : item.bid_type === "make_offer" ? (
+            <span className="text-[12px] text-muted-foreground italic">Make Offer</span>
+          ) : item.askingPrice && item.askingPrice !== "$0" ? (
             <span className="text-sm font-bold text-foreground">{item.askingPrice}</span>
           ) : (
-            <span className="text-[12px] text-muted-foreground italic">Price on request</span>
+            <span />
           )}
           <span className="text-[11px] font-semibold text-primary-foreground bg-primary px-3 py-1 rounded uppercase tracking-wide">
             View
@@ -287,7 +343,7 @@ const MarketplaceCardGrid = ({ listings, onItemClick }: MarketplaceCardGridProps
   if (listings.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {listings.map((item) => (
         <MarketplaceCard key={item.id} item={item} onClick={() => onItemClick(item)} />
       ))}

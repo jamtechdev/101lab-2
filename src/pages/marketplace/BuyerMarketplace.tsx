@@ -110,6 +110,7 @@ const BuyerMarketplace = () => {
     bidFilter: (selectedBidFilter as any) || undefined,
     bidDate: (selectedBidFilter === 'custom' && selectedBidDate) ? selectedBidDate : undefined,
     lang: currentLang,
+    type: SITE_TYPE,
   });
 
   // Get pagination info from API response
@@ -260,6 +261,11 @@ const BuyerMarketplace = () => {
         city: "N/A",
         image: batch.firstProductImages?.[0] || null,
         images: batch.firstProductImages || [],
+        firstProductId: batch.firstProductId || null,
+        country: batch.country || null,
+        bid_type: batch.bid_type || null,
+        target_price: batch.target_price || null,
+        currency: batch.currency || null,
       })) || [],
     [batchData?.data]
   );
