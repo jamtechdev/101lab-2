@@ -245,7 +245,7 @@ const Header = () => {
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive-foreground hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
-                    onClick={() => navigate("/auth?type=buyer")}
+                    onClick={() => window.open("/auth?type=buyer&mode=signup", "_blank")}
                   >
                     <UserPlus className="h-3.5 w-3.5" />
                     Create account
@@ -266,21 +266,21 @@ const Header = () => {
                       <div className="absolute right-0 top-full pt-0.5 z-50">
                         <div className="bg-popover border border-border rounded shadow-lg min-w-[160px] py-0.5">
                           <button
-                            onClick={() => navigate("/auth?type=buyer")}
+                            onClick={() => window.open("/auth?type=buyer&mode=signin", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <User className="h-3.5 w-3.5 text-muted-foreground" />
                             Buyer Portal
                           </button>
                           <button
-                            onClick={() => navigate("/auth?type=seller")}
+                            onClick={() => window.open("/auth?type=seller&mode=signin", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
                             Seller Portal
                           </button>
                           <button
-                            onClick={() => navigate("/auth?type=admin")}
+                            onClick={() => window.open("/auth?type=admin&mode=signin", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
@@ -523,11 +523,11 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
-                      onClick={() => { window.open("/auth?type=buyer", "_blank"); setOpenMenu(false); }}>
+                      onClick={() => { navigate("/auth?type=buyer&mode=signup"); setOpenMenu(false); }}>
                       Create account
                     </Button>
                     <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
-                      onClick={() => { window.open("/auth", "_blank"); setOpenMenu(false); }}>
+                      onClick={() => { navigate("/auth?type=buyer&mode=signin"); setOpenMenu(false); }}>
                       Sign in
                     </Button>
                   </div>

@@ -179,6 +179,39 @@ export const apiSlice = createApi({
         data: formData,
       }),
     }),
+    signupInitiate: builder.mutation<{ success: boolean; message: string }, { email: string; password: string; role: string }>({
+      query: (body) => ({
+        url: "/user/signup-initiate",
+        method: "POST",
+        data: body,
+      }),
+    }),
+    verifySignupCode: builder.mutation<{ success: boolean; message: string; data?: any }, { email: string; code: string }>({
+      query: (body) => ({
+        url: "/user/verify-signup-code",
+        method: "POST",
+        data: body,
+      }),
+    }),
+    resendVerificationCode: builder.mutation<{ success: boolean; message: string }, { email: string }>({
+      query: (body) => ({
+        url: "/user/resend-verification-code",
+        method: "POST",
+        data: body,
+      }),
+    }),
+    completeSignup: builder.mutation<{ success: boolean; message: string; data?: any }, {
+      email: string; first_name: string; last_name: string; phone?: string;
+      company?: string; company_tax_id?: string;
+      street_address?: string; city?: string; district_state?: string;
+      postal_code?: string; country?: string;
+    }>({
+      query: (body) => ({
+        url: "/user/complete-signup",
+        method: "POST",
+        data: body,
+      }),
+    }),
     verifyUser: builder.query<VerifyResponse, void>({
       query: () => {
         const { accessToken, refreshToken } = getTokens();
@@ -418,6 +451,10 @@ export const {
   useGetUserByIdQuery,
   useLoginMutation,
   useSignupMutation,
+  useSignupInitiateMutation,
+  useVerifySignupCodeMutation,
+  useResendVerificationCodeMutation,
+  useCompleteSignupMutation,
   useVerifyUserQuery,
   useLogoutMutation,
   useGetCategoriesQuery,
