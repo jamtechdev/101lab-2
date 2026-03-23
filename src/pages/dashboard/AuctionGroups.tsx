@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,10 @@ import {
   X,
   Package,
   CheckCircle2,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { SITE_TYPE } from "@/config/site";
@@ -60,20 +64,19 @@ const COUNTRY_OPTIONS = [
   "United States","Vietnam",
 ];
 
+// Updated language options to match the image
 const LANGUAGE_OPTIONS = [
-  "Arabic","Bengali","Chinese (Simplified)","Chinese (Traditional)",
-  "Czech","Danish","Dutch","English","Finnish","French","German",
-  "Greek","Hebrew","Hindi","Hungarian","Indonesian","Italian",
-  "Japanese","Korean","Malay","Norwegian","Persian","Polish",
-  "Portuguese","Romanian","Russian","Serbian","Spanish","Swahili",
-  "Swedish","Thai","Turkish","Ukrainian","Urdu","Vietnamese",
+  "GB English",
+  "TW 繁简体中文",
+  "JP 日本語",
+  "TH ไทย",
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type BatchOption = { batchId: number; title: string | null; category: string };
 
-// ─── Language Selector ────────────────────────────────────────────────────────
+// ─── Enhanced Language Selector ────────────────────────────────────────────────
 
 const LanguageSelector = ({
   selected,
@@ -82,6 +85,16 @@ const LanguageSelector = ({
   selected: string[];
   onChange: (v: string[]) => void;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredLanguages = useMemo(() => {
+    if (!searchTerm) return LANGUAGE_OPTIONS;
+    return LANGUAGE_OPTIONS.filter(lang => 
+      lang.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
   const toggle = (lang: string) =>
     onChange(
       selected.includes(lang)
@@ -89,43 +102,93 @@ const LanguageSelector = ({
         : [...selected, lang]
     );
 
+  const selectAll = () => {
+    onChange(LANGUAGE_OPTIONS);
+  };
+
+  const clearAll = () => {
+    onChange([]);
+  };
+
   return (
     <div className="space-y-2">
       {/* Selected chips */}
       <div className="flex flex-wrap gap-1 min-h-[2.5rem] p-2 border rounded-lg bg-muted/30">
-        {selected.map((lang) => (
-          <Badge key={lang} variant="secondary" className="gap-1 pr-1 h-6">
-            {lang}
-            <button type="button" onClick={() => toggle(lang)}>
-              <X className="h-3 w-3 hover:text-destructive" />
-            </button>
-          </Badge>
-        ))}
+        {selected.length === 0 ? (
+          <span className="text-muted-foreground text-sm self-center">
+            No languages selected
+          </span>
+        ) : (
+          selected.map((lang) => (
+            <Badge key={lang} variant="secondary" className="gap-1 pr-1 h-6">
+              {lang}
+              <button type="button" onClick={() => toggle(lang)}>
+                <X className="h-3 w-3 hover:text-destructive" />
+              </button>
+            </Badge>
+          ))
+        )}
       </div>
-      {/* Language grid picker — commented out; English is set by default
-      <div className="max-h-36 overflow-y-auto border rounded-lg p-2 grid grid-cols-2 gap-1">
-        {LANGUAGE_OPTIONS.map((lang) => (
-          <button
-            key={lang}
-            type="button"
-            onClick={() => toggle(lang)}
-            className={`text-left text-xs px-2 py-1.5 rounded transition-colors flex items-center gap-1.5 ${
-              selected.includes(lang)
-                ? "bg-primary text-primary-foreground font-medium"
-                : "hover:bg-muted text-foreground"
-            }`}
-          >
-            {selected.includes(lang) && <CheckCircle2 className="h-3 w-3 shrink-0" />}
-            {lang}
-          </button>
-        ))}
-      </div>
-      */}
+
+      {/* Language picker toggle */}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full justify-between"
+      >
+        <span className="flex items-center gap-2">
+          <Languages className="h-3 w-3" />
+          {isExpanded ? "Hide language options" : "Show language options"}
+        </span>
+        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+
+      {/* Language grid picker */}
+      {isExpanded && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+              <Input
+                placeholder="Search languages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-7 h-8 text-sm"
+              />
+            </div>
+            <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs h-8">
+              Select All
+            </Button>
+            <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs h-8">
+              Clear
+            </Button>
+          </div>
+          <div className="max-h-48 overflow-y-auto border rounded-lg p-2 grid grid-cols-2 gap-1">
+            {filteredLanguages.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => toggle(lang)}
+                className={`text-left text-xs px-2 py-1.5 rounded transition-colors flex items-center gap-1.5 ${
+                  selected.includes(lang)
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "hover:bg-muted text-foreground"
+                }`}
+              >
+                {selected.includes(lang) && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                {lang}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-// ─── Batch Selector ───────────────────────────────────────────────────────────
+// ─── Enhanced Batch Selector with Search ───────────────────────────────────────
 
 const BatchSelector = ({
   batches,
@@ -138,6 +201,21 @@ const BatchSelector = ({
   onChange: (ids: number[]) => void;
   loading?: boolean;
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const filteredBatches = useMemo(() => {
+    if (!searchTerm.trim()) return batches;
+    
+    const searchLower = searchTerm.toLowerCase().trim();
+    return batches.filter(batch => {
+      const idMatch = batch.batchId.toString().includes(searchLower);
+      const titleMatch = batch.title?.toLowerCase().includes(searchLower);
+      const categoryMatch = batch.category?.toLowerCase().includes(searchLower);
+      return idMatch || titleMatch || categoryMatch;
+    });
+  }, [batches, searchTerm]);
+
   const toggle = (id: number) =>
     onChange(
       selected.includes(id)
@@ -145,8 +223,20 @@ const BatchSelector = ({
         : [...selected, id]
     );
 
+  const selectAll = () => {
+    const allIds = filteredBatches.map(b => b.batchId);
+    onChange(allIds);
+  };
+
+  const clearAll = () => {
+    onChange([]);
+  };
+
+  const getSelectedCount = () => selected.length;
+  const getTotalCount = () => batches.length;
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Selected chips */}
       <div className="flex flex-wrap gap-1 min-h-[2.5rem] p-2 border rounded-lg bg-muted/30">
         {selected.length === 0 ? (
@@ -173,53 +263,135 @@ const BatchSelector = ({
         )}
       </div>
 
-      {/* Batch list */}
-      <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
-        {loading ? (
-          <p className="text-sm text-muted-foreground p-3 text-center">
-            Loading batches…
-          </p>
-        ) : batches.length === 0 ? (
-          <p className="text-sm text-muted-foreground p-3 text-center">
-            No machines batches found for your account.
-          </p>
-        ) : (
-          batches.map((b) => {
-            const isSelected = selected.includes(b.batchId);
-            return (
-              <button
-                key={b.batchId}
-                type="button"
-                onClick={() => toggle(b.batchId)}
-                className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-colors ${
-                  isSelected ? "bg-primary/8 border-l-2 border-primary" : "hover:bg-muted"
-                }`}
-              >
-                {/* Checkbox indicator */}
-                <div
-                  className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
-                    isSelected
-                      ? "bg-primary border-primary"
-                      : "border-muted-foreground/40"
-                  }`}
-                >
-                  {isSelected && (
-                    <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {b.title || b.category || "Untitled Batch"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Batch ID: #{b.batchId}
-                  </p>
-                </div>
-              </button>
-            );
-          })
+      {/* Search and controls */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search by ID, title, or category..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-9"
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+
+        {filteredBatches.length > 0 && !loading && (
+          <div className="flex gap-2 justify-between items-center">
+            <p className="text-xs text-muted-foreground">
+              Showing {filteredBatches.length} of {getTotalCount()} batches
+              {searchTerm && ` (filtered)`}
+            </p>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" onClick={selectAll} className="text-xs h-7 px-2">
+                Select All
+              </Button>
+              <Button variant="ghost" size="sm" onClick={clearAll} className="text-xs h-7 px-2">
+                Clear All
+              </Button>
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Batch list */}
+      {isExpanded && (
+        <div className="max-h-64 overflow-y-auto border rounded-lg divide-y">
+          {loading ? (
+            <p className="text-sm text-muted-foreground p-3 text-center">
+              Loading batches…
+            </p>
+          ) : filteredBatches.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                {searchTerm ? "No matching batches found" : "No machine batches found for your account"}
+              </p>
+              {searchTerm && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setSearchTerm("")}
+                  className="text-xs mt-1"
+                >
+                  Clear search
+                </Button>
+              )}
+            </div>
+          ) : (
+            filteredBatches.map((b) => {
+              const isSelected = selected.includes(b.batchId);
+              return (
+                <button
+                  key={b.batchId}
+                  type="button"
+                  onClick={() => toggle(b.batchId)}
+                  className={`w-full text-left px-3 py-2.5 flex items-center gap-3 transition-all duration-150 ${
+                    isSelected 
+                      ? "bg-primary/10 border-l-2 border-primary" 
+                      : "hover:bg-muted/50"
+                  }`}
+                >
+                  {/* Checkbox indicator */}
+                  <div
+                    className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+                      isSelected
+                        ? "bg-primary border-primary"
+                        : "border-muted-foreground/40"
+                    }`}
+                  >
+                    {isSelected && (
+                      <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium truncate">
+                        {b.title || b.category || "Untitled Batch"}
+                      </p>
+                      <Badge variant="outline" className="text-xs font-mono">
+                        #{b.batchId}
+                      </Badge>
+                    </div>
+                    {b.category && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Category: {b.category}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      )}
+      
+      {/* Selection summary */}
+      {selected.length > 0 && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+          <span className="flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3 text-green-500" />
+            {selected.length} batch(es) selected
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onChange([])}
+            className="text-xs h-6 px-2"
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
@@ -248,7 +420,7 @@ const GroupCard = ({
   const handleEditClick = () => onEdit(group, allBatchIds);
 
   return (
-    <Card className="border shadow-sm hover:shadow-md transition-shadow">
+    <Card className="border shadow-sm hover:shadow-md transition-all duration-200">
       <CardContent className="p-4 space-y-3">
 
         {/* Header row */}
@@ -293,7 +465,7 @@ const GroupCard = ({
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
             <Package className="h-3 w-3" />
-            Batches
+            Batches ({allBatchIds.length})
           </p>
           {loadingAuctions ? (
             <p className="text-xs text-muted-foreground">Loading…</p>
@@ -302,7 +474,7 @@ const GroupCard = ({
               No batches added yet. Click edit to add batches.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
               {allBatchIds.map((bId: number) => {
                 const b = sellerBatches.find((x) => x.batchId === bId);
                 return (
@@ -367,6 +539,7 @@ const AuctionGroupDialog = ({
             placeholder="e.g. Heavy Machinery – Europe Q3"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            className="transition-all"
           />
         </div>
 
@@ -420,7 +593,7 @@ const AuctionGroupDialog = ({
         <Button variant="outline" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button onClick={onSave} disabled={saving}>
+        <Button onClick={onSave} disabled={saving} className="min-w-[80px]">
           {saving ? "Saving…" : title}
         </Button>
       </DialogFooter>
@@ -430,7 +603,13 @@ const AuctionGroupDialog = ({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-const EMPTY_FORM = { title: "", country: "", languages: ["English"] as string[], batchIds: [] as number[] };
+// Updated EMPTY_FORM to include English by default
+const EMPTY_FORM = { 
+  title: "", 
+  country: "", 
+  languages: ["GB English"] as string[], 
+  batchIds: [] as number[] 
+};
 
 const AuctionGroups = () => {
   const sellerId = Number(
@@ -474,7 +653,7 @@ const AuctionGroups = () => {
     setForm({
       title: group.title,
       country: group.country,
-      languages: group.languages ?? [],
+      languages: group.languages ?? ["GB English"],
       batchIds: currentBatchIds,
     });
     setDialog("edit");
@@ -490,6 +669,7 @@ const AuctionGroups = () => {
   const validate = () => {
     if (!form.title.trim()) { toast.error("Title is required."); return false; }
     if (!form.country) { toast.error("Country is required."); return false; }
+    if (!form.languages.length) { toast.error("At least one language is required."); return false; }
     return true;
   };
 
@@ -562,6 +742,9 @@ const AuctionGroups = () => {
   };
 
   const groups = groupsData?.data ?? [];
+
+  console.log("groups is ",groups);
+  
 
   return (
     <DashboardLayout>

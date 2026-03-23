@@ -1075,7 +1075,7 @@ const AuctionGroupSection = () => {
   const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "machines" });
   const groups = (data?.data ?? []).filter(
     (g) =>
-      !(g.earliestBidEndDate && new Date(g.earliestBidEndDate).getTime() < Date.now())
+      g
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
