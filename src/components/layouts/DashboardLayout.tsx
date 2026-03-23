@@ -86,6 +86,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
         { name: t('nav.listAnItem'), href: "/upload", icon: Package, permission: null },
         { name: t('nav.myListings'), href: "/dashboard/submissions", icon: ClipboardList, permission: null },
         { name: t('nav.bidsAndWinners'), href: "/dashboard/bids", icon: TrendingUp, permission: "bidding.view" },
+        { name: "Auction Groups", href: "/dashboard/auction-groups", icon: Gavel, permission: null },
       ]
     },
     {

@@ -114,6 +114,7 @@ import SellerBatchDetails from "./pages/dashboard/SellerBatchDetails";
 import SellerLandingPage from "./pages/sellerLanding/SellerLandingPage.js";
 import DirectSalesPage from "./pages/DirectSalesPage/DirectSalesPage.js";
 import MyLots from "./pages/buyer/MyLots";
+import AuctionGroups from "./pages/dashboard/AuctionGroups";
 
 const queryClient = new QueryClient();
 
@@ -198,6 +199,7 @@ const App = () => {
 
                 <Route path="/dashboard/bids" element={<SellerBidDashboard />} />
                 <Route path="/dashboard/bid/batch/:batchId" element={<BuyerBidsList />} />
+                <Route path="/dashboard/auction-groups" element={<AuctionGroups />} />
 
                 <Route path="/dashboard/reports" element={<Reports />} />
 

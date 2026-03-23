@@ -14,6 +14,7 @@ import unreadReducer from "./slices/unreadSlice";
 
 import sellerUnreadReducer from "./slices/sellerUnreadSlice";
 import { checkoutApi } from "./slices/checkoutApiSlice";
+import { auctionGroupApi } from "./slices/auctionGroupApiSlice";
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     [permissionApi.reducerPath]: permissionApi.reducer,
     [sellerNetworkApi.reducerPath]: sellerNetworkApi.reducer,
     [checkoutApi.reducerPath]:checkoutApi.reducer,
+    [auctionGroupApi.reducerPath]: auctionGroupApi.reducer,
     unread: unreadReducer,
     sellerUnread:sellerUnreadReducer
   },
@@ -43,7 +45,8 @@ export const store = configureStore({
       roleApi.middleware,
       permissionApi.middleware,
       sellerNetworkApi.middleware,
-      checkoutApi.middleware
+      checkoutApi.middleware,
+      auctionGroupApi.middleware
     ),
 });
 

@@ -68,6 +68,8 @@ import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import i18n from "@/i18n/config";
 import { useGetCategoriesQuery } from "@/rtk/slices/apiSlice";
+import { useGetAuctionGroupsHomeQuery } from "@/rtk/slices/auctionGroupApiSlice";
+import type { AuctionGroupHomeItem } from "@/rtk/slices/auctionGroupApiSlice";
 
 // ─── Brand Trust Bar ─────────────────────────────────────────────────────────
 const trustedBrands = [
@@ -943,6 +945,226 @@ const CategoryProductRows = () => {
   );
 };
 
+// ─── Auction Group Card — same mosaic style as CategoryCard ──────────────────
+const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const imgs = group.previewImages;
+  const mainImg = imgs[0] || "/placeholder.svg";
+  const sideImgs = [
+    imgs[1] || "/placeholder.svg",
+    imgs[2] || "/placeholder.svg",
+    imgs[3] || "/placeholder.svg",
+  ];
+
+  type BidStatus = "ended" | "upcoming" | "live";
+  const [bidStatus, setBidStatus] = useState<BidStatus>(
+    group.hasActiveBid === false ? "ended" : "live"
+  );
+  const [timeLeft, setTimeLeft] = useState("");
+
+  const formatLocalTime = (utcStr: string) =>
+    new Intl.DateTimeFormat(undefined, {
+      month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit",
+      timeZoneName: "short",
+    }).format(new Date(utcStr));
+
+  useEffect(() => {
+    const calc = () => {
+      const now = Date.now();
+      const endMs = group.earliestBidEndDate ? new Date(group.earliestBidEndDate).getTime() : null;
+      const startMs = group.earliestBidStartDate ? new Date(group.earliestBidStartDate).getTime() : null;
+
+      if (endMs && now > endMs) { setBidStatus("ended"); setTimeLeft(""); return; }
+      if (startMs && now < startMs) {
+        setBidStatus("upcoming");
+        const diff = startMs - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        setTimeLeft(h >= 24 ? `Opens in ${Math.floor(h / 24)}d ${h % 24}h` : `Opens in ${h}h ${m}m`);
+        return;
+      }
+      setBidStatus("live");
+      if (!endMs) { setTimeLeft(""); return; }
+      const diff = endMs - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(
+        h >= 24
+          ? `${Math.floor(h / 24)}d ${h % 24}h`
+          : `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+      );
+    };
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, [group.earliestBidStartDate, group.earliestBidEndDate]);
+
+  return (
+    <div
+      onClick={() => navigate(`/buyer-marketplace?category=scrap&auction_group=${group.group_id}`)}
+      className="cursor-pointer group flex-shrink-0 w-[calc(85vw-2rem)] sm:w-[380px] md:w-[420px] lg:w-[460px] border border-border rounded overflow-hidden bg-card hover:shadow-md transition-shadow"
+    >
+      {/* Mosaic image area */}
+      <div className="relative flex h-[220px] gap-[2px]">
+        <div className="flex-[3] min-w-0 overflow-hidden">
+          <img
+            src={mainImg}
+            alt={group.title}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+          />
+        </div>
+        <div className="flex-[1] min-w-0 flex flex-col gap-[2px]">
+          {sideImgs.map((src, i) => (
+            <div key={i} className="flex-1 min-h-0 overflow-hidden">
+              <img src={src} alt="" className="w-full h-full object-cover" />
+            </div>
+          ))}
+        </div>
+
+        {/* Bid status badge — bottom left */}
+        {(group.earliestBidEndDate || group.earliestBidStartDate) && (
+          <div className="absolute bottom-2 left-2 z-10">
+            {bidStatus === "ended" ? (
+              <span className="inline-flex items-center gap-1 bg-muted/90 text-muted-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm">
+                <Clock className="h-3 w-3" />{t("landing.bidEnded")}
+              </span>
+            ) : bidStatus === "upcoming" ? (
+              <span className="inline-flex items-center gap-1 bg-foreground/80 text-card text-[11px] font-bold px-2 py-0.5 rounded-sm">
+                <Clock className="h-3 w-3" />
+                {group.earliestBidStartDate ? formatLocalTime(group.earliestBidStartDate) : t("landing.upcoming")}
+              </span>
+            ) : timeLeft ? (
+              <span className="inline-flex items-center gap-1 bg-destructive/90 text-destructive-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm">
+                <Clock className="h-3 w-3" />{timeLeft}
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        {/* Batch count — bottom right */}
+        <div className="absolute bottom-0 right-0 z-10">
+          <span className="inline-flex items-center gap-1 bg-foreground/85 text-card text-[12px] font-semibold pl-3 pr-3 py-2 rounded-tl-lg">
+            <Gavel className="h-3.5 w-3.5" /> {group.batchCount}
+          </span>
+        </div>
+      </div>
+
+      {/* Details below image */}
+      <div className="px-3 pt-2.5 pb-2.5">
+        <h3 className="font-bold text-[14px] text-foreground leading-snug uppercase group-hover:text-primary transition-colors line-clamp-1">
+          {group.title}
+        </h3>
+        <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1">
+          <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
+          {group.location || t("landing.verifiedSeller")}
+          {" · "}
+          {group.batchCount} {t("landing.lotsInCategory")}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ─── Auction Group Section — horizontal scroll, same layout as CategorySection ─
+const AuctionGroupSection = () => {
+  const { t } = useTranslation();
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "machines" });
+  const groups = (data?.data ?? []).filter(
+    (g) =>
+      !(g.earliestBidEndDate && new Date(g.earliestBidEndDate).getTime() < Date.now())
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeft(el.scrollLeft > 10);
+    setShowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && groups.length > 0) setTimeout(checkScroll, 200);
+  }, [groups, isLoading, checkScroll]);
+
+  const scroll = (dir: "left" | "right") =>
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -480 : 480, behavior: "smooth" });
+
+  return (
+    <section className="py-6 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Clock className="h-4 w-4 text-destructive" />
+            {t("landing.auctionsClosingSoon")}
+          </h2>
+          <Link
+            to="/buyer-marketplace?bidFilter=closing_soon"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+          >
+            {t("landing.viewAll")} <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        {isLoading && (
+          <div className="flex gap-4 overflow-hidden">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex-shrink-0 w-[calc(85vw-2rem)] sm:w-[380px] md:w-[420px] lg:w-[460px] animate-pulse rounded overflow-hidden border border-border">
+                <div className="h-[220px] bg-secondary" />
+                <div className="px-3 py-2.5 space-y-1.5">
+                  <div className="h-3.5 bg-secondary rounded w-3/4" />
+                  <div className="h-3 bg-secondary rounded w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!isLoading && groups.length > 0 && (
+          <div className="relative">
+            {showLeft && (
+              <button
+                onClick={() => scroll("left")}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
+            <div
+              ref={scrollRef}
+              onScroll={checkScroll}
+              className="flex gap-4 overflow-x-auto pb-1"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {groups.map((group) => (
+                <AuctionGroupCard key={group.group_id} group={group} />
+              ))}
+            </div>
+            {showRight && (
+              <button
+                onClick={() => scroll("right")}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {!isLoading && groups.length === 0 && (
+          <p className="text-sm text-muted-foreground py-4">{t("landing.noUpcomingAuctions")}</p>
+        )}
+      </div>
+    </section>
+  );
+};
+
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 const Landing = () => {
   const { t } = useTranslation();
@@ -953,14 +1175,8 @@ const Landing = () => {
       <Header />
 
 
-      {/* ── Auctions Closing Soon — by Category ──────────────────── */}
-      <CategorySection
-        title={t("landing.auctionsClosingSoon")}
-        icon={Clock}
-        iconClass="text-destructive"
-        viewAllLink="/buyer-marketplace?bidFilter=closing_soon"
-        sort="closing_soon"
-      />
+      {/* ── Auctions Closing Soon — Auction Groups ───────────────── */}
+      <AuctionGroupSection />
 
       {/* ── Highlighted Lots — by Category ───────────────────────── */}
       <CategorySection
