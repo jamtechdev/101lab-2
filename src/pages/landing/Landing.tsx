@@ -5,6 +5,7 @@ import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
+import { SITE_CATEGORIES, HOME_CATEGORY_COUNT, HOME_PRODUCT_ROWS_COUNT, sortByConfig } from "@/config/categories";
 import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
 import { useTranslation } from "react-i18next";
 import {
@@ -711,9 +712,14 @@ const CategorySection = ({
 const BrowseByCategorySection = () => {
   const { t } = useTranslation();
   const { data: categoriesData, isLoading } = useLanguageAwareCategories();
-  const categories: { slug: string; name: string }[] = Array.isArray(categoriesData)
+  const loaded: { slug: string; name: string }[] = Array.isArray(categoriesData)
     ? categoriesData
     : (categoriesData as any)?.data ?? [];
+
+  // Static fallback → real data sorted by config order
+  const categories = loaded.length > 0
+    ? sortByConfig(loaded).slice(0, HOME_CATEGORY_COUNT)
+    : SITE_CATEGORIES.slice(0, HOME_CATEGORY_COUNT);
 
   return (
     <section className="py-10 bg-secondary/30 border-b border-border">
@@ -721,33 +727,30 @@ const BrowseByCategorySection = () => {
         <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">TOP PICKS</p>
         <h2 className="text-lg font-bold text-foreground mb-6">{t("landing.browseByCat") || "Popular Categories"}</h2>
 
-        {isLoading && (
-          <div className="flex flex-wrap justify-center gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-10 w-32 bg-secondary animate-pulse rounded-md" />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && categories.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.slice(0, 6).map((cat) => (
-              <Link
-                key={cat.slug}
-                to={`/buyer-marketplace?category=${cat.slug}`}
-                className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-              >
-                {cat.name}
-              </Link>
-            ))}
+        <div className="flex flex-wrap justify-center gap-3">
+          {isLoading
+            ? SITE_CATEGORIES.slice(0, HOME_CATEGORY_COUNT).map((cat) => (
+                <div key={cat.slug} className="h-10 w-40 bg-secondary animate-pulse rounded-md" />
+              ))
+            : categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  to={`/buyer-marketplace?category=${cat.slug}`}
+                  className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  {cat.name}
+                </Link>
+              ))
+          }
+          {!isLoading && (
             <Link
               to="/buyer-marketplace"
               className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
             >
               More industrial categories
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
@@ -929,15 +932,20 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
 // ─── Category Product Rows (all categories) ───────────────────────────────────
 const CategoryProductRows = () => {
   const { data, isLoading } = useLanguageAwareCategorySummary();
-  const categories: { slug: string; name: string }[] = data?.data ?? [];
+  const loaded: { slug: string; name: string }[] = data?.data ?? [];
+
+  // Sort by config order; fall back to static list while loading
+  const categories = loaded.length > 0
+    ? sortByConfig(loaded).slice(0, HOME_PRODUCT_ROWS_COUNT)
+    : SITE_CATEGORIES.slice(0, HOME_PRODUCT_ROWS_COUNT);
 
   if (isLoading) return null;
-  if (categories.length === 0) return null;
+  if (loaded.length === 0) return null;
 
   return (
     <section className="bg-background">
       <div className="container mx-auto px-4">
-        {categories.slice(0, 3).map((cat) => (
+        {categories.map((cat) => (
           <CategoryProductRow key={cat.slug} category={cat} />
         ))}
       </div>

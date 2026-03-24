@@ -22,6 +22,8 @@ const languages = [
   { code: "th", label: "ไทย", flag: "🇹🇭" },
 ];
 
+import { SITE_CATEGORIES, sortByConfig } from "@/config/categories";
+
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,9 +53,13 @@ const Header = () => {
   }, []);
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
-  const categories: any[] = Array.isArray(categoriesData)
+  const loadedCategories: any[] = Array.isArray(categoriesData)
     ? categoriesData
     : (categoriesData as any)?.data ?? [];
+  // Sort loaded categories to match the configured sequence order
+  const sortedLoadedCategories = loadedCategories.length > 0 ? sortByConfig(loadedCategories) : [];
+  // Show static list instantly while API loads; swap to real data (sorted) once available
+  const categories: any[] = sortedLoadedCategories.length > 0 ? sortedLoadedCategories : SITE_CATEGORIES;
 
   // Responsive: show fewer categories on smaller screens
   useEffect(() => {
@@ -328,62 +334,17 @@ const Header = () => {
               </button>
               {isCategoryOpen && <div className="absolute left-0 top-full w-full h-1 z-50" />}
               {isCategoryOpen && (
-                <div className="fixed left-0 right-0 top-auto z-50 bg-popover border-t border-border shadow-xl" style={{ marginTop: '1px' }}>
-                  <div className="container mx-auto px-4 flex min-h-[320px] max-h-[70vh]">
-                    {/* Left sidebar — category list */}
-                    <div className="w-[260px] border-r border-border overflow-y-auto py-2 flex-shrink-0">
-                      {categories.map((cat, idx) => (
-                        <button
-                          key={cat.slug}
-                          onMouseEnter={() => setHoveredCatIdx(idx)}
-                          onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${hoveredCatIdx === idx
-                              ? "bg-secondary text-primary font-medium"
-                              : "text-popover-foreground hover:bg-secondary/50"
-                            }`}
-                        >
-                          <span>{cat.name}</span>
-                          <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Right panel — category detail */}
-                    <div className="flex-1 p-6 overflow-y-auto">
-                      {categories[hoveredCatIdx] && (
-                        <>
-                          <h3 className="text-lg font-bold text-foreground mb-1">{categories[hoveredCatIdx].name}</h3>
-                          <Link
-                            to={`/buyer-marketplace?category=${categories[hoveredCatIdx].slug}`}
-                            onClick={() => setIsCategoryOpen(false)}
-                            className="text-sm font-semibold text-primary hover:underline inline-block mb-5"
-                          >
-                            SHOW ALL
-                          </Link>
-
-                          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                            Browse all available {categories[hoveredCatIdx].name.toLowerCase()} listings. Find auctions, direct sales, and verified equipment from trusted sellers worldwide.
-                          </p>
-
-                          <div className="border-t border-border pt-4">
-                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3 font-medium">More categories</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
-                              {categories.filter((_, i) => i !== hoveredCatIdx).slice(0, 10).map((cat) => (
-                                <Link
-                                  key={cat.slug}
-                                  to={`/buyer-marketplace?category=${cat.slug}`}
-                                  onClick={() => setIsCategoryOpen(false)}
-                                  className="text-sm text-popover-foreground hover:text-primary transition-colors py-1 truncate"
-                                >
-                                  {cat.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                <div className="absolute left-0 top-full z-50 bg-popover border border-border rounded-b-md shadow-lg w-[220px] max-h-[320px] overflow-y-auto" style={{ marginTop: '1px' }}>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.slug}
+                      onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm transition-colors text-popover-foreground hover:bg-secondary/60 hover:text-primary border-b border-border/40 last:border-b-0"
+                    >
+                      <span className="truncate">{cat.name}</span>
+                      <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0 ml-2" />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>

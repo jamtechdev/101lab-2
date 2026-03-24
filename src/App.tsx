@@ -315,6 +315,8 @@ const App = () => {
             </Routes>
             </LoginModalProvider>
           </BrowserRouter>
+
+          
         </Provider>
       </TooltipProvider>
     </QueryClientProvider>
