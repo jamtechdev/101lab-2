@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>testing Group Call — Web Test</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, sans-serif; background: #0d0d0d; color: #fff; height: 100vh; overflow: hidden; }
+
+    /* ── SCREENS ──────────────────────────────────────────────────── */
+    .screen { display: none; height: 100vh; flex-direction: column; }
+    .screen.active { display: flex; }
+
+    /* ── LOGIN ────────────────────────────────────────────────────── */
+    #loginScreen { justify-content: center; align-items: center; background: #111; }
+    .card { background: #1e1e1e; border-radius: 16px; padding: 36px; width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+    .card h2 { text-align: center; margin-bottom: 8px; font-size: 22px; }
+    .card p { text-align: center; color: #888; font-size: 13px; margin-bottom: 28px; }
+    input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid #333; background: #2a2a2a; color: #fff; font-size: 14px; margin-bottom: 14px; outline: none; }
+    input:focus { border-color: #0a84ff; }
+    .btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+    .btn:active { opacity: .8; }
+    .btn-primary { background: #0a84ff; color: #fff; }
+    .btn-green  { background: #30d158; color: #fff; }
+    .btn-red    { background: #ff453a; color: #fff; }
+    .btn-gray   { background: #3a3a3c; color: #fff; }
+    .err { color: #ff453a; font-size: 13px; text-align: center; margin-top: 10px; min-height: 18px; }
+
+    /* ── JOIN ─────────────────────────────────────────────────────── */
+    #joinScreen { justify-content: center; align-items: center; background: #111; }
+    .user-badge { display: flex; align-items: center; gap: 10px; background: #2a2a2a; border-radius: 12px; padding: 10px 14px; margin-bottom: 20px; font-size: 14px; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; background: #0a84ff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+    .radio-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .radio-btn { flex: 1; padding: 10px; border-radius: 10px; border: 2px solid #333; background: transparent; color: #888; font-size: 14px; cursor: pointer; text-align: center; transition: all .2s; }
+    .radio-btn.selected { border-color: #0a84ff; color: #0a84ff; background: rgba(10,132,255,.1); }
+
+    /* ── CALL ─────────────────────────────────────────────────────── */
+    #callScreen { background: #000; position: relative; }
+    #videoGrid { flex: 1; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; }
+    .tile { position: relative; background: #1c1c1e; overflow: hidden; border: 1px solid #000; }
+    .tile video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .tile-no-video { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #2c2c2e; font-size: 48px; }
+    .tile-name { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,.6); border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 600; }
+    .tile-muted { position: absolute; top: 8px; right: 8px; background: #ff453a; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+
+    /* Local PiP */
+    #localPip { position: absolute; bottom: 120px; right: 12px; width: 90px; height: 130px; border-radius: 12px; overflow: hidden; border: 2px solid #fff; z-index: 20; background: #2c2c2e; }
+    #localPip video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #localPipLabel { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 11px; background: rgba(0,0,0,.5); }
+    #localPipIcon { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+
+    /* Waiting */
+    #waitingOverlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; z-index: 5; }
+    #waitingOverlay video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    #waitingOverlay .waiting-text { position: relative; z-index: 2; background: rgba(0,0,0,.6); border-radius: 20px; padding: 10px 22px; font-size: 14px; color: rgba(255,255,255,.85); }
+    #waitingOverlay .waiting-overlay-dark { position: absolute; inset: 0; background: rgba(0,0,0,.4); }
+
+    /* Header */
+    #callHeader { position: absolute; top: 0; left: 0; right: 0; z-index: 30; padding: 16px 20px 10px; background: linear-gradient(to bottom, rgba(0,0,0,.7) 0%, transparent 100%); pointer-events: none; }
+    #callHeader h3 { font-size: 17px; font-weight: 700; }
+    #callTimer { font-size: 13px; color: rgba(255,255,255,.8); margin-top: 2px; }
+    #callParticipantCount { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 2px; }
+
+    /* Controls */
+    #controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 30; background: linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 100%); padding: 16px 20px 32px; display: flex; justify-content: space-around; align-items: center; }
+    .ctrl { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+    .ctrl-circle { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 22px; transition: background .2s; }
+    .ctrl-circle.red { background: #ff453a; }
+    .ctrl-label { font-size: 11px; color: #fff; }
+
+    /* Debug Log */
+    #debugPanel { position: fixed; bottom: 0; right: 0; width: 320px; height: 220px; background: rgba(0,0,0,.85); border-top-left-radius: 12px; overflow-y: auto; padding: 10px; font-size: 11px; font-family: monospace; z-index: 999; border: 1px solid #333; }
+    #debugPanel h4 { color: #0a84ff; margin-bottom: 6px; font-size: 12px; }
+    .log-line { padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .log-ok    { color: #30d158; }
+    .log-warn  { color: #ffd60a; }
+    .log-err   { color: #ff453a; }
+    .log-info  { color: #64d2ff; }
+    #toggleDebug { position: fixed; bottom: 225px; right: 10px; z-index: 1000; background: #1c1c1e; border: 1px solid #333; color: #888; border-radius: 8px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════ LOGIN SCREEN ══════════════════════ -->
+<div id="loginScreen" class="screen active">
+  <div class="card">
+    <h2>testing Group Call</h2>
+    <p>Web Test Tool — Login to start</p>
+    <input id="loginEmail"    type="email"    placeholder="Email" />
+    <input id="loginPassword" type="password" placeholder="Password" />
+    <button class="btn btn-primary" onclick="doLogin()">Login</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ JOIN SCREEN ════════════════════════ -->
+<div id="joinScreen" class="screen">
+  <div class="card">
+    <h2>Join Group Call</h2>
+    <p>Enter conversation ID to join or start a call</p>
+    <div class="user-badge" id="userBadge">
+      <div class="avatar" id="userInitial">?</div>
+      <span id="userNameLabel">Loading…</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input id="convInput" placeholder="Conversation ID" style="margin-bottom:0;flex:1" />
+      <button class="btn btn-gray" onclick="loadGroups()" style="width:auto;padding:12px 14px;font-size:12px">Load Groups</button>
+    </div>
+    <div id="groupList" style="max-height:160px;overflow-y:auto;margin-bottom:14px;display:none"></div>
+    <div class="radio-row">
+      <button class="radio-btn selected" id="btnAudio" onclick="selectCallType('audio')">🎵 Audio</button>
+      <button class="radio-btn"          id="btnVideo" onclick="selectCallType('video')">📹 Video</button>
+    </div>
+    <button class="btn btn-green" onclick="joinCall()" style="margin-bottom:10px">Join / Start Call</button>
+    <button class="btn btn-gray"  onclick="doLogout()">Logout</button>
+    <div class="err" id="joinErr"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ CALL SCREEN ════════════════════════ -->
+<div id="callScreen" class="screen">
+
+  <!-- Waiting overlay (0 remote peers) -->
+  <div id="waitingOverlay">
+    <div class="waiting-overlay-dark"></div>
+    <video id="waitingLocalVideo" autoplay muted playsinline></video>
+    <span class="waiting-text">⏳ Waiting for others to join…</span>
+  </div>
+
+  <!-- Remote grid -->
+  <div id="videoGrid"></div>
+
+  <!-- Local PiP -->
+  <div id="localPip" style="display:none">
+    <div id="localPipIcon">🙂</div>
+    <div id="localPipLabel">You</div>
+  </div>
+
+  <!-- Header -->
+  <div id="callHeader">
+    <h3 id="callTitle">Group Call</h3>
+    <div id="callTimer">00:00</div>
+    <div id="callParticipantCount"></div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div class="ctrl" onclick="toggleMute()">
+      <div class="ctrl-circle" id="muteBtn">🎤</div>
+      <span class="ctrl-label" id="muteLabel">Mute</span>
+    </div>
+    <div class="ctrl" onclick="toggleVideo()">
+      <div class="ctrl-circle" id="videoBtn">📹</div>
+      <span class="ctrl-label" id="videoLabel">Stop</span>
+    </div>
+    <div class="ctrl" onclick="endCall()">
+      <div class="ctrl-circle red">📵</div>
+      <span class="ctrl-label">End</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ DEBUG PANEL ════════════════════════ -->
+<button id="toggleDebug" onclick="toggleDebugPanel()">📋 Logs</button>
+<div id="debugPanel">
+  <h4>📋 Debug Log</h4>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════════
+const BASE_URL   = 'https://api.vmeeta.com';
+const TURN_URL   = `${BASE_URL}/api/chat/new/turn-credentials`;
+const LOGIN_URL  = `${BASE_URL}/email/login`;
+
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let myToken       = localStorage.getItem('testing_token')  || null;
+let myUser        = JSON.parse(localStorage.getItem('testing_user') || 'null');
+let selectedType  = 'audio';
+let socket        = null;
+let localStream   = null;
+let pcs           = {};   // peerId → RTCPeerConnection
+let iceQueues     = {};   // peerId → RTCIceCandidate[]
+let remoteStreams  = {};  // peerId → MediaStream
+let participants  = {};   // peerId → { userName }
+let conversationId = null;
+let iceConfig     = null;
+let timerInterval = null;
+let callSeconds   = 0;
+let isMuted       = false;
+let isVideoOff    = false;
+
+// ════════════════════════════════════════════════════════════════
+//  DEBUG LOG
+// ════════════════════════════════════════════════════════════════
+function log(msg, type = 'info') {
+  const p = document.createElement('div');
+  p.className = `log-line log-${type}`;
+  p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  const panel = document.getElementById('debugPanel');
+  panel.appendChild(p);
+  panel.scrollTop = panel.scrollHeight;
+  console.log(`[testing] ${msg}`);
+}
+function toggleDebugPanel() {
+  const p = document.getElementById('debugPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SCREENS
+// ════════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOGIN
+// ════════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  document.getElementById('loginErr').textContent = '';
+  if (!email || !password) { document.getElementById('loginErr').textContent = 'Fill in email and password'; return; }
+
+  log(`Logging in as ${email}…`);
+  try {
+    const res  = await fetch(LOGIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    log(`Login response: ${JSON.stringify(data).slice(0,120)}`, res.ok ? 'ok' : 'err');
+
+    if (!res.ok) { document.getElementById('loginErr').textContent = data.message || 'Login failed'; return; }
+
+    // Token might be in different keys — try all common ones
+    const token = data.accessToken || data.token || data.data?.accessToken || data.data?.token;
+    const user  = data.user || data.data?.user || data.data || {};
+    if (!token) { document.getElementById('loginErr').textContent = 'No token in response — check backend'; log('Response keys: ' + Object.keys(data).join(', '), 'warn'); return; }
+
+    myToken = token;
+    myUser  = { id: user.id || user._id, fullName: user.fullName || user.name || email, profilePic: user.profilePic };
+    localStorage.setItem('testing_token', myToken);
+    localStorage.setItem('testing_user',  JSON.stringify(myUser));
+    log(`Logged in! userId=${myUser.id} name=${myUser.fullName}`, 'ok');
+    renderJoinScreen();
+    showScreen('joinScreen');
+  } catch (e) {
+    log(`Login error: ${e.message}`, 'err');
+    document.getElementById('loginErr').textContent = 'Network error: ' + e.message;
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('testing_token');
+  localStorage.removeItem('testing_user');
+  myToken = null; myUser = null;
+  showScreen('loginScreen');
+}
+
+function renderJoinScreen() {
+  if (!myUser) return;
+  const initial = (myUser.fullName || '?')[0].toUpperCase();
+  document.getElementById('userInitial').textContent  = initial;
+  document.getElementById('userNameLabel').textContent = myUser.fullName + ` (id: ${myUser.id})`;
+}
+
+async function loadGroups() {
+  log('Fetching conversations…');
+  try {
+    const res  = await fetch(`${BASE_URL}/api/chat/conversations`, {
+      headers: { Authorization: `Bearer ${myToken}` },
+    });
+    const data = await res.json();
+    const list = data.conversations || data.data || data || [];
+    // Filter group conversations only
+    const groups = list.filter(c => c.isGroup || c.type === 'group' || c.groupName || c.groupTitle);
+    log(`Found ${groups.length} group conversations`, groups.length > 0 ? 'ok' : 'warn');
+
+    const container = document.getElementById('groupList');
+    container.style.display = 'block';
+    container.innerHTML = groups.length === 0
+      ? '<div style="color:#888;font-size:12px;padding:8px">No group conversations found. Try entering ID manually.</div>'
+      : groups.map(g => `
+          <div onclick="selectGroup('${g._id || g.id}','${(g.groupName||g.groupTitle||g.name||'Group').replace(/'/g,"\\'")}')\"
+               style="padding:10px 12px;background:#2a2a2a;border-radius:8px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px">
+            <span style="font-size:18px">👥</span>
+            <div>
+              <div style="font-weight:600">${g.groupName||g.groupTitle||g.name||'Group'}</div>
+              <div style="color:#888;font-size:11px">${g._id||g.id}</div>
+            </div>
+          </div>`).join('');
+  } catch (e) {
+    log(`Load groups error: ${e.message}`, 'err');
+  }
+}
+
+function selectGroup(id, name) {
+  document.getElementById('convInput').value = id;
+  document.getElementById('groupList').style.display = 'none';
+  log(`Selected group: ${name} (${id})`, 'ok');
+}
+
+function selectCallType(type) {
+  selectedType = type;
+  document.getElementById('btnAudio').className = 'radio-btn' + (type === 'audio' ? ' selected' : '');
+  document.getElementById('btnVideo').className = 'radio-btn' + (type === 'video' ? ' selected' : '');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TURN CREDENTIALS
+// ════════════════════════════════════════════════════════════════
+async function fetchIceConfig() {
+  try {
+    const res  = await fetch(TURN_URL, { headers: { Authorization: `Bearer ${myToken}` } });
+    const turn = await res.json();
+    log(`TURN credentials fetched: username=${turn.username}`, 'ok');
+    return {
+      iceServers: [
+        { urls: ['stun:stun.l.google.com:19302', 'stun:turn.vmeeta.com:3478'] },
+        { urls: ['turn:turn.vmeeta.com:3478?transport=udp', 'turn:turn.vmeeta.com:3478?transport=tcp', 'turns:turn.vmeeta.com:443?transport=tcp'],
+          username: String(turn.username || ''), credential: turn.credential || '' },
+      ],
+      iceCandidatePoolSize: 10,
+    };
+  } catch (e) {
+    log(`TURN fetch failed (using STUN only): ${e.message}`, 'warn');
+    return { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GLARE PREVENTION — lower userId = offerer
+// ════════════════════════════════════════════════════════════════
+const iAmOfferer = (peerId) => String(myUser.id) < String(peerId);
+
+// ════════════════════════════════════════════════════════════════
+//  WEBRTC PEER CONNECTION
+// ════════════════════════════════════════════════════════════════
+function getOrCreatePC(peerId) {
+  if (pcs[peerId]) return pcs[peerId];
+  log(`Creating RTCPeerConnection for ${peerId}`);
+
+  const pc = new RTCPeerConnection(iceConfig);
+
+  // Add local tracks
+  if (localStream) localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  // Remote stream
+  pc.ontrack = (e) => {
+    const stream = e.streams?.[0];
+    if (!stream) return;
+    log(`ontrack from ${peerId} — stream=${stream.id}`, 'ok');
+    remoteStreams[peerId] = stream;
+    renderGrid();
+  };
+
+  // ICE candidates
+  pc.onicecandidate = (e) => {
+    if (!e.candidate) return;
+    socket.emit('group_call_signal', {
+      to: peerId, from: myUser.id, conversationId,
+      type: 'ice', signal: e.candidate,
+    });
+  };
+
+  // Connection state
+  pc.onconnectionstatechange = () => {
+    log(`PC[${peerId}] state: ${pc.connectionState}`, pc.connectionState === 'connected' ? 'ok' : 'info');
+  };
+
+  pc.oniceconnectionstatechange = () => {
+    log(`ICE[${peerId}]: ${pc.iceConnectionState}`,
+        pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed' ? 'ok' :
+        pc.iceConnectionState === 'failed' ? 'err' : 'info');
+  };
+
+  pcs[peerId] = pc;
+  return pc;
+}
+
+async function flushQueue(peerId) {
+  const pc = pcs[peerId];
+  if (!pc?.remoteDescription) return;
+  const queue = iceQueues[peerId] || [];
+  iceQueues[peerId] = [];
+  for (const c of queue) {
+    try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+    catch (e) { log(`ICE add fail ${peerId}: ${e.message}`, 'warn'); }
+  }
+}
+
+async function createOffer(peerId) {
+  const pc = getOrCreatePC(peerId);
+  try {
+    const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: selectedType === 'video' });
+    await pc.setLocalDescription(offer);
+    log(`Offer sent → ${peerId}`, 'info');
+    socket.emit('group_call_signal', { to: peerId, from: myUser.id, conversationId, type: 'offer', signal: offer });
+  } catch (e) { log(`createOffer error: ${e.message}`, 'err'); }
+}
+
+function connectToPeer(peerId) {
+  if (iAmOfferer(peerId)) {
+    log(`I am offerer for ${peerId} (my id ${myUser.id} < ${peerId})`, 'info');
+    createOffer(peerId);
+  } else {
+    log(`I am answerer for ${peerId} — waiting for offer…`, 'info');
+  }
+}
+
+function removePeer(peerId) {
+  if (pcs[peerId]) { try { pcs[peerId].close(); } catch {} delete pcs[peerId]; }
+  delete iceQueues[peerId];
+  delete remoteStreams[peerId];
+  delete participants[peerId];
+  log(`Peer removed: ${peerId}`, 'warn');
+  renderGrid();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FAKE STREAM (when no camera/mic available)
+// ════════════════════════════════════════════════════════════════
+function createFakeStream(withVideo = false) {
+  const ctx = new AudioContext();
+  const osc = ctx.createOscillator();
+  const dst = ctx.createMediaStreamDestination();
+  osc.connect(dst);
+  osc.frequency.value = 0; // silent
+  osc.start();
+  const tracks = [...dst.stream.getTracks()];
+
+  if (withVideo) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 320; canvas.height = 240;
+    const c = canvas.getContext('2d');
+    setInterval(() => {
+      c.fillStyle = '#1a1a2e';
+      c.fillRect(0, 0, 320, 240);
+      c.fillStyle = 'rgba(255,255,255,0.15)';
+      c.font = '14px sans-serif';
+      c.fillText('No Camera — Test Mode', 60, 120);
+      c.fillText(new Date().toLocaleTimeString(), 120, 145);
+    }, 1000);
+    const videoTrack = canvas.captureStream(5).getVideoTracks()[0];
+    tracks.push(videoTrack);
+  }
+
+  return new MediaStream(tracks);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  JOIN CALL
+// ════════════════════════════════════════════════════════════════
+async function joinCall() {
+  conversationId = document.getElementById('convInput').value.trim();
+  document.getElementById('joinErr').textContent = '';
+  if (!conversationId) { document.getElementById('joinErr').textContent = 'Enter a conversation ID'; return; }
+  if (!myUser) { document.getElementById('joinErr').textContent = 'Not logged in'; return; }
+
+  log(`Joining ${selectedType} call in conversation ${conversationId}…`);
+
+  // Fetch ICE config
+  iceConfig = await fetchIceConfig();
+
+  // Get media — real device preferred, fake stream as fallback
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: selectedType === 'video' ? { width: { ideal: 640 }, height: { ideal: 480 } } : false,
+    });
+    log(`Real media obtained: ${localStream.getTracks().map(t => t.kind).join(', ')}`, 'ok');
+  } catch (e) {
+    log(`No real device (${e.message}) — using fake stream`, 'warn');
+    localStream = createFakeStream(selectedType === 'video');
+    log(`Fake stream ready: ${localStream.getTracks().map(t => t.kind).join(', ')} — signaling will still work`, 'ok');
+  }
+
+  // Show call screen
+  showScreen('callScreen');
+  document.getElementById('callTitle').textContent = `Group ${selectedType === 'video' ? 'Video' : 'Audio'} Call`;
+  startTimer();
+  renderGrid(); // show waiting state
+
+  // Connect socket
+  connectSocket();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  SOCKET
+// ════════════════════════════════════════════════════════════════
+function connectSocket() {
+  if (socket) { socket.disconnect(); }
+  log('Connecting socket…');
+
+  socket = io(BASE_URL, {
+    transports: ['polling', 'websocket'],
+    auth: { token: myToken },
+    reconnection: true,
+  });
+
+  socket.on('connect', () => {
+    log(`Socket connected: ${socket.id}`, 'ok');
+    // Join personal room so backend can route group_call_signal to this socket
+    socket.emit('presence:online', { userId: myUser.id });
+    // Join after socket is connected
+    socket.emit('group_call_join', {
+      conversationId,
+      userId:         myUser.id,
+      userName:       myUser.fullName,
+      userProfilePic: myUser.profilePic,
+      callType:       selectedType,
+    });
+    log(`Emitted group_call_join`, 'info');
+  });
+
+  socket.on('connect_error', (e) => log(`Socket error: ${e.message}`, 'err'));
+  socket.on('disconnect', (r) => log(`Socket disconnected: ${r}`, 'warn'));
+
+  // ── Catch ALL events from backend (debug) ──
+  socket.onAny((event, ...args) => {
+    // Log ALL events — to catch any differently named signal events
+    const preview = JSON.stringify(args).slice(0, 80);
+    log(`◀ SERVER: ${event} — ${preview}`, 'warn');
+  });
+
+  // ── Current participants (sent to new joiner) ──
+  socket.on('group_call_current_participants', ({ participants: existing = [] }) => {
+    log(`group_call_current_participants: ${existing.length} peers`, 'ok');
+    existing.forEach(p => {
+      if (String(p.userId) === String(myUser.id)) return;
+      participants[p.userId] = p;
+      connectToPeer(p.userId);
+    });
+    renderGrid();
+  });
+
+  // ── New participant joined ──
+  socket.on('group_call_participant_joined', ({ userId, userName, userProfilePic }) => {
+    if (String(userId) === String(myUser.id)) return;
+    log(`group_call_participant_joined: ${userName} (${userId})`, 'ok');
+    participants[userId] = { userId, userName, userProfilePic, isMuted: false, isVideoOff: false };
+    connectToPeer(userId);
+    renderGrid();
+  });
+
+  // ── Participant left ──
+  socket.on('group_call_participant_left', ({ userId }) => {
+    log(`group_call_participant_left: ${userId}`, 'warn');
+    removePeer(userId);
+  });
+
+  // ── Call ended by server ──
+  socket.on('group_call_ended', () => {
+    log('group_call_ended received — returning to join screen', 'warn');
+    cleanupCall();
+    showScreen('joinScreen');
+  });
+
+  // ── Mute/Video updates ──
+  socket.on('group_call_mute_update', ({ userId, isMuted: m }) => {
+    if (participants[userId]) participants[userId].isMuted = m;
+    renderGrid();
+  });
+  socket.on('group_call_video_update', ({ userId, isVideoOff: v }) => {
+    if (participants[userId]) participants[userId].isVideoOff = v;
+    renderGrid();
+  });
+
+  // ── WebRTC Signaling ──
+  socket.on('group_call_signal', async ({ from, type, signal }) => {
+    log(`Signal from ${from}: ${type}`, 'info');
+
+    if (type === 'offer') {
+      const pc = getOrCreatePC(from);
+      await pc.setRemoteDescription(new RTCSessionDescription(signal));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      socket.emit('group_call_signal', { to: from, from: myUser.id, conversationId, type: 'answer', signal: answer });
+      log(`Answer sent → ${from}`, 'info');
+      await flushQueue(from);
+
+    } else if (type === 'answer') {
+      const pc = pcs[from];
+      if (pc) {
+        await pc.setRemoteDescription(new RTCSessionDescription(signal));
+        await flushQueue(from);
+        log(`Answer processed from ${from}`, 'ok');
+      }
+
+    } else if (type === 'ice') {
+      const pc = pcs[from];
+      if (pc?.remoteDescription) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(signal)); }
+        catch (e) { log(`ICE error: ${e.message}`, 'warn'); }
+      } else {
+        if (!iceQueues[from]) iceQueues[from] = [];
+        iceQueues[from].push(signal);
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER GRID
+// ════════════════════════════════════════════════════════════════
+function renderGrid() {
+  const remoteList  = Object.entries(remoteStreams);
+  const remoteCount = remoteList.length;
+
+  const waitingEl = document.getElementById('waitingOverlay');
+  const pipEl     = document.getElementById('localPip');
+  const grid      = document.getElementById('videoGrid');
+
+  // ── Update participant count ──
+  const total = remoteCount + 1;
+  document.getElementById('callParticipantCount').textContent = total > 1 ? `${total} participants` : '';
+
+  if (remoteCount === 0) {
+    // Waiting — show local full screen
+    waitingEl.style.display = 'flex';
+    pipEl.style.display = 'none';
+    const wv = document.getElementById('waitingLocalVideo');
+    if (localStream && selectedType === 'video') {
+      wv.srcObject = localStream;
+      wv.style.display = 'block';
+    } else {
+      wv.style.display = 'none';
+    }
+    grid.innerHTML = '';
+    return;
+  }
+
+  waitingEl.style.display = 'none';
+  pipEl.style.display     = 'block';
+
+  // Local PiP
+  let pipVideo = document.getElementById('localPipVideo');
+  if (!pipVideo) {
+    pipVideo = document.createElement('video');
+    pipVideo.id = 'localPipVideo';
+    pipVideo.autoplay = true; pipVideo.muted = true; pipVideo.playsInline = true;
+    pipVideo.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)';
+    pipEl.prepend(pipVideo);
+  }
+  if (localStream && selectedType === 'video' && !isVideoOff) {
+    pipVideo.srcObject = localStream;
+    pipVideo.style.display = 'block';
+    document.getElementById('localPipIcon').style.display = 'none';
+  } else {
+    pipVideo.style.display = 'none';
+    document.getElementById('localPipIcon').style.display = 'flex';
+    document.getElementById('localPipIcon').textContent = isMuted ? '🔇' : '🙂';
+  }
+
+  // Compute layout
+  const cols  = remoteCount <= 2 ? 1 : 2;
+  const vH    = window.innerHeight - 80 - 110; // header + controls
+  const rows  = Math.ceil(remoteCount / cols);
+  const tileH = rows <= 2 ? Math.floor(vH / rows) : Math.max(Math.floor(vH / 2.5), 150);
+  const tileWFull = window.innerWidth;
+  const tileWHalf = Math.floor((window.innerWidth - 2) / 2);
+
+  grid.innerHTML = '';
+
+  for (let i = 0; i < remoteList.length; i += cols) {
+    const row = remoteList.slice(i, i + cols);
+    const rowDiv = document.createElement('div');
+    rowDiv.style.cssText = 'display:flex;flex-direction:row;';
+
+    row.forEach(([peerId, stream]) => {
+      const isLastLone = row.length < cols;
+      const tileW      = isLastLone ? tileWFull : (cols === 1 ? tileWFull : tileWHalf);
+      const p          = participants[peerId] || {};
+
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.cssText = `width:${tileW}px;height:${tileH}px;`;
+
+      if (stream && !p.isVideoOff) {
+        const vid = document.createElement('video');
+        vid.autoplay = true; vid.playsInline = true;
+        vid.srcObject = stream;
+        vid.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        tile.appendChild(vid);
+      } else {
+        const noVid = document.createElement('div');
+        noVid.className = 'tile-no-video';
+        noVid.textContent = '👤';
+        tile.appendChild(noVid);
+      }
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'tile-name';
+      nameEl.textContent = p.userName || peerId;
+      tile.appendChild(nameEl);
+
+      if (p.isMuted) {
+        const muteEl = document.createElement('div');
+        muteEl.className = 'tile-muted';
+        muteEl.textContent = '🔇';
+        tile.appendChild(muteEl);
+      }
+
+      rowDiv.appendChild(tile);
+    });
+
+    grid.appendChild(rowDiv);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CONTROLS
+// ════════════════════════════════════════════════════════════════
+function toggleMute() {
+  if (!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+  document.getElementById('muteBtn').textContent   = isMuted ? '🔇' : '🎤';
+  document.getElementById('muteBtn').className     = 'ctrl-circle' + (isMuted ? ' red' : '');
+  document.getElementById('muteLabel').textContent = isMuted ? 'Unmute' : 'Mute';
+  if (socket) socket.emit('group_call_mute_toggle', { conversationId, userId: myUser.id, isMuted });
+  log(`Mute toggled: ${isMuted}`, 'info');
+}
+
+function toggleVideo() {
+  if (!localStream) return;
+  isVideoOff = !isVideoOff;
+  localStream.getVideoTracks().forEach(t => { t.enabled = !isVideoOff; });
+  document.getElementById('videoBtn').textContent   = isVideoOff ? '📵' : '📹';
+  document.getElementById('videoBtn').className     = 'ctrl-circle' + (isVideoOff ? ' red' : '');
+  document.getElementById('videoLabel').textContent = isVideoOff ? 'Start' : 'Stop';
+  if (socket) socket.emit('group_call_video_toggle', { conversationId, userId: myUser.id, isVideoOff });
+  renderGrid();
+  log(`Video toggled: ${isVideoOff}`, 'info');
+}
+
+function endCall() {
+  if (socket) socket.emit('group_call_leave', { conversationId, userId: myUser.id });
+  log('Ended call — leaving', 'warn');
+  cleanupCall();
+  showScreen('joinScreen');
+}
+
+function cleanupCall() {
+  Object.values(pcs).forEach(pc => { try { pc.close(); } catch {} });
+  pcs = {}; iceQueues = {}; remoteStreams = {}; participants = {};
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (socket)      { socket.disconnect(); socket = null; }
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  callSeconds = 0;
+  isMuted = false; isVideoOff = false;
+  document.getElementById('videoGrid').innerHTML = '';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════════════════════════════
+function startTimer() {
+  callSeconds = 0;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    callSeconds++;
+    const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+    const s = String(callSeconds % 60).padStart(2, '0');
+    document.getElementById('callTimer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  INIT — auto-restore session
+// ════════════════════════════════════════════════════════════════
+window.addEventListener('load', () => {
+  if (myToken && myUser) {
+    log(`Session restored: ${myUser.fullName}`, 'ok');
+    renderJoinScreen();
+    showScreen('joinScreen');
+  } else {
+    showScreen('loginScreen');
+  }
+  // Hide debug panel initially
+  document.getElementById('debugPanel').style.display = 'none';
+});
+</script>
+</body>
+</html>
