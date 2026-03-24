@@ -20,6 +20,7 @@ import {
   Gavel,
   Trophy,
   ShoppingCart,
+  TableProperties,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/greenbidz_logo.png";
@@ -84,6 +85,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
       items: [
         { name: t('nav.dashboard'), href: "/dashboard", icon: LayoutDashboard, permission: null },
         { name: t('nav.listAnItem'), href: "/upload", icon: Package, permission: null },
+        { name: t('nav.bulkUpload'), href: "/dashboard/bulk-upload", icon: TableProperties, permission: null },
         { name: t('nav.myListings'), href: "/dashboard/submissions", icon: ClipboardList, permission: null },
         { name: t('nav.bidsAndWinners'), href: "/dashboard/bids", icon: TrendingUp, permission: "bidding.view" },
         { name: "Auction Groups", href: "/dashboard/auction-groups", icon: Gavel, permission: null },

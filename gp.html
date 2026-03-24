@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>testing Group Call — Web Test</title>
+  <title>VMT Group Call — Web Test</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -86,7 +86,7 @@
 <!-- ══════════════════════ LOGIN SCREEN ══════════════════════ -->
 <div id="loginScreen" class="screen active">
   <div class="card">
-    <h2>testing Group Call</h2>
+    <h2>VMT Group Call</h2>
     <p>Web Test Tool — Login to start</p>
     <input id="loginEmail"    type="email"    placeholder="Email" />
     <input id="loginPassword" type="password" placeholder="Password" />
@@ -179,8 +179,8 @@ const LOGIN_URL  = `${BASE_URL}/email/login`;
 // ════════════════════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════════════════════
-let myToken       = localStorage.getItem('testing_token')  || null;
-let myUser        = JSON.parse(localStorage.getItem('testing_user') || 'null');
+let myToken       = localStorage.getItem('vmt_token')  || null;
+let myUser        = JSON.parse(localStorage.getItem('vmt_user') || 'null');
 let selectedType  = 'audio';
 let socket        = null;
 let localStream   = null;
@@ -205,7 +205,7 @@ function log(msg, type = 'info') {
   const panel = document.getElementById('debugPanel');
   panel.appendChild(p);
   panel.scrollTop = panel.scrollHeight;
-  console.log(`[testing] ${msg}`);
+  console.log(`[VMT] ${msg}`);
 }
 function toggleDebugPanel() {
   const p = document.getElementById('debugPanel');
@@ -248,8 +248,8 @@ async function doLogin() {
 
     myToken = token;
     myUser  = { id: user.id || user._id, fullName: user.fullName || user.name || email, profilePic: user.profilePic };
-    localStorage.setItem('testing_token', myToken);
-    localStorage.setItem('testing_user',  JSON.stringify(myUser));
+    localStorage.setItem('vmt_token', myToken);
+    localStorage.setItem('vmt_user',  JSON.stringify(myUser));
     log(`Logged in! userId=${myUser.id} name=${myUser.fullName}`, 'ok');
     renderJoinScreen();
     showScreen('joinScreen');
@@ -260,8 +260,8 @@ async function doLogin() {
 }
 
 function doLogout() {
-  localStorage.removeItem('testing_token');
-  localStorage.removeItem('testing_user');
+  localStorage.removeItem('vmt_token');
+  localStorage.removeItem('vmt_user');
   myToken = null; myUser = null;
   showScreen('loginScreen');
 }

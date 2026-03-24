@@ -115,6 +115,7 @@ import SellerLandingPage from "./pages/sellerLanding/SellerLandingPage.js";
 import DirectSalesPage from "./pages/DirectSalesPage/DirectSalesPage.js";
 import MyLots from "./pages/buyer/MyLots";
 import AuctionGroups from "./pages/dashboard/AuctionGroups";
+import BulkUpload from "./pages/dashboard/BulkUpload";
 
 const queryClient = new QueryClient();
 
@@ -218,6 +219,7 @@ const App = () => {
                 <Route element={<SellerPermissionRoute permission="product.add" />}> */}
                 <Route path="/upload" element={<ProductListingMain />} />
                 <Route path="/upload/batch/:batchId" element={<SellerBatchDetails />} />
+                <Route path="/dashboard/bulk-upload" element={<BulkUpload />} />
 
                 {/* Seller Marketplace */}
                 <Route path="/dashboard/marketplace" element={<SellerMarketplace />} />
