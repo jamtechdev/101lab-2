@@ -876,13 +876,17 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     if (!buyerId) { toast.error("Please login to make an offer"); return; }
     if (!batchId) { toast.error("Invalid batch ID"); return; }
 
+    const sellerId = data?.data?.batch?.seller_id;
+
     const formData = new FormData();
     formData.append("batch_id", String(batchId));
+    formData.append("seller_id", String(sellerId));
     formData.append("buyer_id", String(buyerId));
     formData.append("company_name", companyBuyerName?.trim() || "");
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
+    formData.append("offer_quantity",1)
     if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
     if (documentFile) formData.append("document_image", documentFile);
 
@@ -1562,7 +1566,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
           ))}
         </div>
       </div>
-
+ 
       {/* ------------- Dialogs ------------- */}
 
       {/* Place Bid Dialog */}
@@ -1760,14 +1764,15 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
             </div>
             <DialogHeader className="items-center">
               <DialogTitle className="text-xl font-bold text-foreground">
-                {t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
+                {bidDialogMode === "make_offer"
+                  ? t("buyer.offerSuccessTitle", "Offer Submitted Successfully!")
+                  : t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {t(
-                "buyer.bidSuccessMessage",
-                "Your bid has been submitted. The seller will review it and you will be notified of any updates."
-              )}
+              {bidDialogMode === "make_offer"
+                ? t("buyer.offerSuccessMessage", "Your offer has been submitted. The seller will review it and you will be notified of any updates.")
+                : t("buyer.bidSuccessMessage", "Your bid has been submitted. The seller will review it and you will be notified of any updates.")}
             </p>
             <div className="flex flex-col w-full gap-2 pt-2">
               <Button
