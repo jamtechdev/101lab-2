@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Upload, Download, CheckCircle2, XCircle, Loader2,
   FileSpreadsheet, ImageIcon, AlertCircle, ChevronRight,
+  Pencil, Trash2, X, ChevronLeft,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
@@ -333,10 +334,19 @@ export default function BulkUpload() {
   const [batchId, setBatchId] = useState<number | null>(null);
   const [csvFileName, setCsvFileName] = useState("");
   const [imageCount, setImageCount] = useState(0);
+  // inline per-row photo add
+  const [addingPhotoRow, setAddingPhotoRow] = useState<number | null>(null);
+  // edit modal
+  const [editingRow, setEditingRow] = useState<BulkRow | null>(null);
+  // photo lightbox
+  const [lightbox, setLightbox] = useState<{ files: File[]; index: number } | null>(null);
+  // multi-select
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   const csvRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
+  const inlineImgRef = useRef<HTMLInputElement>(null);
 
   // ── Category helpers ────────────────────────────────────────────────────────
   function getCatId(cat: { slug: string }): string {
@@ -383,6 +393,61 @@ export default function BulkUpload() {
     if (!files) return;
     setImageMap(groupImagesByRow(files));
     setImageCount(files.length);
+  };
+
+  // ── Inline per-row photo helpers ────────────────────────────────────────────
+  const openInlinePhotoAdd = (rowNum: number) => {
+    setAddingPhotoRow(rowNum);
+    setTimeout(() => inlineImgRef.current?.click(), 50);
+  };
+
+  const handleInlinePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || addingPhotoRow === null) return;
+    const newFiles = Array.from(files);
+    setImageMap((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(addingPhotoRow) ?? [];
+      const merged = [...existing, ...newFiles].slice(0, 10); // max 10
+      next.set(addingPhotoRow, merged);
+      return next;
+    });
+    setAddingPhotoRow(null);
+    e.target.value = "";
+  };
+
+  const removeInlinePhoto = (rowNum: number, idx: number) => {
+    setImageMap((prev) => {
+      const next = new Map(prev);
+      const imgs = [...(next.get(rowNum) ?? [])];
+      imgs.splice(idx, 1);
+      if (imgs.length === 0) next.delete(rowNum);
+      else next.set(rowNum, imgs);
+      return next;
+    });
+  };
+
+  // ── Delete / Edit / Multi-select helpers ────────────────────────────────────
+  const deleteRows = (rowNums: number[]) => {
+    if (!window.confirm(rowNums.length > 1 ? t('bulkUpload.deleteConfirm_other', { count: rowNums.length }) : t('bulkUpload.deleteConfirm_one'))) return;
+    setRows((prev) => prev.filter((r) => !rowNums.includes(r.rowNum)));
+    setImageMap((prev) => {
+      const n = new Map(prev);
+      rowNums.forEach((rn) => n.delete(rn));
+      return n;
+    });
+    setSelectedRows((prev) => { const n = new Set(prev); rowNums.forEach((rn) => n.delete(rn)); return n; });
+  };
+
+  const toggleSelectRow = (rowNum: number) =>
+    setSelectedRows((prev) => { const n = new Set(prev); n.has(rowNum) ? n.delete(rowNum) : n.add(rowNum); return n; });
+
+  const toggleSelectAll = () =>
+    setSelectedRows((prev) => prev.size === rows.length ? new Set() : new Set(rows.map((r) => r.rowNum)));
+
+  const saveEditRow = (updated: BulkRow) => {
+    setRows((prev) => prev.map((r) => r.rowNum === updated.rowNum ? updated : r));
+    setEditingRow(null);
   };
 
   // ── Upload ──────────────────────────────────────────────────────────────────
@@ -487,6 +552,7 @@ export default function BulkUpload() {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
   const allCategorySet = rows.length > 0 && rows.every((r) => r.categoryId);
+  const totalPhotoCount = Array.from(imageMap.values()).reduce((s, a) => s + a.length, 0);
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -494,41 +560,34 @@ export default function BulkUpload() {
 
 
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
 
           {/* Header */}
           <div className="mb-7">
-            <h1 className="text-2xl font-bold text-foreground">Bulk Upload Products</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Upload multiple products at once using a spreadsheet + photos.
-            </p>
+            <h1 className="text-2xl font-bold text-foreground">{t('bulkUpload.pageTitle')}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t('bulkUpload.pageSubtitle')}</p>
           </div>
 
           <div className="space-y-5">
 
             {/* ── STEP 1: Template ── */}
             <div className="border border-border rounded-lg p-5 bg-card">
-              <StepHeader n={1} title="Download Template" />
+              <StepHeader n={1} title={t('bulkUpload.step1Title')} />
               <div className="ml-10 space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Fill in one product per row. <strong>Category</strong> is selected after upload via a dropdown — you don't need to type it in the file.
-                </p>
-                <div className="bg-secondary/50 border border-border rounded-md p-3 text-xs text-muted-foreground space-y-1">
-                  <p><strong className="text-foreground">Condition values:</strong> working, non-working, good, fair, poor (comma-separated)</p>
-                  <p><strong className="text-foreground">priceFormat:</strong> buyNow or offer</p>
-                  <p><strong className="text-foreground">priceCurrency:</strong> USD or TWD</p>
-                  <p><strong className="text-foreground">country:</strong> 2-letter code e.g. TW, US, JP</p>
+                <p className="text-sm text-muted-foreground">{t('bulkUpload.step1Desc')}</p>
+                <div className="bg-secondary/50 border border-border rounded-md p-3 text-xs text-muted-foreground">
+                  <p>{t('bulkUpload.step1Hint')}</p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadTemplate(lang)}>
                   <Download className="h-4 w-4" />
-                  Download Template ({LANG_LABELS[lang] ?? lang})
+                  {t('bulkUpload.downloadBtn')} ({LANG_LABELS[lang] ?? lang})
                 </Button>
               </div>
             </div>
 
             {/* ── STEP 2: Upload Spreadsheet ── */}
             <div className="border border-border rounded-lg p-5 bg-card">
-              <StepHeader n={2} title="Upload Filled Spreadsheet" />
+              <StepHeader n={2} title={t('bulkUpload.step2Title')} />
               <div className="ml-10 space-y-3">
                 <input ref={csvRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleCsvChange} />
                 <Button
@@ -536,11 +595,11 @@ export default function BulkUpload() {
                   onClick={() => csvRef.current?.click()}
                 >
                   <FileSpreadsheet className="h-4 w-4" />
-                  {csvFileName || "Choose .xlsx / .csv file"}
+                  {csvFileName || t('bulkUpload.chooseFile')}
                 </Button>
                 {rows.length > 0 && (
                   <p className="text-sm text-primary font-medium">
-                    ✓ {rows.length} product{rows.length !== 1 ? "s" : ""} loaded
+                    ✓ {t('bulkUpload.productsLoaded_other', { count: rows.length })}
                   </p>
                 )}
               </div>
@@ -548,23 +607,53 @@ export default function BulkUpload() {
               {/* Editable preview table */}
               {rows.length > 0 && (
                 <div className="mt-4 ml-10 overflow-x-auto rounded border border-border">
+                  {/* Bulk-action bar — shown when ≥1 row selected */}
+                  {selectedRows.size > 0 && (
+                    <div className="flex items-center justify-between px-3 py-2 bg-destructive/10 border-b border-destructive/20">
+                      <span className="text-xs font-medium text-destructive">
+                        {t('bulkUpload.rowsSelected_other', { count: selectedRows.size })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => deleteRows(Array.from(selectedRows))}
+                        className="flex items-center gap-1.5 text-xs font-medium text-destructive hover:text-destructive/80 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        {t('bulkUpload.deleteSelected')}
+                      </button>
+                    </div>
+                  )}
                   <table className="min-w-full text-xs">
                     <thead className="bg-secondary">
                       <tr>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium w-8">#</th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Title</th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium min-w-[180px]">
-                          Category <span className="text-destructive">*</span>
+                        {/* Select-all checkbox */}
+                        <th className="px-3 py-2 w-8">
+                          <input
+                            type="checkbox"
+                            checked={rows.length > 0 && selectedRows.size === rows.length}
+                            ref={(el) => { if (el) el.indeterminate = selectedRows.size > 0 && selectedRows.size < rows.length; }}
+                            onChange={toggleSelectAll}
+                            className="cursor-pointer accent-primary"
+                          />
                         </th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Qty</th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Price</th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Country</th>
-                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Photos</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium w-8">{t('bulkUpload.colNum')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colTitle')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium min-w-[180px]">
+                          {t('bulkUpload.colCategory')} <span className="text-destructive">*</span>
+                        </th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colQty')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPrice')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colCountry')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPhotos')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium w-16">{t('bulkUpload.colActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rows.map((r) => (
-                        <tr key={r.rowNum} className="border-t border-border hover:bg-secondary/30">
+                        <tr key={r.rowNum} className={`border-t border-border hover:bg-secondary/30 ${selectedRows.has(r.rowNum) ? "bg-destructive/5" : ""}`}>
+                          <td className="px-3 py-2">
+                            <input type="checkbox" checked={selectedRows.has(r.rowNum)} onChange={() => toggleSelectRow(r.rowNum)} className="cursor-pointer accent-primary" />
+                          </td>
                           <td className="px-3 py-2 text-muted-foreground">{r.rowNum}</td>
                           <td className="px-3 py-2 font-medium text-foreground max-w-[200px] truncate">{r.title}</td>
 
@@ -576,7 +665,7 @@ export default function BulkUpload() {
                               className={`w-full text-xs border rounded px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${!r.categoryId ? "border-destructive" : "border-border"
                                 }`}
                             >
-                              <option value="">— Select category —</option>
+                              <option value="">{t('bulkUpload.selectCategory')}</option>
                               {apiCategories.map((cat) => (
                                 <option key={getCatId(cat)} value={getCatId(cat)}>
                                   {cat.name}
@@ -590,12 +679,60 @@ export default function BulkUpload() {
                             {r.pricePerUnit ? `${r.priceCurrency} ${r.pricePerUnit}` : r.priceFormat}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{r.country}</td>
-                          <td className="px-3 py-2 text-center">
-                            {(imageMap.get(r.rowNum)?.length ?? 0) > 0 ? (
-                              <span className="text-green-600 font-medium">{imageMap.get(r.rowNum)!.length} ✓</span>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                          {/* Inline photo upload cell */}
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1 flex-wrap min-w-[120px]">
+                              {(imageMap.get(r.rowNum) ?? []).map((file, idx) => (
+                                <div key={idx} className="relative group flex-shrink-0">
+                                  <img
+                                    src={URL.createObjectURL(file)}
+                                    alt={file.name}
+                                    onClick={() => setLightbox({ files: imageMap.get(r.rowNum)!, index: idx })}
+                                    className="w-9 h-9 object-cover rounded border border-border cursor-zoom-in hover:opacity-90 transition-opacity"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeInlinePhoto(r.rowNum, idx)}
+                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                                    title="Remove photo"
+                                  >
+                                    <span className="text-[9px] leading-none font-bold">✕</span>
+                                  </button>
+                                </div>
+                              ))}
+                              {(imageMap.get(r.rowNum)?.length ?? 0) < 10 && (
+                                <button
+                                  type="button"
+                                  onClick={() => openInlinePhotoAdd(r.rowNum)}
+                                  className="w-9 h-9 flex-shrink-0 rounded border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                                  title="Add photos"
+                                >
+                                  <ImageIcon className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-3 py-2">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setEditingRow({ ...r })}
+                                className="p-1.5 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground transition-colors"
+                                title={t('bulkUpload.editRow')}
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteRows([r.rowNum])}
+                                className="p-1.5 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
+                                title={t('bulkUpload.deleteRow')}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -607,22 +744,20 @@ export default function BulkUpload() {
 
             {/* ── STEP 3: Photos ── */}
             <div className="border border-border rounded-lg p-5 bg-card">
-              <StepHeader n={3} title={<>Upload Photos <span className="font-normal text-muted-foreground text-sm">(optional)</span></>} />
+              <StepHeader n={3} title={<>{t('bulkUpload.step3Title')} <span className="font-normal text-muted-foreground text-sm">{t('bulkUpload.step3Optional')}</span></>} />
               <div className="ml-10 space-y-4">
 
                 {/* Option A — Folder (recommended) */}
                 <div className="border border-primary/30 rounded-lg p-4 bg-primary/5">
                   <p className="text-sm font-semibold text-foreground mb-1">
-                    ⭐ Easiest — Select a Folder
+                    ⭐ {t('bulkUpload.folderMethodTitle')}
                   </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Create a folder on your computer. Inside it, make subfolders named <strong>1</strong>, <strong>2</strong>, <strong>3</strong>… (matching row numbers). Put photos inside each subfolder — any filename is fine.
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">{t('bulkUpload.folderMethodDesc')}</p>
                   <div className="bg-background border border-border rounded p-2.5 text-xs text-muted-foreground font-mono mb-3 space-y-0.5">
-                    <p>📁 my_products/</p>
-                    <p className="pl-4">📁 1/ → row 1 photos (any names)</p>
-                    <p className="pl-4">📁 2/ → row 2 photos</p>
-                    <p className="pl-4">📁 3/ → row 3 photos</p>
+                    <p>{t('bulkUpload.folderDiagram1')}</p>
+                    <p className="pl-4">{t('bulkUpload.folderDiagram2')}</p>
+                    <p className="pl-4">{t('bulkUpload.folderDiagram3')}</p>
+                    <p className="pl-4">{t('bulkUpload.folderDiagram4')}</p>
                   </div>
                   {/* webkitdirectory lets user pick a whole folder */}
                   <input
@@ -637,25 +772,23 @@ export default function BulkUpload() {
                   />
                   <Button variant="default" size="sm" className="gap-2" onClick={() => folderRef.current?.click()}>
                     <ImageIcon className="h-4 w-4" />
-                    Select Folder
+                    {t('bulkUpload.selectFolder')}
                   </Button>
                 </div>
 
                 {/* Option B — Individual files */}
                 <div className="border border-border rounded-lg p-4">
-                  <p className="text-sm font-medium text-foreground mb-1">Or — Select Individual Files</p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Name each photo with its row number prefix: <code className="bg-secondary px-1 rounded">1_1.jpg</code> <code className="bg-secondary px-1 rounded">1_2.jpg</code> <code className="bg-secondary px-1 rounded">2_1.jpg</code> … then select all at once.
-                  </p>
+                  <p className="text-sm font-medium text-foreground mb-1">{t('bulkUpload.flatMethodTitle')}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{t('bulkUpload.flatMethodDesc')}</p>
                   <input ref={imgRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImagesChange} />
                   <Button variant="outline" size="sm" className="gap-2" onClick={() => imgRef.current?.click()}>
                     <ImageIcon className="h-4 w-4" />
-                    Select Files
+                    {t('bulkUpload.selectFiles')}
                   </Button>
                 </div>
 
-                {imageCount > 0 && (
-                  <p className="text-sm text-primary font-medium">✓ {imageCount} photo{imageCount !== 1 ? "s" : ""} loaded</p>
+                {totalPhotoCount > 0 && (
+                  <p className="text-sm text-primary font-medium">{t('bulkUpload.photosLoaded_other', { count: totalPhotoCount })}</p>
                 )}
 
                 {imageMap.size > 0 && (
@@ -684,19 +817,19 @@ export default function BulkUpload() {
             {/* ── STEP 4: Submit ── */}
             {rows.length > 0 && !done && (
               <div className="border border-border rounded-lg p-5 bg-card">
-                <StepHeader n={4} title="Start Upload" />
+                <StepHeader n={4} title={t('bulkUpload.step4Title')} />
                 <div className="ml-10 space-y-3">
                   {!allCategorySet && (
                     <div className="flex items-center gap-2 text-sm text-destructive">
                       <AlertCircle className="h-4 w-4" />
-                      Please select a category for all rows before uploading.
+                      {t('bulkUpload.categoryWarning')}
                     </div>
                   )}
                   <Button onClick={handleUpload} disabled={isUploading || !allCategorySet} className="gap-2">
                     {isUploading ? (
-                      <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> {t('bulkUpload.uploading')}</>
                     ) : (
-                      <><Upload className="h-4 w-4" /> Upload {rows.length} Product{rows.length !== 1 ? "s" : ""}</>
+                      <><Upload className="h-4 w-4" /> {t('bulkUpload.uploadBtn_other', { count: rows.length })}</>
                     )}
                   </Button>
                 </div>
@@ -707,10 +840,10 @@ export default function BulkUpload() {
             {results.length > 0 && (
               <div className="border border-border rounded-lg p-5 bg-card">
                 <h2 className="font-semibold text-foreground mb-4">
-                  Upload Progress
+                  {t('bulkUpload.progressTitle')}
                   {done && (
                     <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      — {successCount} succeeded{errorCount > 0 ? `, ${errorCount} failed` : ""}
+                      — {successCount} {t('bulkUpload.progressSummary', { success: successCount, failed: errorCount > 0 ? t('bulkUpload.progressFailed', { count: errorCount }) : '' })}
                     </span>
                   )}
                 </h2>
@@ -767,26 +900,25 @@ export default function BulkUpload() {
                       {successCount > 0 ? (
                         <p className="text-sm text-foreground">
                           <CheckCircle2 className="inline h-4 w-4 text-green-600 mr-1" />
-                          <strong>{successCount}</strong> product{successCount !== 1 ? "s" : ""} uploaded —&nbsp;
-                          <strong>{batchId ?? 0}</strong> batch{(batchId ?? 0) !== 1 ? "es" : ""} created.
+                          {t('bulkUpload.resultSuccess', { count: successCount, batches: batchId ?? 0 })}
                         </p>
-                      ) : successCount > 0 ? (
+                      ) : errorCount > 0 ? (
                         <p className="text-sm text-amber-700">
                           <AlertCircle className="inline h-4 w-4 mr-1" />
-                          Products created but batch could not be created. Contact support.
+                          {t('bulkUpload.resultBatchFailed')}
                         </p>
                       ) : (
-                        <p className="text-sm text-red-700">All uploads failed. Check errors above and try again.</p>
+                        <p className="text-sm text-red-700">{t('bulkUpload.resultAllFailed')}</p>
                       )}
                     </div>
                     <div className="flex gap-2">
                       {batchId && (
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => navigate(`/upload/batch/${batchId}`)}>
-                          View Batch <ChevronRight className="h-3.5 w-3.5" />
+                          {t('bulkUpload.viewBatch')} <ChevronRight className="h-3.5 w-3.5" />
                         </Button>
                       )}
                       <Button size="sm" onClick={() => navigate("/dashboard/submissions")}>
-                        Go to Submissions
+                        {t('bulkUpload.goToSubmissions')}
                       </Button>
                     </div>
                   </div>
@@ -797,6 +929,153 @@ export default function BulkUpload() {
           </div>
         </div>
       </div>
+
+      {/* Hidden input for inline per-row photo add */}
+      <input
+        ref={inlineImgRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleInlinePhotoAdd}
+      />
+
+      {/* ── Edit Row Modal ─────────────────────────────────────────────────── */}
+      {editingRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setEditingRow(null)}>
+          <div
+            className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <h2 className="font-semibold text-foreground text-sm">{t('bulkUpload.editModalTitle', { num: editingRow.rowNum })}</h2>
+              <button onClick={() => setEditingRow(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Fields */}
+            <div className="px-5 py-4 space-y-3">
+              {(
+                [
+                  { key: "title",           label: t('bulkUpload.fieldTitle'),            type: "text" },
+                  { key: "description",     label: t('bulkUpload.fieldDescription'),       type: "textarea" },
+                  { key: "condition",       label: t('bulkUpload.fieldCondition'),         type: "text", hint: t('bulkUpload.fieldConditionHint') },
+                  { key: "operationStatus", label: t('bulkUpload.fieldOperationStatus'),   type: "text", hint: t('bulkUpload.fieldOperationStatusHint') },
+                  { key: "location",        label: t('bulkUpload.fieldLocation'),          type: "text", hint: t('bulkUpload.fieldLocationHint') },
+                  { key: "country",         label: t('bulkUpload.fieldCountry'),           type: "text", hint: t('bulkUpload.fieldCountryHint') },
+                  { key: "quantity",        label: t('bulkUpload.fieldQuantity'),          type: "text" },
+                  { key: "priceFormat",     label: t('bulkUpload.fieldPriceFormat'),       type: "select", options: ["buyNow", "offer"] },
+                  { key: "pricePerUnit",    label: t('bulkUpload.fieldPricePerUnit'),      type: "text", hint: t('bulkUpload.fieldPricePerUnitHint') },
+                  { key: "priceCurrency",   label: t('bulkUpload.fieldCurrency'),          type: "select", options: ["USD", "TWD", "JPY", "THB"] },
+                  { key: "weightPerUnit",   label: t('bulkUpload.fieldWeight'),            type: "text" },
+                  { key: "replacementCost", label: t('bulkUpload.fieldReplacementCost'),  type: "text" },
+                ] as const
+              ).map(({ key, label, type, hint, options }: any) => (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-foreground mb-1">{label}</label>
+                  {type === "textarea" ? (
+                    <textarea
+                      rows={3}
+                      value={(editingRow as any)[key]}
+                      onChange={(e) => setEditingRow({ ...editingRow, [key]: e.target.value })}
+                      className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                    />
+                  ) : type === "select" ? (
+                    <select
+                      value={(editingRow as any)[key]}
+                      onChange={(e) => setEditingRow({ ...editingRow, [key]: e.target.value })}
+                      className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={(editingRow as any)[key]}
+                      onChange={(e) => setEditingRow({ ...editingRow, [key]: e.target.value })}
+                      className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  )}
+                  {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end gap-2 px-5 py-4 border-t border-border">
+              <Button variant="outline" size="sm" onClick={() => setEditingRow(null)}>{t('bulkUpload.cancel')}</Button>
+              <Button size="sm" onClick={() => saveEditRow(editingRow)}>{t('bulkUpload.saveChanges')}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Photo Lightbox ─────────────────────────────────────────────────── */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
+          onClick={() => setLightbox(null)}
+        >
+          {/* Close */}
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors z-10"
+            onClick={() => setLightbox(null)}
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Prev */}
+          {lightbox.files.length > 1 && (
+            <button
+              className="absolute left-4 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); setLightbox((lb) => lb && { ...lb, index: (lb.index - 1 + lb.files.length) % lb.files.length }); }}
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+          )}
+
+          {/* Image */}
+          <div className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={URL.createObjectURL(lightbox.files[lightbox.index])}
+              alt={lightbox.files[lightbox.index].name}
+              className="max-w-full max-h-[78vh] object-contain rounded-lg shadow-2xl"
+            />
+            <div className="flex items-center gap-3">
+              <span className="text-white/70 text-xs">{lightbox.files[lightbox.index].name}</span>
+              {lightbox.files.length > 1 && (
+                <span className="text-white/50 text-xs">{lightbox.index + 1} / {lightbox.files.length}</span>
+              )}
+            </div>
+            {/* Thumbnail strip */}
+            {lightbox.files.length > 1 && (
+              <div className="flex gap-1.5 flex-wrap justify-center">
+                {lightbox.files.map((f, i) => (
+                  <img
+                    key={i}
+                    src={URL.createObjectURL(f)}
+                    alt=""
+                    onClick={() => setLightbox((lb) => lb && { ...lb, index: i })}
+                    className={`w-10 h-10 object-cover rounded cursor-pointer transition-all ${i === lightbox.index ? "ring-2 ring-white opacity-100" : "opacity-50 hover:opacity-80"}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Next */}
+          {lightbox.files.length > 1 && (
+            <button
+              className="absolute right-4 text-white/80 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 transition-colors z-10"
+              onClick={(e) => { e.stopPropagation(); setLightbox((lb) => lb && { ...lb, index: (lb.index + 1) % lb.files.length }); }}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          )}
+        </div>
+      )}
     </DashboardLayout>
   );
 }
