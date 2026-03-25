@@ -208,7 +208,7 @@ const App = () => {
                 <Route path="/dashboard/submission/message" element={<SellerChatPageList />} />
 
 
-                <Route element={<SellerPermissionRoute permission="userManagement.edit" />}>
+                <Route element={<SellerPermissionRoute permission="userManagement.edit" />}> 
                   <Route path="/dashboard/permissions" element={<PermissionDashboard />} />
                 </Route>
 

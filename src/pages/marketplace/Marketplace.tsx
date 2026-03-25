@@ -128,6 +128,8 @@ const Marketplace = () => {
     bidDate: (selectedBidFilter === "custom" && selectedBidDate) ? selectedBidDate : undefined,
     lang: currentLang,
     type: SITE_TYPE,
+    country: selectedCountry || undefined,
+    condition: selectedCondition || undefined,
   });
 
   const pagination = batchData?.pagination;
@@ -136,30 +138,48 @@ const Marketplace = () => {
   const hasNextPage = pagination?.hasNextPage ?? false;
   const hasPrevPage = pagination?.hasPrevPage ?? false;
 
+  // Compute dynamic bid status from dates (same logic as details page)
+  const computeDynamicStatus = (batch: any): string => {
+    const now = Date.now();
+    if (batch.bid_start_date && batch.bid_end_date) {
+      const start = new Date(batch.bid_start_date).getTime();
+      const end = new Date(batch.bid_end_date).getTime();
+      if (now >= start && now <= end) return "live";
+      if (now < start) return "upcoming";
+      if (now > end) return "ended";
+    }
+    return batch.status || "none";
+  };
+
   // Transform API data for MarketplaceCardGrid
   const listings = useMemo(
     () =>
-      batchData?.data?.map((batch: any) => ({
-        id: batch.batchId,
-        batch_id: batch.batchId,
-        title: batch.title,
-        description: batch.description,
-        category: batch.category,
-        askingPrice: `$${batch.value}`,
-        status: batch.status,
-        bid_start_date: batch.bid_start_date || null,
-        bid_end_date: batch.bid_end_date || null,
-        bids: batch.bids ?? 0,
-        productCount: batch.itemsCount,
-        city: "N/A",
-        image: batch.firstProductImages?.[0] || null,
-        images: batch.firstProductImages || [],
-        firstProductId: batch.firstProductId || null,
-        country: batch.country || null,
-        bid_type: batch.bid_type || null,
-        target_price: batch.target_price || null,
-        currency: batch.currency || null,
-      })) || [],
+      batchData?.data?.map((batch: any) => {
+        const dynamicStatus = computeDynamicStatus(batch);
+        return {
+          id: batch.batchId,
+          batch_id: batch.batchId,
+          title: batch.title,
+          description: batch.description,
+          category: batch.category,
+          askingPrice: `$${batch.value}`,
+          status: batch.status,
+          dynamicStatus,
+          bid_start_date: batch.bid_start_date || null,
+          bid_end_date: batch.bid_end_date || null,
+          bids: batch.bids ?? 0,
+          productCount: batch.itemsCount,
+          city: "N/A",
+          image: batch.firstProductImages?.[0] || null,
+          images: batch.firstProductImages || [],
+          firstProductId: batch.firstProductId || null,
+          country: batch.country || null,
+          condition: batch.condition || null,
+          bid_type: batch.bid_type || null,
+          target_price: batch.target_price || null,
+          currency: batch.currency || null,
+        };
+      }) || [],
     [batchData?.data]
   );
 

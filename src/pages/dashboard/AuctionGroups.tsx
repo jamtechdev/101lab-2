@@ -621,7 +621,7 @@ const AuctionGroups = () => {
     useGetAuctionGroupsQuery({ seller_id: sellerId, site_id: SITE_TYPE });
 
   const { data: batchesData, isLoading: batchesLoading } = useGetBatchesBySellerQuery(
-    { sellerId: String(sellerId), page: 1, type: "machines" },
+    { sellerId: String(sellerId), page: 1, type: import.meta.env.VITE_SITE_TYPE },
     { skip: !sellerId }
   );
   const sellerBatches: BatchOption[] = (batchesData?.data?.data ?? []).map((b: any) => ({

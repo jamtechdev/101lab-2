@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState, useRef } from "react";
+import { decodeHtml } from "@/utils/decodeHtml";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -759,7 +760,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
         // ---------- Call backend WP route ----------
         const response = await axios.post(
-          `${baseURL}wp/create-product?lang=${lang}&type=${SITE_TYPE}`,
+          `${baseURL}wp/create-product-direct?lang=${lang}&type=${SITE_TYPE}`,
+        
           formData,
           {
             headers: {
@@ -966,8 +968,22 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           }),
           estimatedValue: "",
           currency: "TWD",
-          category: product.categories[0]?.term_id.toString() || "",
-          category_name: product.categories[0]?.term || "",
+          category: (() => {
+            const productCat = product.categories?.[0];
+            if (!productCat) return "";
+            const catList: any[] = (data as any)?.data ?? (Array.isArray(data) ? data : []);
+            const match = catList.find(
+              (c: any) =>
+                c.slug === productCat.term_slug ||
+                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_taxonomy_id?.toString() ||
+                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_id?.toString() ||
+                decodeHtml(c.name).toLowerCase() === decodeHtml(productCat.term).toLowerCase()
+            );
+            return match
+              ? (match.id ?? match.term_taxonomy_id ?? match.term_id)?.toString() ?? ""
+              : productCat.term_id?.toString() ?? "";
+          })(),
+          category_name: decodeHtml(product.categories[0]?.term) || "",
           media: product.attachments.map(att => ({
             file: null,
             url: att.url,
@@ -1528,7 +1544,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                               (cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString() === value
                             );
                             updateItem(item.id, "category", value);
-                            updateItem(item.id, "category_name", matched?.name || "");
+                            updateItem(item.id, "category_name", decodeHtml(matched?.name) || "");
                           }}
                         >
                           <SelectTrigger
@@ -1550,7 +1566,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                   key={cat.id ?? cat.term_id}
                                   value={(cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString()}
                                 >
-                                  {cat.name}
+                                  {decodeHtml(cat.name)}
                                 </SelectItem>
                               ))}
                             <SelectItem key="other" value="other">

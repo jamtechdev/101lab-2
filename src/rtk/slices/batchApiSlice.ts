@@ -90,6 +90,9 @@ export interface FetchBatchesParams {
   bidFilter?: "closing_soon" | "upcoming" | "ended" | "custom";
   bidDate?: string;
   lang?: string;
+  type?: string;
+  country?: string;
+  condition?: string;
 }
 
 export interface BrowseListingsParams {
@@ -228,7 +231,9 @@ export const batchApiSlice = createApi({
         if (p?.bidFilter) queryParams.append("bidFilter", p.bidFilter);
         if (p?.bidDate) queryParams.append("bidDate", p.bidDate);
         if (p?.lang) queryParams.append("lang", p.lang);
-        queryParams.append("type", SITE_TYPE);
+        if (p?.country) queryParams.append("country", p.country);
+        if (p?.condition) queryParams.append("condition", p.condition);
+        queryParams.append("type", p?.type ?? SITE_TYPE);
         const queryString = queryParams.toString();
         return {
           url: `/batch/fetch?${queryString}`,

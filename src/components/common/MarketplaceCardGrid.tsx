@@ -224,12 +224,41 @@ const WishlistButton = ({ productId }: { productId: number }) => {
     </button>
   );
 };
+// ── Status Badge (card details section) ──────────────────────────────────────
+const StatusBadge = ({ status }: { status: string }) => {
+  if (!status || status === "none") return null;
+  if (status === "live") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        Live
+      </span>
+    );
+  }
+  if (status === "upcoming") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+        Upcoming
+      </span>
+    );
+  }
+  if (status === "ended") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+        Ended
+      </span>
+    );
+  }
+  return null;
+};
+
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
   const currentLang = i18n.language as 'en' | 'zh';
   const images: string[] = item.images || (item.image ? [item.image] : []);
-  const bidStatus = getBidStatus(item);
+  // Use pre-computed dynamicStatus if available, else compute on the fly
+  const bidStatus = item.dynamicStatus || getBidStatus(item);
   const bids: number = item.bids ?? 0;
   const location: string = item.city && item.city !== "N/A" ? item.city : "";
 
@@ -291,7 +320,7 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
               {location}
             </p>
           )}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               onClick={(e) => { e.stopPropagation(); window.location.href = `/buyer-marketplace/${item.id}`; }}
               className="bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
@@ -309,6 +338,7 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
                 className="w-5 h-[15px] object-cover rounded-[2px] flex-shrink-0"
               />
             )}
+            <StatusBadge status={bidStatus} />
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
