@@ -114,7 +114,15 @@ const mapApiProductToUI = (product: any) => {
   return {
     id: product.product_id,
     title: product.title,
+    title_en: meta["title_en"],
+    title_zh: meta["title_zh"],
+    title_ja: meta["title_ja"],
+    title_th: meta["title_th"],
     description: product.description,
+    description_en: meta["description_en"],
+    description_zh: meta["description_zh"],
+    description_ja: meta["description_ja"],
+    description_th: meta["description_th"],
     images: product.attachments?.map((a: any) => a.url) || [],
     documents: product.documents?.map((doc: any) => ({
       id: doc.id,
@@ -976,6 +984,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     }
   };
 
+  // Get translated title or description based on current language
+  const getTranslatedField = (product: any, fieldName: string) => {
+    const key = `${fieldName}_${i18n.language}`;
+    return product[key] || product[`${fieldName}_en`] || product[fieldName] || '';
+  };
+
   const allowWholePrice = bidDetail?.allowWholePrice ?? false;
   const allowWeightPrice = bidDetail?.allowWeightPrice ?? false;
 
@@ -1022,7 +1036,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                 {/* Left: Image Gallery (2/3 width) */}
                 <div className="lg:col-span-2">
-                  <ProductMedia product={product} />
+                  <ProductMedia product={product} getTranslatedField={getTranslatedField} />
                 </div>
 
                 {/* Right: Action Panel (2/5 width) */}
@@ -1031,7 +1045,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                     {/* Title + ID */}
                     <div>
-                      <h1 className="text-xl font-bold text-foreground leading-tight">{product.title}</h1>
+                      <h1 className="text-xl font-bold text-foreground leading-tight">{getTranslatedField(product, 'title')}</h1>
                       <p className="text-xs text-muted-foreground mt-1 font-mono">Batch #{id}</p>
                     </div>
 
@@ -1505,7 +1519,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   {/* Description */}
                   <div>
                     <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">{t("buyer.description")}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{product.description || "No description available."}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{getTranslatedField(product, 'description') || "No description available."}</p>
                   </div>
 
                   {/* Documents */}
@@ -1968,9 +1982,10 @@ type ProductMediaProps = {
     title: string;
     images: string[];
   };
+  getTranslatedField: (product: any, fieldName: string) => string;
 };
 
-function ProductMedia({ product }: ProductMediaProps) {
+function ProductMedia({ product, getTranslatedField }: ProductMediaProps) {
   const media = product?.images || [];
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
@@ -1994,13 +2009,13 @@ function ProductMedia({ product }: ProductMediaProps) {
           ) : (
             <img
               src={activeMedia}
-              alt={product.title}
+              alt={getTranslatedField(product, 'title')}
               className="w-full h-full object-contain"
             />
           )
         ) : (
           <div className="text-center p-8">
-            <p className="text-muted-foreground text-lg">{product.title}</p>
+            <p className="text-muted-foreground text-lg">{getTranslatedField(product, 'title')}</p>
           </div>
         )}
         {/* Image count badge */}

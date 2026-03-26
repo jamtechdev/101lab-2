@@ -113,6 +113,8 @@ const BuyerMarketplace = () => {
     type: SITE_TYPE,
   });
 
+  
+
   // Get pagination info from API response
   const pagination = batchData?.pagination;
   const totalItems = pagination?.totalItems ?? 0;
@@ -232,6 +234,7 @@ const BuyerMarketplace = () => {
       productCount: 1,
       title: product.title,
       description: product.description,
+      
       category: product.categories?.[0]?.term || "N/A",
       askingPrice: `$${getMetaValue(product.meta, "_price") || "0"}`,
       inspectionDate: null,
@@ -252,6 +255,14 @@ const BuyerMarketplace = () => {
         productCount: batch.itemsCount,
         title: batch.title,
         description: batch.description,
+        title_en: batch.title_en,
+        title_zh: batch.title_zh,
+        title_ja: batch.title_ja,
+        title_th: batch.title_th,
+        description_en: batch.description_en,
+        description_zh: batch.description_zh,
+        description_ja: batch.description_ja,
+        description_th: batch.description_th,
         category: batch.category,
         askingPrice: `$${batch.value}`,
         inspectionDate: batch.inspectionBidDate,

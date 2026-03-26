@@ -237,6 +237,17 @@ export default function BuyerBatchDetails() {
 
     const products = productData.data.products || [];
 
+    // Helper to extract meta value by key
+    const getMetaValue = (meta: any[], key: string) => {
+        return meta?.find((m: any) => m.meta_key === key)?.meta_value || null;
+    };
+
+    // Helper to get translated field from meta
+    const getTranslatedMeta = (meta: any[], fieldName: string, currentLang: string) => {
+        const key = `${fieldName}_${currentLang}`;
+        return getMetaValue(meta, key) || getMetaValue(meta, `${fieldName}_en`) || null;
+    };
+
     const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setPaymentData((prev) => ({ ...prev, [name]: value }));
@@ -522,16 +533,20 @@ export default function BuyerBatchDetails() {
 
                                                 const image = product.attachments?.[0]?.url;
 
+                                                // Get translated title and description based on current language
+                                                const translatedTitle = getTranslatedMeta(product.meta, 'title', i18n.language) || product.title || `Product #${product.product_id}`;
+                                                const translatedDescription = getTranslatedMeta(product.meta, 'description', i18n.language) || product.description || null;
+
                                                 return (
                                                     <Card
-                                                        key={product.product_id}
+                                                        key={`${product.product_id}-${i18n.language}`}
                                                         className="overflow-hidden hover:shadow-md transition-shadow border"
                                                     >
                                                         <div className="flex gap-4 p-4">
                                                             {image ? (
                                                                 <img
                                                                     src={image}
-                                                                    alt={product.title}
+                                                                    alt={translatedTitle}
                                                                     className="w-24 h-24 object-cover rounded-lg border"
                                                                 />
                                                             ) : (
@@ -541,10 +556,10 @@ export default function BuyerBatchDetails() {
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <h3 className="font-semibold text-lg mb-1 line-clamp-1">
-                                                                    {product.title}
+                                                                    {translatedTitle}
                                                                 </h3>
                                                                 <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                                                                    {product.description || t('buyerDashboard.noDescriptionAvailable')}
+                                                                    {translatedDescription || t('buyerDashboard.noDescriptionAvailable')}
                                                                 </p>
                                                                 <div className="space-y-1 text-sm">
                                                                     {seller && (

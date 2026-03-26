@@ -7,6 +7,7 @@ import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
 import { SITE_CATEGORIES, HOME_CATEGORY_COUNT, HOME_PRODUCT_ROWS_COUNT, sortByConfig } from "@/config/categories";
 import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight, Clock, ShieldCheck, ChevronRight, ChevronLeft,
@@ -758,11 +759,16 @@ const BrowseByCategorySection = () => {
 
 // ─── Category Product Card (Surplex style) ──────────────────────────────────
 const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => void }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
   const isLive = batch.status === "live_for_bids";
   const images: string[] = (batch.firstProductImages as string[]) || [];
   const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
+
+  // Get translated title based on current language
+  const translationKey = `title_${currentLang}`;
+  const translatedTitle = batch[translationKey] || batch.title || `Batch #${batch.batchId}`;
 
   return (
     <div
@@ -797,7 +803,7 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
           {t("landing.batchId")} #{batch.batchId}
         </p>
         <h4 className="font-bold text-[12px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {batch.title || `${batch.category || "Industrial"} Lot #${batch.batchId}`}
+          {translatedTitle}
         </h4>
         <div className="flex items-center gap-1.5 mt-1">
           <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
@@ -830,7 +836,9 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
 
 // ─── Single Category Row (horizontal scroll + arrows) ─────────────────────────
 const CategoryProductRow = ({ category }: { category: { slug: string; name: string } }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { getTranslatedCategory } = useCategoryCache();
+  const currentLang = (i18n.language as 'en' | 'zh') || 'en';
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
@@ -841,6 +849,7 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
     page: 1,
     limit: 10,
     type: SITE_TYPE,
+    lang: currentLang,
   });
   const batches: any[] = data?.data ?? [];
 
@@ -863,7 +872,9 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
   return (
     <div className="py-6 border-b border-border last:border-0">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-foreground">{category.name}</h3>
+        <h3 className="text-base font-bold text-foreground">
+          {currentLang === 'zh' ? getTranslatedCategory(category.name, 'zh') : category.name}
+        </h3>
         <Link
           to={`/buyer-marketplace?category=${category.slug}`}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
@@ -908,7 +919,7 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
           >
             {batches.map((batch) => (
               <CategoryProductCard
-                key={batch.batchId}
+                key={`${batch.batchId}-${currentLang}`}
                 batch={batch}
                 onClick={() => navigate(`/buyer-marketplace/${batch.batchId}`)}
               />

@@ -13,11 +13,13 @@ import Header from "@/components/common/Header";
 import CategoryBar from "@/components/common/CategoryBar";
 import BuyerMarketplaceFilters from "@/components/common/BuyerMarketplaceFilters";
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
 
 const Marketplace = () => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
   const navigate = useNavigate();
+  const categoryCache = useCategoryCache();
 
   // URL-synced state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -161,6 +163,14 @@ const Marketplace = () => {
           batch_id: batch.batchId,
           title: batch.title,
           description: batch.description,
+          title_en: batch.title_en,
+          title_zh: batch.title_zh,
+          title_ja: batch.title_ja,
+          title_th: batch.title_th,
+          description_en: batch.description_en,
+          description_zh: batch.description_zh,
+          description_ja: batch.description_ja,
+          description_th: batch.description_th,
           category: batch.category,
           askingPrice: `$${batch.value}`,
           status: batch.status,

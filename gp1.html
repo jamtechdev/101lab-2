@@ -101,6 +101,7 @@
   <h2 id="roleGreet">Welcome!</h2>
   <button class="role-btn btn-green" onclick="goHost()">🎬 Go Live (Host)</button>
   <button class="role-btn btn-primary" style="margin-top:4px" onclick="goViewer()">👁 Watch a Stream (Viewer)</button>
+  <button class="role-btn btn-orange" style="margin-top:4px;display:none" id="resumeBtn" onclick="resumeStream()">🔄 Resume Stream</button>
 </div>
 
 <!-- ══════════════════ HOST SCREEN ══════════════════ -->
@@ -297,6 +298,13 @@ async function login() {
     document.getElementById('roleGreet').textContent = `Hi ${currentUser.fullName || currentUser.username || 'User'} 👋`;
     connectSocket();
     showScreen('roleScreen');
+
+    // Check if there's a stream to resume
+    const savedStreamId = localStorage.getItem('lastStreamId');
+    if (savedStreamId) {
+      document.getElementById('resumeBtn').style.display = 'block';
+      log(`💾 Resumable stream found: ${savedStreamId}`);
+    }
   } catch(e) {
     document.getElementById('loginErr').textContent = e.message;
     log(`❌ Login error: ${e.message}`, '#f55');
@@ -440,6 +448,7 @@ function connectSocket() {
       showScreen('endedScreen');
     }
     if (role === 'host') {
+      localStorage.removeItem('lastStreamId');
       showScreen('endedScreen');
     }
   });
@@ -471,6 +480,59 @@ async function goHost() {
     localStream = createFakeStream();
     document.getElementById('hostVideo').srcObject = localStream;
     log('🎨 Fake camera stream started');
+  }
+}
+
+async function resumeStream() {
+  const resumeId = localStorage.getItem('lastStreamId');
+  if (!resumeId) { alert('No stream to resume'); return; }
+
+  role = 'host';
+  showScreen('hostScreen');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    document.getElementById('hostVideo').srcObject = localStream;
+    log('📷 Camera started');
+  } catch(e) {
+    log(`⚠️ Real camera unavailable (${e.message}) — using fake camera`, '#fa0');
+    localStream = createFakeStream();
+    document.getElementById('hostVideo').srcObject = localStream;
+    log('🎨 Fake camera stream started');
+  }
+
+  // Go live with SAME streamId (no create)
+  streamId = resumeId;
+  currentStreamId = resumeId;
+  document.getElementById('createBtn').textContent = 'Resuming…';
+  document.getElementById('createBtn').disabled = true;
+
+  try {
+    // Skip create, just go live with same stream ID
+    await api('POST', `/api/livestream/${resumeId}/go-live`, {});
+    log('🔄 Stream RESUMED');
+
+    socket.emit('presence:online', { userId: currentUser.id });
+    socket.emit('livestream_host_start', {
+      streamId: resumeId,
+      userId:         currentUser.id,
+      userName:       currentUser.fullName || currentUser.username,
+      userProfilePic: currentUser.profilePic || '',
+    });
+
+    // Show live UI
+    document.getElementById('liveBadge').style.display = 'flex';
+    document.getElementById('viewerPill').style.display = 'flex';
+    document.getElementById('endBtn').style.display = 'block';
+    document.getElementById('hostReactionsRow').style.display = 'flex';
+    document.getElementById('hostChatRow').style.display = 'flex';
+    document.getElementById('muteBtn').style.display = 'block';
+    document.getElementById('videoBtn').style.display = 'block';
+    document.getElementById('createBtn').style.display = 'none';
+  } catch(e) {
+    log(`❌ Resume error: ${e.message}`, '#f55');
+    alert(`Resume Failed: ${e.message}`);
+    document.getElementById('createBtn').textContent = '🔴 Go Live';
+    document.getElementById('createBtn').disabled = false;
   }
 }
 
@@ -540,6 +602,7 @@ async function createAndGoLive() {
     const createRes = await api('POST', '/api/livestream/create', { title: 'Web Test Stream', description: 'Testing' });
     streamId = createRes.stream.id;
     currentStreamId = streamId;
+    localStorage.setItem('lastStreamId', streamId); // Save for resume
     log(`✅ Stream created: ${streamId}`);
 
     // Show stream ID so viewer can use it
@@ -613,6 +676,7 @@ async function endStream() {
   try {
     await api('POST', `/api/livestream/${streamId}/end`, {});
     socket.emit('livestream_host_end', { streamId, userId: currentUser.id });
+    localStorage.removeItem('lastStreamId'); // Clear resume data
     cleanupHost();
     showScreen('endedScreen');
     log('📵 Stream ended by host');

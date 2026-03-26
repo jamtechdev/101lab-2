@@ -2,9 +2,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store, Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { translateCategoryName } from "@/utils/categoryTranslations";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
 
 // ── Country ISO lookup ────────────────────────────────────────────────────────
 const COUNTRY_TO_ISO: Record<string, string> = {
@@ -255,12 +255,44 @@ const StatusBadge = ({ status }: { status: string }) => {
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n } = useTranslation();
-  const currentLang = i18n.language as 'en' | 'zh';
+  const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
+  const { getTranslatedCategory } = useCategoryCache();
+   
+
+
+  
+    
+  
+
+
   const images: string[] = item.images || (item.image ? [item.image] : []);
   // Use pre-computed dynamicStatus if available, else compute on the fly
   const bidStatus = item.dynamicStatus || getBidStatus(item);
   const bids: number = item.bids ?? 0;
   const location: string = item.city && item.city !== "N/A" ? item.city : "";
+
+   
+
+
+  // Get translated title from backend response
+  // Map language codes: 'zh' -> 'title_zh', 'en' -> 'title_en', 'ja' -> 'title_ja', 'th' -> 'title_th'
+  const translationKey = `title_${currentLang}`;
+
+
+
+  const translatedTitle = item[translationKey] || item.title || `Batch #${item.id}`;
+
+
+  
+
+  // Get translated description from backend response
+  const descriptionKey = `description_${currentLang}`;
+  const translatedDescription = item[descriptionKey] || item.description || "";
+
+  // Get translated category from cache (supports EN and ZH only)
+  const translatedCategory = currentLang === 'zh' ? getTranslatedCategory(item.category, 'zh') : item.category || "N/A";
+
+  
 
   return (
     <div
@@ -311,7 +343,7 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
       {/* Details */}
       <div className="px-4 pt-3 pb-3">
         <h3 className="font-bold text-[15px] text-foreground leading-snug line-clamp-2 uppercase group-hover:text-primary transition-colors min-h-[2.5rem]">
-          {item.title || `Batch #${item.id}`}
+          {translatedTitle}
         </h3>
         <div className="mt-1 space-y-0.5 text-[12px] text-muted-foreground">
           {location && (
@@ -327,8 +359,8 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
             >
               #{item.id}
             </span>
-            {item.category && item.category !== "N/A" && (
-              <span className="truncate">{translateCategoryName(item.category, currentLang)}</span>
+            {translatedCategory && translatedCategory !== "N/A" && (
+              <span className="truncate">{translatedCategory}</span>
             )}
             {item.country && getCountryIso(item.country) && (
               <img
@@ -370,12 +402,17 @@ interface MarketplaceCardGridProps {
 }
 
 const MarketplaceCardGrid = ({ listings, onItemClick }: MarketplaceCardGridProps) => {
+  const { i18n } = useTranslation();
+  // Force re-render when language changes
+  const currentLang = i18n.language;
+
   if (listings.length === 0) return null;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {listings.map((item) => (
-        <MarketplaceCard key={item.id} item={item} onClick={() => onItemClick(item)} />
+        // Use batchId as key for more stability, but add language to force re-render on language change
+        <MarketplaceCard key={`${item.batchId || item.id}-${currentLang}`} item={item} onClick={() => onItemClick(item)} />
       ))}
     </div>
   );
