@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import SEOMeta from "@/components/common/SEOMeta";
+import { getSEO } from "@/config/seoConfig";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
 import { SITE_CATEGORIES, HOME_CATEGORY_COUNT, HOME_PRODUCT_ROWS_COUNT, sortByConfig } from "@/config/categories";
@@ -1091,7 +1093,7 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
 // ─── Auction Group Section — horizontal scroll, same layout as CategorySection ─
 const AuctionGroupSection = () => {
   const { t } = useTranslation();
-  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: import.meta.env.VITE_SITE_TYPE });
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE });
   const groups = (data?.data ?? []).filter(
     (g) =>
       g
@@ -1189,8 +1191,11 @@ const Landing = () => {
   const { t } = useTranslation();
   const [sellModalOpen, setSellModalOpen] = useState(false);
 
+  const seoData = getSEO('home');
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta {...seoData} />
       <Header />
 
 

@@ -73,7 +73,7 @@ export const auctionGroupApi = createApi({
       { site_id?: string }
     >({
       query: ({ site_id } = {}) => ({
-        url: `/auction-group/home?site_id=${site_id ?? import.meta.env.VITE_SITE_TYPE}`,
+        url: `/auction-group/home?site_id=${site_id ?? SITE_TYPE}`,
         method: "GET",
       }),
       providesTags: ["AuctionGroups"],

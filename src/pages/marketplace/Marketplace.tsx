@@ -14,6 +14,10 @@ import CategoryBar from "@/components/common/CategoryBar";
 import BuyerMarketplaceFilters from "@/components/common/BuyerMarketplaceFilters";
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
+import SEOMeta from "@/components/common/SEOMeta";
+
+// ✨ Smoothness - skeleton loaders
+import { ProductCardSkeleton } from "@/components/common/Skeletons";
 
 const Marketplace = () => {
   const { t, i18n } = useTranslation();
@@ -216,8 +220,21 @@ const Marketplace = () => {
 
   const hasActiveFilter = selectedCategory || selectedCountry || selectedCondition || selectedBidFilter;
 
+  const pageTitle = searchQuery
+    ? `Buy ${searchQuery} - GreenBidz Marketplace`
+    : "Industrial Equipment Marketplace - GreenBidz";
+  const pageDescription = searchQuery
+    ? `Browse and buy quality ${searchQuery} on GreenBidz. Connect with trusted sellers of industrial equipment and machinery.`
+    : "Discover industrial equipment, machinery, and recyclable materials from verified sellers worldwide on GreenBidz.";
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta
+        title={pageTitle}
+        description={pageDescription}
+        keywords="buy equipment, marketplace, industrial equipment, machinery, sellers, equipment for sale"
+        type="website"
+      />
       <Header />
 
       {/* <CategoryBar
@@ -308,13 +325,16 @@ const Marketplace = () => {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Loading */}
+            {/* Loading - Skeleton */}
             {isLoading && (
-              <div className="flex justify-center items-center py-20">
-                <div className="text-center space-y-4">
-                  <Loader2 className="w-12 h-12 animate-spin text-accent mx-auto" />
-                  <p className="text-muted-foreground">Loading marketplace listings...</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <Store className="w-4 h-4 text-primary" />
+                    Loading listings...
+                  </h2>
                 </div>
+                <ProductCardSkeleton count={12} />
               </div>
             )}
 

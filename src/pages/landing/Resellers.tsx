@@ -22,6 +22,7 @@ import heroImage from "@/assets/resellers-hero.jpg";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
 import Header from "@/components/common/Header";
+import SEOMeta from "@/components/common/SEOMeta";
 
 const Resellers = () => {
   const navigate = useNavigate();
@@ -85,6 +86,12 @@ const Resellers = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta
+        title="Recyclers & Resellers Marketplace - GreenBidz"
+        description="Get daily requests from factories and manufacturers. Source quality equipment and materials at scale. Grow your recycling business with GreenBidz enterprise network."
+        keywords="recycler marketplace, reseller platform, equipment sourcing, factory requests, bulk equipment"
+        type="website"
+      />
       {/* Header */}
       {/* <header className="border-b border-border bg-card shadow-soft">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

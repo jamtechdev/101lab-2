@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import SEOMeta from "@/components/common/SEOMeta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -190,6 +191,12 @@ const SellerLandingPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <SEOMeta
+        title="Sell With GreenBidz - Global Marketplace for Equipment & Materials"
+        description="List and sell your equipment globally. Reach thousands of verified buyers. Fast approvals, transparent pricing, and secure transactions with GreenBidz."
+        keywords="sell equipment online, marketplace for sellers, industrial equipment sales, global buyer network"
+        type="website"
+      />
       <Header />
 
       {/* ── HERO + FORM ─────────────────────────────────────────────────── */}

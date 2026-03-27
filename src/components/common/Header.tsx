@@ -23,6 +23,7 @@ const languages = [
 ];
 
 import { SITE_CATEGORIES, sortByConfig } from "@/config/categories";
+import { SITE_NAME } from "@/config/branding";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -185,7 +186,7 @@ const Header = () => {
                 className="h-7 sm:h-8 w-auto"
               />
               <div className="hidden sm:block leading-tight">
-                <span className="text-sm font-bold text-foreground">101machines</span>
+                <span className="text-sm font-bold text-foreground">{SITE_NAME}</span>
                 <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
               </div>
             </div>

@@ -8,6 +8,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { store } from "./rtk/store";
 import { LoginModalProvider } from "./context/LoginModalContext";
 
+// ✨ Smoothness imports
+import './styles/smoothness.css';
+import { ScrollToTopButton } from "@/components/common/SmoothScroll";
+import { enableSmoothScroll } from "@/utils/smoothnessUtils";
+
 import Landing from "./pages/landing/Landing";
 import Factories from "./pages/landing/Factories";
 import Resellers from "./pages/landing/Resellers";
@@ -56,6 +61,7 @@ import AdminAutoApproval from "./pages/Admin/AdminAutoApproval";
 import AdminCommission from "./pages/Admin/AdminCommission.js";
 
 import AIChat from "./pages/buyer/AiChat";
+import SmoothnessDemo from "./pages/SmoothnessDemo";
 
 import GuestRoute from "./context/GuestRoute";
 import SellerPermissionRoute from "./context/SellerPermissionRoute";
@@ -116,11 +122,17 @@ import DirectSalesPage from "./pages/DirectSalesPage/DirectSalesPage.js";
 import MyLots from "./pages/buyer/MyLots";
 import AuctionGroups from "./pages/dashboard/AuctionGroups";
 import BulkUpload from "./pages/dashboard/BulkUpload";
+import SEOAnalytics from "./pages/dashboard/SEOAnalytics";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const userId = localStorage.getItem("userId");
+
+  useEffect(() => {
+    // ✨ Enable smooth scrolling globally
+    enableSmoothScroll();
+  }, []);
 
   useEffect(() => {
     const role = localStorage.getItem("userRole");
@@ -155,6 +167,7 @@ const App = () => {
           <SellerNotificationListener sellerId={userId} isSeller={true} />
 
           <BrowserRouter>
+            <ScrollToTopButton showAfter={300} />
             <LoginModalProvider>
             <Routes>
               {/* PUBLIC */}
@@ -170,7 +183,8 @@ const App = () => {
               </Route>
 
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              
+              <Route path="/seo-analytics" element={<SEOAnalytics />} />
+
               {/* PUBLIC MARKETPLACE */}
               <Route path="/buyer-marketplace" element={<Marketplace />} />
               <Route path="/buyer-marketplace/:id" element={<ListingDetail />} />
@@ -308,6 +322,7 @@ const App = () => {
 
               {/* MISC */}
               <Route path="/ai/chat1" element={<AIChat />} />
+              <Route path="/smoothness-demo" element={<SmoothnessDemo />} />
               <Route path="/test" element={<TestRendeer />} />
 
 
