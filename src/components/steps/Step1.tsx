@@ -10,7 +10,8 @@ import logo from "@/assets/greenbidz_logo.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 
 interface MediaFile {
   url: string;
@@ -546,14 +547,27 @@ const UploadMethod = () => {
                       </div>
 
                       <div>
-                        <Label htmlFor={`description-${item.id}`}>Description 描述</Label>
-                        <Textarea
-                          id={`description-${item.id}`}
-                          value={item.description}
-                          onChange={(e) => updateItem(item.id, "description", e.target.value)}
-                          placeholder="Describe your item 描述您的項目"
-                          className="mt-1 min-h-[100px]"
-                        />
+                        <Label>Description 描述</Label>
+                        <div className="mt-1">
+                          <SunEditor
+                            setContents={item.description}
+                            onChange={(content) => updateItem(item.id, "description", content)}
+                            setOptions={{
+                              height: "250",
+                              buttonList: [
+                                ["undo", "redo"],
+                                ["font", "fontSize", "formatBlock"],
+                                ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+                                ["fontColor", "hiliteColor"],
+                                ["outdent", "indent"],
+                                ["align", "horizontalRule", "list", "lineHeight"],
+                                ["table", "link", "image"],
+                                ["fullScreen", "showBlocks", "codeView"],
+                                ["removeFormat"],
+                              ],
+                            }}
+                          />
+                        </div>
                       </div>
 
                       <div>

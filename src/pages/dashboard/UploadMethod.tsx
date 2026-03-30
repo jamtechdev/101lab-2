@@ -12,7 +12,8 @@ import logo from "@/assets/greenbidz_logo.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import { useGetCategoriesQuery, useVerifyUserQuery, useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { useGetUsersQuery } from "@/rtk/slices/adminApiSlice";
@@ -1696,7 +1697,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent
                                   align="start"
-                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2"
+                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2 z-[9999]"
                                 >
                                   {[
                                     "new",
@@ -1782,7 +1783,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
                                 <DropdownMenuContent
                                   align="start"
-                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2"
+                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2 z-[9999]"
                                 >
                                   {["deinstalled", "needDeinstall", "collected", "other"].map(
                                     (status) => (
@@ -1818,19 +1819,26 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                 {t("upload.description")}
                                 <span className="text-destructive">*</span>
                               </Label>
-                              <Textarea
-                                id={`description-${item.id}`}
-                                value={item.description}
-                                onChange={(e) =>
-                                  updateItem(item.id, "description", e.target.value)
-                                }
-                                placeholder={t("upload.descriptionPlaceholder")}
-                                className={cn(
-                                  "mt-1 min-h-[100px] border-border/50 focus:border-accent",
-                                  errorsForItem.description &&
-                                  "border-destructive focus-visible:ring-destructive"
-                                )}
-                              />
+                              <div className="mt-1">
+                                <SunEditor
+                                  setContents={item.description}
+                                  onChange={(content) => updateItem(item.id, "description", content)}
+                                  setOptions={{
+                                    height: "250",
+                                    buttonList: [
+                                      ["undo", "redo"],
+                                      ["font", "fontSize", "formatBlock"],
+                                      ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+                                      ["fontColor", "hiliteColor"],
+                                      ["outdent", "indent"],
+                                      ["align", "horizontalRule", "list", "lineHeight"],
+                                      ["table", "link", "image"],
+                                      ["fullScreen", "showBlocks", "codeView"],
+                                      ["removeFormat"],
+                                    ],
+                                  }}
+                                />
+                              </div>
                             </div>
 
                             {/* <div>

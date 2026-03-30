@@ -1519,7 +1519,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   {/* Description */}
                   <div>
                     <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">{t("buyer.description")}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{getTranslatedField(product, 'description') || "No description available."}</p>
+                    {(() => {
+                      const desc = getTranslatedField(product, 'description') || "";
+                      return /<[a-z][\s\S]*>/i.test(desc)
+                        ? <div className="text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                        : <p className="text-sm text-muted-foreground leading-relaxed">{desc || "No description available."}</p>;
+                    })()}
                   </div>
 
                   {/* Documents */}

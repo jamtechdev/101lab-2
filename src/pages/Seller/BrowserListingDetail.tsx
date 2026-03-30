@@ -251,7 +251,12 @@ export default function BrowserListingDetail() {
             {(getTranslatedField('description') || product?.description) && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl font-semibold text-neutral-900 mb-4">{t('browserListingDetail.details')}</h2>
-                <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{getTranslatedField('description')}</p>
+                {(() => {
+                  const desc = getTranslatedField('description') || "";
+                  return /<[a-z][\s\S]*>/i.test(desc)
+                    ? <div className="text-neutral-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                    : <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{desc}</p>;
+                })()}
 
                 {product.categories && product.categories.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-neutral-200">
