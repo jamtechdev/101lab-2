@@ -451,14 +451,20 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       return;
     }
 
+    const currentItem = items.find(i => i.id === itemId);
+    const currentDocCount = currentItem?.documentFile?.length || 0;
+    const validFiles = files.slice(0, Math.max(0, 5 - currentDocCount));
+    if (validFiles.length < files.length) {
+      toast.error(t("upload.maxDocumentsAllowed"));
+    }
+    if (validFiles.length === 0) return;
 
     setItems(prev =>
       prev.map(item =>
         item.id === itemId
           ? {
             ...item,
-
-            documentFile: [...(item.documentFile || []), ...files],
+            documentFile: [...(item.documentFile || []), ...validFiles],
           }
           : item
       )
@@ -493,9 +499,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       const item = items.find(i => i.id === itemId);
       if (!item) continue;
 
-      // Check max 10 photos + 1 video
-      const hasVideo = item.media.some(m => m.type === "video");
-      if (isVideo && hasVideo) {
+      // Check max 10 photos + 2 videos
+      if (isVideo && item.media.filter(m => m.type === "video").length >= 2) {
         toast.error(t('upload.onlyOneVideoAllowed'));
         continue;
       }
@@ -1190,6 +1195,9 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("upload.addPhotosVideo")}
                         </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1 bg-muted/40 rounded px-2 py-1">
+                          {t("upload.mediaLimitsHint")}
+                        </p>
                       </div>
 
                       {item.media.length > 0 && (
@@ -1225,7 +1233,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         </div>
                       )}
 
-                      {item.media.length < 11 && (
+                      {(item.media.filter(m => m.type === "image").length < 10 || item.media.filter(m => m.type === "video").length < 2) && (
                         <label className="border-2 border-dashed border-border/50 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
                           <ImagePlus className="w-8 h-8 text-muted-foreground mb-2 group-hover:text-accent transition-colors" />
                           <p className="text-sm font-medium text-foreground">{t("upload.addPhotosOrVideo")}</p>
@@ -1265,8 +1273,11 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         {t("upload.uploadInventoryFile")}{" "}
                         <span className="text-muted-foreground font-normal">({t("upload.optional")})</span>
                       </Label>
-                      <p className="text-xs text-muted-foreground mb-3 mt-1">
+                      <p className="text-xs text-muted-foreground mb-1 mt-1">
                         {t("upload.uploadFileTypes")}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mb-3 bg-muted/40 rounded px-2 py-1">
+                        {t("upload.documentLimitsHint")}
                       </p>
 
                       <div className="flex items-center gap-3 flex-wrap">
@@ -1715,7 +1726,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                         const updated = checked
                                           ? (currentConditions.includes(cond) ? currentConditions : [...currentConditions, cond])
                                           : currentConditions.filter((c) => c !== cond);
-
+    
                                         updateItem(item.id, "condition", updated);
                                       }}
                                       className="rounded-md px-3 py-2 text-sm font-medium cursor-pointer  hover:bg-muted/70 transition-all duration-150"

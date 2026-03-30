@@ -123,7 +123,7 @@ const mapApiProductToUI = (product: any) => {
     description_zh: meta["description_zh"],
     description_ja: meta["description_ja"],
     description_th: meta["description_th"],
-    images: product.attachments?.map((a: any) => a.url) || [],
+    images: product.attachments?.filter((a: any) => a.type?.startsWith('image') || a.type?.startsWith('video')).map((a: any) => a.url) || [],
     documents: product.documents?.map((doc: any) => ({
       id: doc.id,
       url: doc.url,
