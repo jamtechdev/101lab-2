@@ -1200,7 +1200,7 @@ const Landing = () => {
 
 
       {/* ── Auctions Closing Soon — Auction Groups ───────────────── */}
-      <AuctionGroupSection />
+      {/* <AuctionGroupSection /> */}
 
       {/* ── Highlighted Lots — by Category ───────────────────────── */}
       <CategorySection
