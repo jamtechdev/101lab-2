@@ -1072,7 +1072,7 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
 // ─── Auction Group Section — horizontal scroll, same layout as CategorySection ─
 const AuctionGroupSection = () => {
   const { t } = useTranslation();
-  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "machines" });
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "LabGreenbidz" });
   const groups = (data?.data ?? []).filter(
     (g) =>
       !(g.earliestBidEndDate && new Date(g.earliestBidEndDate).getTime() < Date.now())

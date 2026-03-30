@@ -249,7 +249,7 @@ export const apiSlice = createApi({
         const rawLang = lang || localStorage.getItem('language') || 'en';
         const currentLang = rawLang === 'zh' ? 'zh-hant' : rawLang;
         return {
-          url: `/product/machines/category?language=${currentLang}`,
+        url: "/product/lab/category",
           method: "GET",
         };
       },

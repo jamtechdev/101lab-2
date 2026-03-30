@@ -33,7 +33,6 @@ const Header = () => {
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
-  const [hoveredCatIdx, setHoveredCatIdx] = useState(0);
   const [visibleCatCount, setVisibleCatCount] = useState(3);
 
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
@@ -179,7 +178,7 @@ const Header = () => {
                 className="h-7 sm:h-8 w-auto"
               />
               <div className="hidden sm:block leading-tight">
-                <span className="text-sm font-bold text-foreground">101machines</span>
+                <span className="text-sm font-bold text-foreground">101Lab</span>
                 <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
               </div>
             </div>
@@ -326,63 +325,26 @@ const Header = () => {
                 All categories
                 <ChevronDown className={`h-3 w-3 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`} />
               </button>
-              {isCategoryOpen && <div className="absolute left-0 top-full w-full h-1 z-50" />}
               {isCategoryOpen && (
-                <div className="fixed left-0 right-0 top-auto z-50 bg-popover border-t border-border shadow-xl" style={{ marginTop: '1px' }}>
-                  <div className="container mx-auto px-4 flex min-h-[320px] max-h-[70vh]">
-                    {/* Left sidebar — category list */}
-                    <div className="w-[260px] border-r border-border overflow-y-auto py-2 flex-shrink-0">
-                      {categories.map((cat, idx) => (
-                        <button
-                          key={cat.slug}
-                          onMouseEnter={() => setHoveredCatIdx(idx)}
-                          onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${hoveredCatIdx === idx
-                              ? "bg-secondary text-primary font-medium"
-                              : "text-popover-foreground hover:bg-secondary/50"
-                            }`}
-                        >
-                          <span>{cat.name}</span>
-                          <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0" />
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Right panel — category detail */}
-                    <div className="flex-1 p-6 overflow-y-auto">
-                      {categories[hoveredCatIdx] && (
-                        <>
-                          <h3 className="text-lg font-bold text-foreground mb-1">{categories[hoveredCatIdx].name}</h3>
-                          <Link
-                            to={`/buyer-marketplace?category=${categories[hoveredCatIdx].slug}`}
-                            onClick={() => setIsCategoryOpen(false)}
-                            className="text-sm font-semibold text-primary hover:underline inline-block mb-5"
-                          >
-                            SHOW ALL
-                          </Link>
-
-                          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                            Browse all available {categories[hoveredCatIdx].name.toLowerCase()} listings. Find auctions, direct sales, and verified equipment from trusted sellers worldwide.
-                          </p>
-
-                          <div className="border-t border-border pt-4">
-                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-3 font-medium">More categories</p>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
-                              {categories.filter((_, i) => i !== hoveredCatIdx).slice(0, 10).map((cat) => (
-                                <Link
-                                  key={cat.slug}
-                                  to={`/buyer-marketplace?category=${cat.slug}`}
-                                  onClick={() => setIsCategoryOpen(false)}
-                                  className="text-sm text-popover-foreground hover:text-primary transition-colors py-1 truncate"
-                                >
-                                  {cat.name}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </div>
+                <div className="absolute left-0 top-full pt-1 z-50">
+                  <div className="bg-popover border border-border rounded shadow-lg w-[220px] max-h-[320px] overflow-y-auto py-1">
+                    <Link
+                      to="/buyer-marketplace"
+                      onClick={() => setIsCategoryOpen(false)}
+                      className="flex items-center px-3 py-2 text-sm font-medium text-popover-foreground hover:bg-secondary hover:text-primary transition-colors"
+                    >
+                      All categories
+                    </Link>
+                    {categories.map((cat) => (
+                      <Link
+                        key={cat.slug}
+                        to={`/buyer-marketplace?category=${cat.slug}`}
+                        onClick={() => setIsCategoryOpen(false)}
+                        className="flex items-center px-3 py-2 text-sm text-popover-foreground hover:bg-secondary hover:text-primary transition-colors"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               )}
