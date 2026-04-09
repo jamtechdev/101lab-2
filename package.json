@@ -8,6 +8,14 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "generate:bulk-templates": "node scripts/generate-bulk-upload-templates.mjs",
+    "convert:bio-pharma-bulk": "node scripts/convert-bio-pharma-export-to-bulk.mjs",
+    "convert:101machine-industrial": "node scripts/convert-101machine-industrial-to-bulk.mjs",
+    "audit:bulk-images": "node scripts/audit-bulk-images.mjs",
+    "merge:bulk-images": "node scripts/merge-image-xlsx-into-bulk.mjs",
+    "monday:list-boards": "node scripts/monday-list-board-meta.mjs --boards",
+    "monday:list-board": "node scripts/monday-list-board-meta.mjs",
+    "set:batch-dates": "node scripts/set-batch-bidding-dates.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -7,6 +7,8 @@ import { SITE_TYPE } from "@/config/site";
 export interface AuctionGroup {
   group_id: number;
   title: string;
+  slug?: string;
+  description?: string;
   country: string;
   languages: string[];
   site_id: string;
@@ -19,6 +21,16 @@ export interface AuctionGroup {
 export interface AuctionGroupHomeItem {
   group_id: number;
   title: string;
+  title_en?: string;
+  title_zh?: string;
+  title_ja?: string;
+  title_th?: string;
+  slug?: string;
+  description?: string;
+  description_en?: string;
+  description_zh?: string;
+  description_ja?: string;
+  description_th?: string;
   country: string;
   languages: string[];
   location: string;
@@ -28,6 +40,7 @@ export interface AuctionGroupHomeItem {
   earliestBidStartDate: string | null;
   earliestBidEndDate: string | null;
   hasActiveBid: boolean;
+  featured_type?: 'none' | 'featured' | 'highlighted' | 'both';
 }
 
 export interface AuctionBatchInfo {
@@ -46,6 +59,8 @@ export interface AuctionItem {
 
 export interface CreateAuctionGroupRequest {
   title: string;
+  slug?: string;
+  description?: string;
   country: string;
   languages: string[];
   seller_id: number;
@@ -55,6 +70,8 @@ export interface CreateAuctionGroupRequest {
 export interface UpdateAuctionGroupRequest {
   group_id: number;
   title?: string;
+  slug?: string;
+  description?: string;
   country?: string;
   languages?: string[];
 }
@@ -126,6 +143,20 @@ export const auctionGroupApi = createApi({
       invalidatesTags: ["AuctionGroups"],
     }),
 
+    // Get a single auction group by ID or slug
+    getAuctionGroupDetail: builder.query<
+      { success: boolean; data: AuctionGroupHomeItem },
+      { group_identifier: string | number; site_id?: string }
+    >({
+      query: ({ group_identifier, site_id }) => ({
+        url: `/auction-group/${group_identifier}?site_id=${site_id ?? SITE_TYPE}`,
+        method: "GET",
+      }),
+      providesTags: (_result, _error, { group_identifier }) => [
+        { type: "AuctionGroups", id: group_identifier },
+      ],
+    }),
+
     // Get all auctions within a group
     getAuctionsInGroup: builder.query<
       { success: boolean; data: AuctionItem[] },
@@ -192,6 +223,7 @@ export const auctionGroupApi = createApi({
 export const {
   useGetAuctionGroupsHomeQuery,
   useGetAuctionGroupsQuery,
+  useGetAuctionGroupDetailQuery,
   useCreateAuctionGroupMutation,
   useUpdateAuctionGroupMutation,
   useDeleteAuctionGroupMutation,

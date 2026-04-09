@@ -93,6 +93,7 @@ export interface FetchBatchesParams {
   type?: string;
   country?: string;
   condition?: string;
+  auctionGroup?: string; // Support both ID and slug
 }
 
 export interface BrowseListingsParams {
@@ -233,6 +234,7 @@ export const batchApiSlice = createApi({
         if (p?.lang) queryParams.append("lang", p.lang);
         if (p?.country) queryParams.append("country", p.country);
         if (p?.condition) queryParams.append("condition", p.condition);
+        if (p?.auctionGroup) queryParams.append("auctionGroup", p.auctionGroup);
         queryParams.append("type", p?.type ?? SITE_TYPE);
         const queryString = queryParams.toString();
         return {

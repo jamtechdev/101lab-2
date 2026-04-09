@@ -58,7 +58,8 @@ interface Location {
 
 interface InventoryItem {
   id: string;
-  category: string;
+  parentCategory: string;   // UI only — parent slug for subcategory filtering
+  category: string;          // subcategory id (sent to API as product_category_ids)
   title: string;
   description: string;
   condition: string[];
@@ -188,6 +189,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
   const [items, setItems] = useState<InventoryItem[]>([
     {
       id: "1",
+      parentCategory: "",
       category: "",
       title: "",
       description: "",
@@ -331,6 +333,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       ...items,
       {
         id: newId,
+        parentCategory: "",
         category: "",
         title: "",
         description: "",
@@ -974,22 +977,46 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           }),
           estimatedValue: "",
           currency: "TWD",
-          category: (() => {
+          ...(() => {
             const productCat = product.categories?.[0];
-            if (!productCat) return "";
-            const catList: any[] = (data as any)?.data ?? (Array.isArray(data) ? data : []);
-            const match = catList.find(
-              (c: any) =>
-                c.slug === productCat.term_slug ||
-                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_taxonomy_id?.toString() ||
-                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_id?.toString() ||
-                decodeHtml(c.name).toLowerCase() === decodeHtml(productCat.term).toLowerCase()
-            );
-            return match
-              ? (match.id ?? match.term_taxonomy_id ?? match.term_id)?.toString() ?? ""
-              : productCat.term_id?.toString() ?? "";
+            if (!productCat) return { parentCategory: "", category: "", category_name: "" };
+            const labCats: any[] = Array.isArray(data) ? data : [];
+            // Search subcategories first, then parent categories
+            for (const parent of labCats) {
+              for (const sub of (parent.subcategories ?? [])) {
+                if (
+                  sub.slug === productCat.term_slug ||
+                  sub.id?.toString() === productCat.term_taxonomy_id?.toString() ||
+                  sub.id?.toString() === productCat.term_id?.toString() ||
+                  decodeHtml(sub.name).toLowerCase() === decodeHtml(productCat.term).toLowerCase()
+                ) {
+                  return {
+                    parentCategory: parent.slug,
+                    category: sub.id?.toString() ?? "",
+                    category_name: decodeHtml(sub.name) || "",
+                  };
+                }
+              }
+              // Also check parent itself
+              if (
+                parent.slug === productCat.term_slug ||
+                parent.id?.toString() === productCat.term_taxonomy_id?.toString() ||
+                parent.id?.toString() === productCat.term_id?.toString() ||
+                decodeHtml(parent.name).toLowerCase() === decodeHtml(productCat.term).toLowerCase()
+              ) {
+                return {
+                  parentCategory: parent.slug,
+                  category: parent.id?.toString() ?? "",
+                  category_name: decodeHtml(parent.name) || "",
+                };
+              }
+            }
+            return {
+              parentCategory: "",
+              category: productCat.term_id?.toString() ?? "",
+              category_name: decodeHtml(productCat.term) || "",
+            };
           })(),
-          category_name: decodeHtml(product.categories[0]?.term) || "",
           media: product.attachments.map(att => ({
             file: null,
             url: att.url,
@@ -1265,7 +1292,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                       </Button>
 
 
-                    </div>
+                    </div>s
 
                     {/* File Upload Section */}
                     <div className="mb-6">
@@ -1538,9 +1565,9 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                               }
                             </div>
 
-                            <div>
+                            <div className="space-y-2">
                               <Label
-                                htmlFor={`category-${item.id}`}
+                                htmlFor={`parent-category-${item.id}`}
                                 className={cn(
                                   "text-sm font-medium",
                                   (errorsForItem.category || errorsForItem.category_name) &&
@@ -1551,43 +1578,74 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                 <span className="text-destructive">*</span>
                               </Label>
 
+                              {/* Step 1: Parent category */}
                               <Select
-                                value={item.category}
+                                value={item.parentCategory}
                                 onValueChange={(value) => {
-                                  const matched = data?.data?.find((cat: any) =>
-                                    (cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString() === value
-                                  );
-                                  updateItem(item.id, "category", value);
-                                  updateItem(item.id, "category_name", decodeHtml(matched?.name) || "");
+                                  updateItem(item.id, "parentCategory", value);
+                                  updateItem(item.id, "category", "");
+                                  updateItem(item.id, "category_name", "");
                                 }}
                               >
                                 <SelectTrigger
-                                  id={`category-${item.id}`}
+                                  id={`parent-category-${item.id}`}
                                   className={cn(
                                     "mt-1 border-border/50 focus:border-accent",
                                     errorsForItem.category &&
+                                    !item.parentCategory &&
                                     "border-destructive focus-visible:ring-destructive"
                                   )}
                                 >
                                   <SelectValue placeholder={t("upload.selectCategory")} />
                                 </SelectTrigger>
-
                                 <SelectContent>
-                                  {Array.isArray(data?.data) &&
-                                    data?.data.length > 0 &&
-                                    data.data.map((cat: any) => (
-                                      <SelectItem
-                                        key={cat.id ?? cat.term_id}
-                                        value={(cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString()}
-                                      >
-                                        {decodeHtml(cat.name)}
-                                      </SelectItem>
-                                    ))}
-                                  <SelectItem key="other" value="other">
-                                    {t("upload.others")}
-                                  </SelectItem>
+                                  {Array.isArray(data) && data.map((cat: any) => (
+                                    <SelectItem key={cat.slug} value={cat.slug}>
+                                      {decodeHtml(cat.name)}
+                                    </SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
+
+                              {/* Step 2: Subcategory (shown once a parent is selected) */}
+                              {(() => {
+                                const parentCat = Array.isArray(data)
+                                  ? data.find((c: any) => c.slug === item.parentCategory)
+                                  : null;
+                                return parentCat?.subcategories?.length > 0 ? (
+                                  <Select
+                                    value={item.category}
+                                    onValueChange={(value) => {
+                                      const sub = parentCat.subcategories.find(
+                                        (s: any) => s.id?.toString() === value
+                                      );
+                                      updateItem(item.id, "category", value);
+                                      updateItem(item.id, "category_name", decodeHtml(sub?.name) || "");
+                                    }}
+                                  >
+                                    <SelectTrigger
+                                      className={cn(
+                                        "border-border/50 focus:border-accent",
+                                        errorsForItem.category &&
+                                        !item.category &&
+                                        "border-destructive focus-visible:ring-destructive"
+                                      )}
+                                    >
+                                      <SelectValue placeholder="Select subcategory" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {parentCat.subcategories.map((sub: any) => (
+                                        <SelectItem
+                                          key={sub.id}
+                                          value={sub.id?.toString()}
+                                        >
+                                          {decodeHtml(sub.name)}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : null;
+                              })()}
 
                               {item.category === "other" && (
                                 <Input

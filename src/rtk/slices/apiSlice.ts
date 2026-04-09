@@ -57,6 +57,30 @@ export interface Category {
   thumbnail_id: string;
 }
 
+export interface LabSubcategory {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+  parent: number;
+}
+
+export interface LabCategory {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+  subcategories: LabSubcategory[];
+}
+
+export interface LabCategoriesResponse {
+  success: boolean;
+  message: string;
+  data: LabCategory[];
+  language: string;
+  total: number;
+}
+
 // -------------------- OTP / Forgot Password Interfaces --------------------
 export interface SendOtpRequest {
   email: string;
@@ -244,12 +268,12 @@ export const apiSlice = createApi({
         };
       },
     }),
-    getMachinesCategories: builder.query<Category[], string | void>({
+    getMachinesCategories: builder.query<LabCategoriesResponse, string | void>({
       query: (lang) => {
         const rawLang = lang || localStorage.getItem('language') || 'en';
         const currentLang = rawLang === 'zh' ? 'zh-hant' : rawLang;
         return {
-        url: "/product/lab/category",
+          url: `/product/lab/category?language=${encodeURIComponent(currentLang)}`,
           method: "GET",
         };
       },

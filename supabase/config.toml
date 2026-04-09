@@ -1,1 +1,5 @@
 project_id = "yevktxrmkaferztdujgv"
+
+# Public lead form: browser has no Monday token; keep verify_jwt off and rely on Supabase anon + rate limits.
+[functions.submit-direct-sales-monday]
+verify_jwt = false

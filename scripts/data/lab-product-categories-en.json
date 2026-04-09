@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "message": "Product labs categories fetched successfully",
+  "data": [
+    {
+      "id": 5375,
+      "name": "Lab Infrastructure & Essentials",
+      "slug": "lab-infrastructure-essentials",
+      "count": 0,
+      "subcategories": [
+        { "id": 5411, "name": "Cold Storage (-80C Freezers, LN2 Tanks)", "slug": "cold-storage-freezers-ln2-tanks", "count": 0, "parent": 5375 },
+        { "id": 5412, "name": "Fume Hoods & Biosafety Cabinets", "slug": "fume-hoods-biosafety-cabinets", "count": 0, "parent": 5375 },
+        { "id": 5415, "name": "General Lab Tools (Balances, Pipettes, Stirrers)", "slug": "general-lab-tools-balances-pipettes", "count": 0, "parent": 5375 },
+        { "id": 5413, "name": "Lab Furniture & Benches", "slug": "lab-furniture-benches", "count": 0, "parent": 5375 },
+        { "id": 5414, "name": "Water Purification Systems", "slug": "water-purification-systems", "count": 0, "parent": 5375 }
+      ]
+    },
+    {
+      "id": 5371,
+      "name": "Life Sciences & Biotech (Bio)",
+      "slug": "life-sciences-biotech-bio",
+      "count": 0,
+      "subcategories": [
+        { "id": 5383, "name": "Bioreactors & Fermenters", "slug": "bioreactors-fermenters", "count": 0, "parent": 5371 },
+        { "id": 5384, "name": "Cell Culture & Analysis", "slug": "cell-culture-analysis", "count": 0, "parent": 5371 },
+        { "id": 5385, "name": "Centrifuges (Floor, Tabletop, Ultra)", "slug": "centrifuges-floor-tabletop-ultra", "count": 0, "parent": 5371 },
+        { "id": 5386, "name": "Genomics & PCR", "slug": "genomics-pcr", "count": 0, "parent": 5371 },
+        { "id": 5387, "name": "Incubators & Shakers", "slug": "incubators-shakers", "count": 0, "parent": 5371 },
+        { "id": 5388, "name": "Microscopy & Imaging Systems", "slug": "microscopy-imaging-systems", "count": 0, "parent": 5371 },
+        { "id": 5389, "name": "Protein Purification (FPLC)", "slug": "protein-purification-fplc", "count": 0, "parent": 5371 },
+        { "id": 5390, "name": "Sterilization & Autoclaves", "slug": "sterilization-autoclaves", "count": 0, "parent": 5371 }
+      ]
+    },
+    {
+      "id": 5372,
+      "name": "Pharmaceutical & Analytical (Pharma)",
+      "slug": "pharmaceutical-analytical-pharma",
+      "count": 0,
+      "subcategories": [
+        { "id": 5391, "name": "Chromatography (HPLC, GC, TLC)", "slug": "chromatography-hplc-gc-tlc", "count": 0, "parent": 5372 },
+        { "id": 5394, "name": "Dissolution & Tablet Testing", "slug": "dissolution-tablet-testing", "count": 0, "parent": 5372 },
+        { "id": 5392, "name": "Mass Spectrometry (LC-MS, GC-MS)", "slug": "mass-spectrometry-lc-ms-gc-ms", "count": 0, "parent": 5372 },
+        { "id": 5396, "name": "Pharmaceutical Processing (Mixers, Granulators)", "slug": "pharma-processing-mixers-granulators", "count": 0, "parent": 5372 },
+        { "id": 5397, "name": "Sample Preparation (Evaporators, Freeze Dryers)", "slug": "sample-prep-evaporators-freeze-dryers", "count": 0, "parent": 5372 },
+        { "id": 5393, "name": "Spectroscopy (UV-Vis, FTIR, NMR)", "slug": "spectroscopy-uv-vis-ftir-nmr", "count": 0, "parent": 5372 },
+        { "id": 5398, "name": "Thermal Analysis (DSC, TGA)", "slug": "thermal-analysis-dsc-tga", "count": 0, "parent": 5372 },
+        { "id": 5395, "name": "Liquid Handling & Lab Automation", "slug": "liquid-handling-lab-automation", "count": 0, "parent": 5372 }
+      ]
+    },
+    {
+      "id": 5373,
+      "name": "Test & Measurement (T&M)",
+      "slug": "test-measurement-tm",
+      "count": 0,
+      "subcategories": [
+        { "id": 5399, "name": "Calibration & Standards", "slug": "calibration-standards", "count": 0, "parent": 5373 },
+        { "id": 5400, "name": "Electronic Test (Oscilloscopes, Multimeters)", "slug": "electronic-test-oscilloscopes", "count": 0, "parent": 5373 },
+        { "id": 5401, "name": "Environmental Chambers (Temp/Humidity)", "slug": "environmental-chambers-temp-humidity", "count": 0, "parent": 5373 },
+        { "id": 5402, "name": "Materials Testing (UTM, Hardness)", "slug": "materials-testing-utm-hardness", "count": 0, "parent": 5373 },
+        { "id": 5403, "name": "Metrology & Inspection (CMM, Vision Systems)", "slug": "metrology-inspection-cmm-vision", "count": 0, "parent": 5373 },
+        { "id": 5404, "name": "Physical Property Testing (Viscometers, Rheometers)", "slug": "physical-property-viscometers", "count": 0, "parent": 5373 },
+        { "id": 5405, "name": "Pressure, Flow & Vacuum Measurement", "slug": "pressure-flow-vacuum-measurement", "count": 0, "parent": 5373 },
+        { "id": 5406, "name": "Signal Generators & Analyzers", "slug": "signal-generators-analyzers", "count": 0, "parent": 5373 }
+      ]
+    }
+  ],
+  "language": "en",
+  "total": 4
+}

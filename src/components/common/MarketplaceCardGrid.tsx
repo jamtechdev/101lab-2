@@ -53,7 +53,7 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
       const s = Math.floor((diff % 60000) / 1000);
       if (h >= 24) {
         const d = Math.floor(h / 24);
-        setTimeLeft(`${d}d ${h % 24}h ${String(m).padStart(2, "0")}m`);
+        setTimeLeft(`${d} ${d === 1 ? 'day' : 'days'}`);
       } else {
         setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
       }
@@ -132,12 +132,28 @@ const MosaicImages = ({ images, itemId }: { images: string[]; itemId: any }) => 
     return (
       <div className="flex h-[260px]">
         <div className="flex-[3] min-w-0 overflow-hidden">
-          <img src={mainImg} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+          <img
+            src={mainImg}
+            alt="Product"
+            loading="lazy"
+            decoding="async"
+            width={380}
+            height={260}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+          />
         </div>
         <div className="flex-[1] min-w-0 flex flex-col gap-[2px] ml-[2px]">
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex-1 min-h-0 overflow-hidden">
-              <img src={sideImgs[i] || mainImg} alt="" className="w-full h-full object-cover" />
+              <img
+                src={sideImgs[i] || mainImg}
+                alt="Product"
+                loading="lazy"
+                decoding="async"
+                width={100}
+                height={86}
+                className="w-full h-full object-cover"
+              />
             </div>
           ))}
         </div>
@@ -147,7 +163,15 @@ const MosaicImages = ({ images, itemId }: { images: string[]; itemId: any }) => 
 
   return (
     <div className="h-[260px] overflow-hidden">
-      <img src={mainImg} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+      <img
+        src={mainImg}
+        alt="Product"
+        loading="lazy"
+        decoding="async"
+        width={400}
+        height={260}
+        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+      />
     </div>
   );
 };
@@ -368,6 +392,9 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
                 alt={item.country}
                 title={item.country}
                 className="w-5 h-[15px] object-cover rounded-[2px] flex-shrink-0"
+                loading="lazy"
+                width={20}
+                height={15}
               />
             )}
             <StatusBadge status={bidStatus} />

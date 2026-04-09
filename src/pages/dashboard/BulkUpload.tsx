@@ -33,6 +33,8 @@ interface BulkRow {
   priceCurrency: string;  // "USD" | "TWD"
   weightPerUnit: string;
   replacementCost: string;
+  /** From spreadsheet "images" column; converted to File at upload (browser fetch) */
+  imageUrls?: string[];
 }
 
 type RowStatus = "pending" | "uploading" | "success" | "error";
@@ -125,20 +127,21 @@ function catNameToSlug(name: string): string | null {
 }
 
 // Column order — title first so it feels natural; category second with dropdown
+// A=title … M=replacementCost  N=images (optional: comma-separated photo URLs, max 10; fetched at upload)
 // A=title  B=category  C=description  D=condition  E=operationStatus
 // F=location  G=country  H=quantity  I=priceFormat  J=pricePerUnit
-// K=priceCurrency  L=weightPerUnit  M=replacementCost
+// K=priceCurrency  L=weightPerUnit  M=replacementCost  N=images
 const DATA_COLS = [
   "title", "category", "description", "condition", "operationStatus",
   "location", "country", "quantity",
   "priceFormat", "pricePerUnit", "priceCurrency",
-  "weightPerUnit", "replacementCost",
+  "weightPerUnit", "replacementCost", "images",
 ];
 
 const COL_WIDTHS: Record<string, number> = {
   title: 32, category: 28, description: 40, condition: 18, operationStatus: 18,
   location: 24, country: 10, quantity: 10, priceFormat: 12,
-  pricePerUnit: 14, priceCurrency: 12, weightPerUnit: 14, replacementCost: 16,
+  pricePerUnit: 14, priceCurrency: 12,   weightPerUnit: 14, replacementCost: 16, images: 50,
 };
 
 const EXAMPLES: Record<string, string> = {
@@ -154,27 +157,36 @@ const EXAMPLES: Record<string, string> = {
   priceCurrency: "USD",
   weightPerUnit: "500",
   replacementCost: "20000",
+  images: "",
 };
 
-function downloadTemplate(lang: string = "en") {
-  const catNames = CATEGORY_TRANSLATIONS[lang] ?? CATEGORY_TRANSLATIONS.en;
-  const catSheetName = `Categories`;   // single sheet with chosen-language names
-  const numCats = catNames.length;     // 12
+function downloadTemplate(lang: string = "en", labCategories: any[] = []) {
+  // Build flat subcategory list from API categories; fall back to hardcoded EN list
+  const apiSubcatNames: string[] = labCategories.flatMap((cat: any) =>
+    cat.subcategories?.length > 0
+      ? cat.subcategories.map((s: any) => s.name)
+      : [cat.name]
+  );
+  const catNames = apiSubcatNames.length > 0
+    ? apiSubcatNames
+    : (CATEGORY_TRANSLATIONS[lang] ?? CATEGORY_TRANSLATIONS.en);
+
+  const catSheetName = `Categories`;
+  const numCats = catNames.length;
   const wb = XLSX.utils.book_new();
 
   // ── 1. Categories helper sheet (dropdown source) ──────────────────────────
-  // Column A = category names in chosen language
   const wsCat = XLSX.utils.aoa_to_sheet([
-    ["category"],  // header (hidden from dropdown range)
+    ["category"],
     ...catNames.map((n) => [n]),
   ]);
-  wsCat["!cols"] = [{ wch: 36 }];
+  wsCat["!cols"] = [{ wch: 40 }];
   XLSX.utils.book_append_sheet(wb, wsCat, catSheetName);
 
   // ── 2. Main Products sheet ────────────────────────────────────────────────
   // Row 1 = info row, Row 2 = headers, Row 3 = example, Row 4+ = data
   const infoRow = [
-    `Fill one product per row. Category dropdown is in column B. Language: ${LANG_LABELS[lang] ?? lang}`,
+    `Fill one product per row. Category in B. Optional column "images": comma-separated https URLs (max 10). Language: ${LANG_LABELS[lang] ?? lang}`,
     ...Array(DATA_COLS.length - 1).fill(""),
   ];
   const headerRow = DATA_COLS;
@@ -229,6 +241,8 @@ interface ParsedRow {
   condition: string; operationStatus: string; location: string; country: string;
   quantity: string; priceFormat: string; pricePerUnit: string; priceCurrency: string;
   weightPerUnit: string; replacementCost: string;
+  /** Deduped https URLs from optional "images" / "Images" column */
+  imageUrls: string[];
 }
 
 function parseSheet(file: File): Promise<ParsedRow[]> {
@@ -251,12 +265,32 @@ function parseSheet(file: File): Promise<ParsedRow[]> {
         );
 
         const colIdx = (name: string) => headers.findIndex((h) => h.toLowerCase() === name.toLowerCase());
+        const imagesCol =
+          colIdx("images") >= 0
+            ? colIdx("images")
+            : headers.findIndex((h) => h.toLowerCase() === "image_urls");
+
+        const parseImageUrls = (cell: unknown): string[] => {
+          const raw = cell?.toString() ?? "";
+          const parts = raw.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+          const seen = new Set<string>();
+          const out: string[] = [];
+          for (const p of parts) {
+            if (!/^https?:\/\//i.test(p)) continue;
+            if (seen.has(p)) continue;
+            seen.add(p);
+            out.push(p);
+            if (out.length >= 10) break;
+          }
+          return out;
+        };
 
         const parsed: ParsedRow[] = dataRows
           .filter((r) => r[colIdx("title")]?.toString().trim())
           .map((r, i) => ({
             rowNum: i + 1,
-            categorySlugHint: catNameToSlug(r[colIdx("category")]?.toString() ?? "") ?? "",
+            // Try slug lookup first; fall back to raw name so new API subcategory names match by name
+            categorySlugHint: catNameToSlug(r[colIdx("category")]?.toString() ?? "") ?? r[colIdx("category")]?.toString().trim() ?? "",
             title: r[colIdx("title")]?.toString().trim() ?? "",
             description: r[colIdx("description")]?.toString().trim() ?? "",
             condition: r[colIdx("condition")]?.toString().trim() ?? "",
@@ -269,6 +303,7 @@ function parseSheet(file: File): Promise<ParsedRow[]> {
             priceCurrency: r[colIdx("priceCurrency")]?.toString().trim() || "USD",
             weightPerUnit: r[colIdx("weightPerUnit")]?.toString().trim() ?? "",
             replacementCost: r[colIdx("replacementCost")]?.toString().trim() ?? "",
+            imageUrls: imagesCol >= 0 ? parseImageUrls(r[imagesCol]) : [],
           }));
         resolve(parsed);
       } catch (err) {
@@ -278,6 +313,27 @@ function parseSheet(file: File): Promise<ParsedRow[]> {
     reader.onerror = reject;
     reader.readAsBinaryString(file);
   });
+}
+
+/** Fetch remote image URLs as Files for multipart upload (CORS must allow the app origin). */
+async function imageUrlsToFiles(urls: string[]): Promise<File[]> {
+  const files: File[] = [];
+  let i = 0;
+  for (const url of urls.slice(0, 10)) {
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (!blob.size || !blob.type.startsWith("image/")) continue;
+      const ext = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : blob.type.includes("gif") ? "gif" : "jpg";
+      const name = `url_${i + 1}.${ext}`;
+      files.push(new File([blob], name, { type: blob.type }));
+      i++;
+    } catch {
+      /* CORS or network */
+    }
+  }
+  return files;
 }
 
 /** Group images by row-number prefix: "1_1.jpg" → row 1 */
@@ -305,25 +361,19 @@ export default function BulkUpload() {
   const baseURL = import.meta.env.VITE_PRODUCTION_URL;
   const [batchCreate] = useBatchCreateMutation();
 
-  // Load API categories silently — needed to resolve term_id for backend
+  // Load API categories (LabCategory[] with subcategories) — needed to resolve id for backend
   const { data: catData } = useLanguageAwareCategories();
-  const apiCategories: any[] = Array.isArray(catData)
-    ? catData
-    : (catData as any)?.data ?? [];
+  const apiCategories = Array.isArray(catData) ? catData : [];
 
-  // Match SITE_CATEGORY slug/name → API term_id
+  // Resolve subcategory slug → numeric id for backend submission
   function resolveTermId(slug: string): string {
-    const siteCat = SITE_CATEGORIES.find((c) => c.slug === slug);
-    if (!siteCat) return slug;
-    const matched = apiCategories.find(
-      (c: any) =>
-        c.slug === siteCat.slug ||
-        c.name?.toLowerCase() === siteCat.name.toLowerCase()
-    );
-    if (matched) {
-      return (matched.id ?? matched.term_taxonomy_id ?? matched.term_id)?.toString() ?? slug;
+    for (const cat of apiCategories) {
+      if (cat.slug === slug) return String(cat.id ?? slug);
+      for (const sub of (cat.subcategories ?? [])) {
+        if (sub.slug === slug) return String(sub.id ?? slug);
+      }
     }
-    return slug; // fallback: send slug if API not loaded yet
+    return slug;
   }
 
   const [rows, setRows] = useState<BulkRow[]>([]);
@@ -349,16 +399,21 @@ export default function BulkUpload() {
   const inlineImgRef = useRef<HTMLInputElement>(null);
 
   // ── Category helpers ────────────────────────────────────────────────────────
-  function getCatId(cat: { slug: string }): string {
-    return cat.slug; // slug used as select value; resolveTermId maps to term_id on submit
+  function findCategoryName(slug: string): string {
+    for (const cat of apiCategories) {
+      if (cat.slug === slug) return cat.name;
+      for (const sub of (cat.subcategories ?? [])) {
+        if (sub.slug === slug) return sub.name;
+      }
+    }
+    return "";
   }
 
   function updateRowCategory(rowNum: number, slug: string) {
-    const matched = apiCategories.find((c) => c.slug === slug);
     setRows((prev) =>
       prev.map((r) =>
         r.rowNum === rowNum
-          ? { ...r, categoryId: slug, categoryName: matched?.name || "" }
+          ? { ...r, categoryId: slug, categoryName: findCategoryName(slug) }
           : r
       )
     );
@@ -371,13 +426,25 @@ export default function BulkUpload() {
     setCsvFileName(file.name);
     try {
       const parsed = await parseSheet(file);
+      // Build flat list of all subcategories from API for name→slug matching
+      const allSubcats = apiCategories.flatMap((cat: any) =>
+        cat.subcategories?.length > 0 ? cat.subcategories : [cat]
+      );
       setRows(
         parsed.map((r) => {
-          // Use category from Excel dropdown if valid, else fall back to first category
-          const matched = SITE_CATEGORIES.find((c) => c.slug === r.categorySlugHint);
-          const cat = matched ?? SITE_CATEGORIES[0];
-          const { categorySlugHint: _hint, ...rest } = r;
-          return { ...rest, categoryId: cat.slug, categoryName: cat.name } as BulkRow;
+          // Match category name from Excel to API subcategory slug
+          const bySlugHint = allSubcats.find((c: any) => c.slug === r.categorySlugHint);
+          const byName = allSubcats.find(
+            (c: any) => c.name?.toLowerCase() === r.categorySlugHint?.toLowerCase()
+          );
+          const matched = bySlugHint ?? byName ?? allSubcats[0];
+          const { categorySlugHint: _hint, imageUrls, ...rest } = r;
+          return {
+            ...rest,
+            categoryId: matched?.slug ?? "",
+            categoryName: matched?.name ?? "",
+            imageUrls: imageUrls?.length ? imageUrls : undefined,
+          } as BulkRow;
         })
       );
       setResults([]);
@@ -498,8 +565,10 @@ export default function BulkUpload() {
           .forEach((s) => formData.append("operation_status[]", s));
         if (row.location) formData.append("location[]", row.location);
 
-        (imageMap.get(row.rowNum) || []).slice(0, 10)
-          .forEach((img) => formData.append("images", img));
+        // Send image URLs to backend for server-side download (avoids CORS)
+        row.imageUrls?.slice(0, 10).forEach((url) => formData.append("image_urls[]", url));
+        // Also append any manually uploaded files
+        (imageMap.get(row.rowNum) || []).slice(0, 10).forEach((img) => formData.append("images", img));
 
         const response = await axios.post(
           `${baseURL}wp/create-product?lang=${lang}&type=${SITE_TYPE}`,
@@ -552,7 +621,9 @@ export default function BulkUpload() {
   const successCount = results.filter((r) => r.status === "success").length;
   const errorCount = results.filter((r) => r.status === "error").length;
   const allCategorySet = rows.length > 0 && rows.every((r) => r.categoryId);
-  const totalPhotoCount = Array.from(imageMap.values()).reduce((s, a) => s + a.length, 0);
+  const totalPhotoCount =
+    Array.from(imageMap.values()).reduce((s, a) => s + a.length, 0) +
+    rows.reduce((s, r) => s + (r.imageUrls?.length ?? 0), 0);
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -578,7 +649,7 @@ export default function BulkUpload() {
                 <div className="bg-secondary/50 border border-border rounded-md p-3 text-xs text-muted-foreground">
                   <p>{t('bulkUpload.step1Hint')}</p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadTemplate(lang)}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => downloadTemplate(lang, apiCategories)}>
                   <Download className="h-4 w-4" />
                   {t('bulkUpload.downloadBtn')} ({LANG_LABELS[lang] ?? lang})
                 </Button>
@@ -662,14 +733,19 @@ export default function BulkUpload() {
                             <select
                               value={r.categoryId}
                               onChange={(e) => updateRowCategory(r.rowNum, e.target.value)}
-                              className={`w-full text-xs border rounded px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${!r.categoryId ? "border-destructive" : "border-border"
-                                }`}
+                              className={`w-full text-xs border rounded px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${!r.categoryId ? "border-destructive" : "border-border"}`}
                             >
                               <option value="">{t('bulkUpload.selectCategory')}</option>
                               {apiCategories.map((cat) => (
-                                <option key={getCatId(cat)} value={getCatId(cat)}>
-                                  {cat.name}
-                                </option>
+                                cat.subcategories?.length > 0 ? (
+                                  <optgroup key={cat.slug} label={cat.name}>
+                                    {cat.subcategories.map((sub: any) => (
+                                      <option key={sub.slug} value={sub.slug}>{sub.name}</option>
+                                    ))}
+                                  </optgroup>
+                                ) : (
+                                  <option key={cat.slug} value={cat.slug}>{cat.name}</option>
+                                )
                               ))}
                             </select>
                           </td>
@@ -709,6 +785,11 @@ export default function BulkUpload() {
                                 >
                                   <ImageIcon className="w-3.5 h-3.5" />
                                 </button>
+                              )}
+                              {(r.imageUrls?.length ?? 0) > 0 && (
+                                <span className="text-[10px] text-primary whitespace-nowrap" title={r.imageUrls!.join("\n")}>
+                                  +{r.imageUrls!.length} URL
+                                </span>
                               )}
                             </div>
                           </td>
@@ -1001,6 +1082,29 @@ export default function BulkUpload() {
                   {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
                 </div>
               ))}
+              <div>
+                <label className="block text-xs font-medium text-foreground mb-1">Image URLs (optional)</label>
+                <textarea
+                  rows={3}
+                  placeholder="https://… one per line or comma-separated (max 10)"
+                  value={(editingRow.imageUrls ?? []).join("\n")}
+                  onChange={(e) => {
+                    const parts = e.target.value.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+                    const seen = new Set<string>();
+                    const urls: string[] = [];
+                    for (const p of parts) {
+                      if (!/^https?:\/\//i.test(p)) continue;
+                      if (seen.has(p)) continue;
+                      seen.add(p);
+                      urls.push(p);
+                      if (urls.length >= 10) break;
+                    }
+                    setEditingRow({ ...editingRow, imageUrls: urls.length ? urls : undefined });
+                  }}
+                  className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">Fetched at upload; needs CORS, or use folder upload with 1_1.jpg naming.</p>
+              </div>
             </div>
 
             {/* Modal footer */}

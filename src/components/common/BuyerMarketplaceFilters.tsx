@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Filter, X, Globe, Wrench, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,14 +9,14 @@ import { useTranslation } from "react-i18next";
 const INITIAL_VISIBLE_COUNT = 6;
 
 const COUNTRIES = [
-  { id: "malaysia", name: "Malaysia" },
-  { id: "singapore", name: "Singapore" },
-  { id: "thailand", name: "Thailand" },
+  { id: "china", name: "China" },
   { id: "indonesia", name: "Indonesia" },
+  { id: "india", name: "India" },
+  { id: "malaysia", name: "Malaysia" },
+  { id: "taiwan", name: "Taiwan" },
+  { id: "thailand", name: "Thailand" },
+  { id: "japan", name: "Japan" },
   { id: "vietnam", name: "Vietnam" },
-  { id: "philippines", name: "Philippines" },
-  { id: "cambodia", name: "Cambodia" },
-  { id: "myanmar", name: "Myanmar" },
 ];
 
 const CONDITIONS = [
@@ -50,10 +50,25 @@ const FilterPanel = ({
   const [isCountryExpanded, setIsCountryExpanded] = useState(true);
   const [isConditionExpanded, setIsConditionExpanded] = useState(true);
   const [showAllCategories, setShowAllCategories] = useState(false);
+  const [expandedParents, setExpandedParents] = useState({});
 
   const { data: categoriesData, isLoading: categoriesLoading } = useLanguageAwareCategories();
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.data ?? [];
   const visibleCategories = showAllCategories ? categories : categories.slice(0, INITIAL_VISIBLE_COUNT);
+
+  // Expand first category by default on initial load
+  useEffect(() => {
+    if (categories.length > 0 && Object.keys(expandedParents).length === 0) {
+      setExpandedParents({ [categories[0].slug]: true });
+    }
+  }, [categories.length]);
+
+  const toggleParentExpand = (parentSlug) => {
+    setExpandedParents(prev => ({
+      ...prev,
+      [parentSlug]: !prev[parentSlug]
+    }));
+  };
 
   const hasActiveFilter = !!selectedCategory || !!selectedCountry || !!selectedCondition || !!selectedBidFilter || !!selectedSearch;
   const activeCount = [selectedCategory, selectedCountry, selectedCondition, selectedBidFilter, selectedSearch].filter(Boolean).length;
@@ -96,10 +111,36 @@ const FilterPanel = ({
             ) : (
               <>
                 {visibleCategories.map((cat) => (
-                  <label key={cat.term_id} className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors ${selectedCategory === cat.slug ? "bg-primary/8" : "hover:bg-muted/60"}`}>
-                    <Checkbox checked={selectedCategory === cat.slug} onCheckedChange={() => onCategoryChange(selectedCategory === cat.slug ? "" : cat.slug)} className="h-3.5 w-3.5 rounded-sm" />
-                    <span className={`text-xs transition-colors flex-1 ${selectedCategory === cat.slug ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{cat.name}</span>
-                  </label>
+                  <div key={cat.term_id}>
+                    {/* Parent Category */}
+                    <div className="flex items-center gap-2.5">
+                      <label className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors flex-1 ${selectedCategory === cat.slug ? "bg-primary/8" : "hover:bg-muted/60"}`}>
+                        <Checkbox checked={selectedCategory === cat.slug} onCheckedChange={() => onCategoryChange(selectedCategory === cat.slug ? "" : cat.slug)} className="h-3.5 w-3.5 rounded-sm" />
+                        <span className={`text-xs transition-colors flex-1 ${selectedCategory === cat.slug ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{cat.name}</span>
+                      </label>
+                      {cat.subcategories && cat.subcategories.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleParentExpand(cat.slug)}
+                          className="pr-2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedParents[cat.slug] ? "rotate-180" : ""}`} />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Subcategories */}
+                    {cat.subcategories && cat.subcategories.length > 0 && expandedParents[cat.slug] && (
+                      <div className="ml-4 mt-1 space-y-1 border-l border-border/40 pl-3">
+                        {cat.subcategories.map((subcat) => (
+                          <label key={subcat.slug} className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors ${selectedCategory === subcat.slug ? "bg-primary/8" : "hover:bg-muted/60"}`}>
+                            <Checkbox checked={selectedCategory === subcat.slug} onCheckedChange={() => onCategoryChange(selectedCategory === subcat.slug ? "" : subcat.slug)} className="h-3.5 w-3.5 rounded-sm" />
+                            <span className={`text-xs transition-colors flex-1 ${selectedCategory === subcat.slug ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{subcat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
                 {categories.length > INITIAL_VISIBLE_COUNT && (
                   <button type="button" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium mt-2 pl-2" onClick={() => setShowAllCategories(!showAllCategories)}>

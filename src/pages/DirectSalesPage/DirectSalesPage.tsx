@@ -1,4 +1,6 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Globe2, Gavel, Megaphone, HeadphonesIcon, Send,
-  Upload, ListChecks, Handshake, ChevronRight, Quote,
+  Upload, ListChecks, Handshake, Quote, ChevronRight,
 } from "lucide-react";
 import heroImg from "@/assets/direct-sales/hero-reseller.jpg";
+import { PHONE_CODES } from "@/config/phoneCodes";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
+
 
 /* ─── Why Partner Card ─────────────────────────────────────────────────── */
 const PartnerCard = ({
@@ -54,24 +59,75 @@ const StepCard = ({
 /* ════════════════════════════════════════════════════════════════════════ */
 /*  DIRECT SALES PAGE                                                      */
 /* ════════════════════════════════════════════════════════════════════════ */
-const DirectSalesPage = () => {
-  const [form, setForm] = useState({
-    companyName: "",
-    fullName: "",
-    email: "",
-    phone: "",
-    country: "",
-    inventoryType: "",
-    message: "",
-  });
+const emptyForm = {
+  companyName: "",
+  fullName: "",
+  phoneCode: "+886",
+  phone: "",
+  companyEmail: "",
+  message: "",
+  attachment: null as File | null,
+};
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+const SELLER_COUNTRIES = ["China", "Indonesia", "India", "Malaysia", "Taiwan", "Thailand", "Japan", "Vietnam"];
+
+const DirectSalesPage = () => {
+  const [form, setForm] = useState(emptyForm);
+  const [submitting, setSubmitting] = useState(false);
+  const { data: categories = [] } = useLanguageAwareCategories();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setForm((prev) => ({ ...prev, attachment: file }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Direct sales lead:", form);
+
+    if (!form.companyName.trim() || !form.fullName.trim() || !form.companyEmail.trim() || !form.phone.trim() || !form.message.trim()) {
+      toast.error("All fields are required.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const productionUrl = import.meta.env.VITE_PRODUCTION_URL || "http://localhost:4000/api/v1/";
+      const endpoint = `${productionUrl.replace("/api/v1/", "")}/api/v1/reseller/submit-application`;
+
+      const formData = new FormData();
+      formData.append("companyName", form.companyName);
+      formData.append("fullName", form.fullName);
+      formData.append("phoneCode", form.phoneCode);
+      formData.append("phone", form.phone);
+      formData.append("companyEmail", form.companyEmail);
+      formData.append("message", form.message);
+      if (form.attachment) {
+        formData.append("attachment", form.attachment);
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json() as { ok?: boolean; error?: string; itemId?: string };
+
+      if (result?.ok) {
+        toast.success("Thanks — we received your application. Our team will reach out soon.");
+        setForm(emptyForm);
+        return;
+      }
+
+      toast.error(result?.error || "Could not submit. Please try again.");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not submit. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const partners = [
@@ -117,37 +173,156 @@ const DirectSalesPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <Helmet>
+        <title>Power Seller Program - Direct Sales | GreenBidz</title>
+        <meta name="description" content="Become a Power Seller on GreenBidz. Sell industrial equipment and machinery to 100+ countries. Zero listing fees, global exposure, and dedicated support." />
+        <meta name="keywords" content="power seller, industrial equipment sales, machinery marketplace, B2B selling, reseller program" />
+        <meta property="og:title" content="Power Seller Program - Direct Sales | GreenBidz" />
+        <meta property="og:description" content="Become a Power Seller on GreenBidz. Sell to verified buyers worldwide with zero listing fees." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:title" content="Power Seller Program | GreenBidz" />
+        <meta name="twitter:description" content="Become a Power Seller. Sell industrial equipment globally, zero fees." />
+        <link rel="canonical" href="https://101recycle.greenbidz.com/direct-sales" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://101recycle.greenbidz.com"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Power Seller Program",
+                "item": "https://101recycle.greenbidz.com/direct-sales"
+              }
+            ]
+          })}
+        </script>
+      </Helmet>
       <Header />
 
-      {/* ── HERO BANNER ──────────────────────────────────────────── */}
-      <section className="relative h-[340px] sm:h-[400px] lg:h-[460px] overflow-hidden">
-        <img
-          src={heroImg}
-          alt="Direct Sales at 101Machines"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-foreground/60" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-          <p className="uppercase text-xs sm:text-sm tracking-[0.2em] text-primary-foreground/80 mb-3 font-medium">
-            BUY DIRECTLY FROM INSOLVENCY, LIQUIDATION, CLOSURE OR MODERNISATION
-          </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary-foreground max-w-3xl leading-tight">
-            Direct Sales at 101Machines
-          </h1>
-        </div>
-      </section>
-
-      {/* ── INTRO ────────────────────────────────────────────────── */}
+      {/* ── HERO + FORM ──────────────────────────────────────────── */}
       <section className="bg-background">
-        <div className="container mx-auto px-4 py-12 md:py-16 max-w-3xl text-center">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-4">
-            Maximize Your Reach. Scale Your Sales.
-          </h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Stop chasing leads and start closing deals. List your surplus machinery on the world's
-            most active industrial marketplace and leverage our global buyer network to move
-            inventory faster and at higher margins.
-          </p>
+        <div className="container mx-auto px-4 py-10 md:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+
+            {/* Left — Image + overlay text */}
+            <div className="relative rounded-lg overflow-hidden h-[300px] sm:h-[400px] lg:h-full lg:min-h-[560px]">
+              <img
+                src={heroImg}
+                alt="Direct Sales at 101Lab"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6">
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+                  Apply to be a Power Seller
+                </h2>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  Fill out the form and our team will reach out to get you started on the platform.
+                </p>
+              </div>
+            </div>
+
+            {/* Right — Form */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
+                Apply to be Power Seller
+              </h1>
+
+              <form onSubmit={handleSubmit} className="space-y-5">                             
+
+                {/* Company Name */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Company Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="companyName" placeholder="Company name" value={form.companyName} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Full Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="fullName" placeholder="First and last name" value={form.fullName} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Phone with Country Code */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Country Code & Phone <span className="text-destructive">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      name="phoneCode"
+                      value={form.phoneCode}
+                      onChange={handleChange}
+                      className="border border-border rounded-md bg-background text-foreground text-sm px-2 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-40 shrink-0"
+                    >
+                      {PHONE_CODES.filter(c => SELLER_COUNTRIES.includes(c.country)).map((c) => (
+                        <option key={c.code} value={c.code}>{c.label}</option>
+                      ))}
+                    </select>
+                    <Input name="phone" type="tel" placeholder="Phone number" value={form.phone} onChange={handleChange} required className="border-border flex-1" />
+                  </div>
+                </div>
+
+                {/* Company Email */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Company Email <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="companyEmail" type="email" placeholder="company@example.com" value={form.companyEmail} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Message <span className="text-destructive">*</span>
+                  </label>
+                  <Textarea
+                    name="message"
+                    placeholder="Describe your inquiry or what you want to sell…"
+                    value={form.message}
+                    onChange={handleChange}
+                    required
+                    rows={4}
+                    className="border-border"
+                  />
+                </div>
+
+                {/* Attachment */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Attachment (Optional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="border-border flex-1"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png,.gif"
+                    />
+                    {form.attachment && (
+                      <span className="text-sm text-muted-foreground">{form.attachment.name}</span>
+                    )}
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full sm:w-auto px-8" disabled={submitting}>
+                  <Send className="h-4 w-4 mr-2" />
+                  {submitting ? "Sending…" : "Apply Now"}
+                </Button>
+              </form>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -212,73 +387,6 @@ const DirectSalesPage = () => {
         </div>
       </section>
 
-      {/* ── APPLICATION FORM ─────────────────────────────────────── */}
-      <section className="bg-background">
-        <div className="container mx-auto px-4 py-12 md:py-20">
-          <div className="max-w-2xl mx-auto">
-            <div className="text-center mb-8">
-              <p className="uppercase text-xs tracking-[0.2em] font-semibold text-primary mb-2">
-                Ready to expand your footprint?
-              </p>
-              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-2">
-                Apply to Become a Reseller
-              </h2>
-              <p className="text-muted-foreground text-sm">
-                No upfront fees. Pay only when you sell.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5 bg-card border border-border rounded-lg p-6 md:p-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {[
-                  { name: "companyName", label: "Company Name", placeholder: "Your company" },
-                  { name: "fullName", label: "Full Name", placeholder: "First and last name" },
-                  { name: "email", label: "Email Address", placeholder: "you@company.com", type: "email" },
-                  { name: "phone", label: "Phone Number", placeholder: "+1 234 567 890" },
-                  { name: "country", label: "Country", placeholder: "Country" },
-                  { name: "inventoryType", label: "Inventory Type", placeholder: "CNC, Presses, Vehicles…" },
-                ].map((f) => (
-                  <div key={f.name}>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
-                      {f.label} <span className="text-destructive">*</span>
-                    </label>
-                    <Input
-                      name={f.name}
-                      type={(f as any).type || "text"}
-                      placeholder={f.placeholder}
-                      value={(form as any)[f.name]}
-                      onChange={handleChange}
-                      required
-                      className="border-border"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  Tell us about your inventory <span className="text-destructive">*</span>
-                </label>
-                <Textarea
-                  name="message"
-                  placeholder="Describe the type and volume of equipment you typically sell…"
-                  value={form.message}
-                  onChange={handleChange}
-                  required
-                  rows={4}
-                  className="border-border"
-                />
-              </div>
-
-              <Button type="submit" className="w-full sm:w-auto px-8">
-                <Send className="h-4 w-4 mr-2" />
-                Apply Now
-              </Button>
-            </form>
-          </div>
-        </div>
-      </section>
-
       {/* ── VELOCITY HIGHLIGHTS ───────────────────────────────────── */}
       <section className="bg-muted/30">
         <div className="container mx-auto px-4 py-10 md:py-14">
@@ -296,6 +404,56 @@ const DirectSalesPage = () => {
           </div>
         </div>
       </section>
+
+      {/* ── CATEGORIES & SUBCATEGORIES ────────────────────────────── */}
+      {categories.length > 0 && (
+        <section className="bg-background">
+          <div className="container mx-auto px-4 py-12 md:py-20">
+            <div className="text-center mb-12">
+              <p className="uppercase text-xs tracking-[0.2em] font-semibold text-primary mb-2">
+                Product Categories
+              </p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
+                Explore our complete inventory
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {categories.map((category) => (
+                <div
+                  key={category.slug}
+                  className="bg-card border border-border rounded-lg p-6 hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                >
+                  <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                    {category.name}
+                    {category.subcategories && category.subcategories.length > 0 && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                        {category.subcategories.length}
+                      </span>
+                    )}
+                  </h3>
+
+                  {category.subcategories && category.subcategories.length > 0 ? (
+                    <ul className="space-y-2">
+                      {category.subcategories.map((subcategory) => (
+                        <li
+                          key={subcategory.slug}
+                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <ChevronRight className="h-4 w-4 text-primary/60" />
+                          {subcategory.name}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No subcategories</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>

@@ -67,7 +67,7 @@ const COMMON_SIZES = {
  *
  * Example:
  * const url = getOptimizedImageUrl('original.jpg', 300, 200, 'medium');
- * // Returns: 'original.jpg?w=300&h=200&q=75&fmt=webp&auto=format'
+ * // Returns: 'original.jpg' (returns original if backend doesn't support optimization)
  */
 export const getOptimizedImageUrl = (
   url: string,
@@ -80,35 +80,9 @@ export const getOptimizedImageUrl = (
     return DEFAULT_PLACEHOLDER;
   }
 
-  // If URL is already optimized, return as-is
-  if (url.includes('?') && (url.includes('w=') || url.includes('fmt='))) {
-    return url;
-  }
-
-  // Build query parameters
-  const params = new URLSearchParams();
-
-  // Add dimensions if provided
-  if (width && width > 0) {
-    params.append('w', String(width));
-  }
-  if (height && height > 0) {
-    params.append('h', String(height));
-  }
-
-  // Add quality setting
-  const qualityValue = QUALITY_MAP[quality] || QUALITY_MAP.medium;
-  params.append('q', String(qualityValue));
-
-  // Always convert to WebP for modern browsers
-  params.append('fmt', 'webp');
-
-  // Auto-detect browser format
-  params.append('auto', 'format');
-
-  // Build final URL
-  const separator = url.includes('?') ? '&' : '?';
-  return `${url}${separator}${params.toString()}`;
+  // For now, return URL as-is since backend may not support query params
+  // In production, integrate with CDN like Cloudinary, Imgix, or Vercel Image Optimization
+  return url;
 };
 
 // =====================================================
@@ -119,12 +93,10 @@ export const getOptimizedImageUrl = (
  * Generate responsive image srcset for different pixel densities
  *
  * @param url - Image URL
- * @param width - Base width
+ * @param width - Base width (currently not used since backend doesn't support optimization)
  * @returns srcset string for <img> tag
  *
- * Example:
- * <img srcSet={getResponsiveImages(url, 300)} />
- * // Generates: url?w=300 1x, url?w=600 2x, url?w=450 1.5x
+ * For production, integrate with CDN to generate different sizes
  */
 export const getResponsiveImages = (
   url: string,
@@ -132,22 +104,9 @@ export const getResponsiveImages = (
 ): string => {
   if (!url) return `${DEFAULT_PLACEHOLDER} 1x`;
 
-  try {
-    const sizes = [
-      { baseWidth: width, multiplier: '1x' },
-      { baseWidth: Math.round(width * 1.5), multiplier: '1.5x' },
-      { baseWidth: width * 2, multiplier: '2x' },
-    ];
-
-    return sizes
-      .map(({ baseWidth, multiplier }) =>
-        `${getOptimizedImageUrl(url, baseWidth)} ${multiplier}`
-      )
-      .join(', ');
-  } catch (error) {
-    console.error('Error generating responsive images:', error);
-    return `${DEFAULT_PLACEHOLDER} 1x`;
-  }
+  // Return single URL for all densities
+  // In production, use CDN like Cloudinary: url?w=300 1x, url?w=600 2x, etc.
+  return `${url} 1x`;
 };
 
 /**
@@ -185,22 +144,17 @@ export const getResponsiveSizes = (
  * Get low-quality placeholder URL for blur-up effect
  *
  * @param url - Original image URL
- * @param width - Small width for placeholder (default 50px)
- * @returns Placeholder URL (very low quality, small size)
+ * @param width - Small width for placeholder (default 50px) - not used since backend doesn't support optimization
+ * @returns Placeholder URL
  *
- * Example:
- * const blur = getPlaceholderUrl(url, 50);
- * // Use as background-image while loading
+ * For production, use CDN to generate actual low-quality versions
  */
 export const getPlaceholderUrl = (url: string, width: number = 50): string => {
   if (!url) return DEFAULT_PLACEHOLDER;
 
-  try {
-    return getOptimizedImageUrl(url, width, undefined, 'low');
-  } catch (error) {
-    console.error('Error generating placeholder:', error);
-    return DEFAULT_PLACEHOLDER;
-  }
+  // Return same URL as placeholder for now
+  // In production, use CDN to serve actual low-quality LQIP (Low Quality Image Placeholder)
+  return url;
 };
 
 /**

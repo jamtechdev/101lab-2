@@ -15,6 +15,7 @@ import BuyerMarketplaceFilters from "@/components/common/BuyerMarketplaceFilters
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
 import SEOMeta from "@/components/common/SEOMeta";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
 // ✨ Smoothness - skeleton loaders
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
@@ -24,6 +25,7 @@ const Marketplace = () => {
   const currentLang = i18n.language;
   const navigate = useNavigate();
   const categoryCache = useCategoryCache();
+  const { data: labCategories } = useLanguageAwareCategories();
 
   // URL-synced state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,6 +40,14 @@ const Marketplace = () => {
   const selectedBidDate = searchParams.get("bidDate") || "";
   const selectedStatus = searchParams.get("status") || undefined;
   const selectedHighlighted = searchParams.get("highlighted") === "true" ? true : undefined;
+  const selectedGroup = searchParams.get("group") || "";
+
+  // Sync searchQuery and debouncedSearch when URL search parameter changes
+  useEffect(() => {
+    const urlSearch = searchParams.get("search") || "";
+    setSearchQuery(urlSearch);
+    setDebouncedSearch(urlSearch);
+  }, [searchParams.get("search")]);
 
   // Debounce search and sync to URL
   useEffect(() => {
@@ -95,6 +105,13 @@ const Marketplace = () => {
     setSearchParams(p);
   };
 
+  const handleGroupChange = (group: string) => {
+    const p = new URLSearchParams(searchParams);
+    if (group) p.set("group", group); else p.delete("group");
+    p.delete("page");
+    setSearchParams(p);
+  };
+
   const handleClearAllFilters = () => {
     const p = new URLSearchParams(searchParams);
     p.delete("category");
@@ -103,6 +120,7 @@ const Marketplace = () => {
     p.delete("bidFilter");
     p.delete("bidDate");
     p.delete("search");
+    p.delete("group");
     p.delete("page");
     setSearchParams(p);
     setSearchQuery("");
@@ -121,13 +139,53 @@ const Marketplace = () => {
     ? parseInt(debouncedSearch.trim(), 10)
     : undefined;
 
+  /**
+   * Resolve the URL category slug → the value(s) the backend understands.
+   *
+   * Products are stored by term_id in the backend. Some products may be stored
+   * with the PARENT term_id, others with the SUBCATEGORY term_id. To cover both:
+   *  - Subcategory selected → send subcategory slug + subcategory id + parent id
+   *  - Parent selected → send parent slug + parent id (backend does hierarchical WP lookup)
+   *
+   * We pass the numeric id as the primary `category` param, and the parent id
+   * as `parentCategoryId` so the backend can OR-match either level.
+   */
+  const resolvedCategory = useMemo(() => {
+    if (!selectedCategory) return { category: undefined, parentCategoryId: undefined };
+    const cats = Array.isArray(labCategories) ? labCategories : [];
+
+    // Check parent categories
+    const parentMatch = cats.find((c) => c.slug === selectedCategory);
+    if (parentMatch) {
+      return {
+        category: String(parentMatch.id),   // numeric id — more reliable than slug
+        parentCategoryId: undefined,
+      };
+    }
+
+    // Check subcategories
+    for (const parent of cats) {
+      const subMatch = (parent.subcategories ?? []).find((s) => s.slug === selectedCategory);
+      if (subMatch) {
+        return {
+          category: String(subMatch.id),          // subcategory numeric id
+          parentCategoryId: String(parent.id),    // parent id — for products stored at parent level
+        };
+      }
+    }
+
+    // Not found — pass the slug as-is (legacy/fallback)
+    return { category: selectedCategory, parentCategoryId: undefined };
+  }, [selectedCategory, labCategories]);
+
   // Fetch batches
-  const { data: batchData, isLoading, isFetching, isError } = useGetBatchesQuery({
+  const { data: batchData, isLoading, isFetching, isError, refetch } = useGetBatchesQuery({
     page: currentPage,
     limit: 12,
     search: searchAsBatchId ? undefined : (debouncedSearch || undefined),
     batchId: searchAsBatchId,
-    category: selectedCategory || undefined,
+    category: resolvedCategory.category,
+    parentCategoryId: resolvedCategory.parentCategoryId,
     status: selectedStatus,
     highlighted: selectedHighlighted,
     bidFilter: (selectedBidFilter as any) || undefined,
@@ -136,7 +194,18 @@ const Marketplace = () => {
     type: SITE_TYPE,
     country: selectedCountry || undefined,
     condition: selectedCondition || undefined,
+    auctionGroup: selectedGroup && selectedGroup !== '' ? selectedGroup : undefined,
   });
+
+  // Ensure data is fetched when page loads with URL search parameters OR when they change
+  useEffect(() => {
+    const hasSearchParams = searchParams.get("search") || searchParams.get("category") ||
+                            searchParams.get("country") || searchParams.get("condition") ||
+                            searchParams.get("bidFilter") || searchParams.get("group");
+    if (hasSearchParams) {
+      refetch();
+    }
+  }, [searchParams, refetch]);
 
   const pagination = batchData?.pagination;
   const totalItems = pagination?.totalItems ?? 0;
@@ -218,7 +287,7 @@ const Marketplace = () => {
     return pages;
   }, [totalPages, currentPage]);
 
-  const hasActiveFilter = selectedCategory || selectedCountry || selectedCondition || selectedBidFilter;
+  const hasActiveFilter = selectedCategory || selectedCountry || selectedCondition || selectedBidFilter || selectedGroup;
 
   const pageTitle = searchQuery
     ? `Buy ${searchQuery} - GreenBidz Marketplace`
@@ -303,6 +372,11 @@ const Marketplace = () => {
                   {selectedBidFilter === "closing_soon" ? t("browseListings.closingSoon") : selectedBidFilter === "upcoming" ? t("browseListings.upcoming") : selectedBidFilter === "ended" ? t("browseListings.ended") : selectedBidDate ? selectedBidDate : t("browseListings.customDate")} ×
                 </Badge>
               )}
+              {selectedGroup && (
+                <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors rounded-full px-3" onClick={() => handleGroupChange("")}>
+                  Auction Group ×
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -325,6 +399,21 @@ const Marketplace = () => {
           />
 
           <div className="flex-1 min-w-0">
+            {/* Auction Group Details Header */}
+            {selectedGroup && batchData?.auctionGroup && (
+              <div className="mb-6 p-4 border border-border rounded-lg bg-card">
+                <h1 className="text-2xl font-bold text-foreground mb-2">
+                  {batchData.auctionGroup.title}
+                </h1>
+                <p className="text-muted-foreground mb-4">
+                  {batchData.auctionGroup.description}
+                </p>
+                <div className="flex items-center gap-4 text-sm font-medium">
+                  <span className="text-primary">{totalItems} {totalItems === 1 ? 'lot' : 'lots'}</span>
+                </div>
+              </div>
+            )}
+
             {/* Loading - Skeleton */}
             {isLoading && (
               <div className="space-y-4">

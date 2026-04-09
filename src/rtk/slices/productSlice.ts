@@ -274,10 +274,10 @@ export const productApiSlice = createApi({
     // --- Fetch Batches By Seller (platform-aware via type) ---
     getBatchesBySeller: builder.query<
       GetBatchesBySellerResponse,
-      { sellerId: string; page: number; type?: string }
+      { sellerId: string; page: number; type?: string; limit?: number }
     >({
-      query: ({ sellerId, page, type }) => ({
-        url: `/batch/seller/${sellerId}?page=${page}&type=${type ?? SITE_TYPE}`,
+      query: ({ sellerId, page, type, limit }) => ({
+        url: `/batch/seller/${sellerId}?page=${page}&type=${type ?? SITE_TYPE}${limit ? `&limit=${limit}` : ""}`,
         method: "GET",
         headers: { "x-system-key": "fa39812fec" },
       }),

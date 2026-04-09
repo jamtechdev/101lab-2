@@ -49,6 +49,19 @@ const BuyerMarketplace = () => {
   const selectedCondition = searchParams.get('condition') || '';
   const selectedBidFilter = searchParams.get('bidFilter') || '';
   const selectedBidDate = searchParams.get('bidDate') || '';
+  const selectedGroup = searchParams.get('group') || '';
+
+  // Sync searchQuery and debouncedSearch when URL search parameter changes
+  useEffect(() => {
+    const urlSearch = searchParams.get("search") || "";
+    setSearchQuery(urlSearch);
+    setDebouncedSearch(urlSearch);
+  }, [searchParams.get("search")]);
+
+  // Debug: Log the selectedGroup value
+  useEffect(() => {
+    console.log('🔍 DEBUG: selectedGroup =', selectedGroup, '| Empty?', selectedGroup === '');
+  }, [selectedGroup]);
 
   const { data: networkData } = useGetMySellerNetworksQuery({
     status: "active"
@@ -95,13 +108,7 @@ const BuyerMarketplace = () => {
     : undefined;
 
   // Server-side paginated query
-  const {
-    data: batchData,
-    isLoading: isLoadingBatches,
-    isFetching,
-    isError,
-    refetch
-  } = useGetBatchesQuery({
+  const queryParams = {
     page: currentPage,
     limit: 10,
     search: searchAsBatchId ? undefined : (debouncedSearch || undefined),
@@ -111,9 +118,39 @@ const BuyerMarketplace = () => {
     bidDate: (selectedBidFilter === 'custom' && selectedBidDate) ? selectedBidDate : undefined,
     lang: currentLang,
     type: SITE_TYPE,
-  });
+    auctionGroup: selectedGroup && selectedGroup !== '' ? selectedGroup : undefined,
+  };
 
-  
+  // Debug: Log the query parameters being sent
+  useEffect(() => {
+    console.log('🔍 DEBUG: RTK Query Params =', queryParams);
+    console.log('🔍 DEBUG: auctionGroup value =', queryParams.auctionGroup);
+  }, [queryParams]);
+
+  const {
+    data: batchData,
+    isLoading: isLoadingBatches,
+    isFetching,
+    isError,
+    refetch
+  } = useGetBatchesQuery(queryParams);
+
+  // Force refetch when search query changes
+  useEffect(() => {
+    if (debouncedSearch || selectedCategory || selectedCountry || selectedCondition || selectedBidFilter) {
+      refetch();
+    }
+  }, [debouncedSearch, selectedCategory, selectedCountry, selectedCondition, selectedBidFilter, refetch]);
+
+  // Ensure data is fetched when page loads with URL search parameters OR when they change
+  useEffect(() => {
+    const hasSearchParams = searchParams.get("search") || searchParams.get("category") ||
+                            searchParams.get("country") || searchParams.get("condition") ||
+                            searchParams.get("bidFilter");
+    if (hasSearchParams) {
+      refetch();
+    }
+  }, [searchParams, refetch]);
 
   // Get pagination info from API response
   const pagination = batchData?.pagination;
@@ -198,6 +235,7 @@ const BuyerMarketplace = () => {
     newSearchParams.delete('bidFilter');
     newSearchParams.delete('bidDate');
     newSearchParams.delete('search');
+    newSearchParams.delete('group');
     newSearchParams.delete('page');
     setSearchParams(newSearchParams);
     setSearchQuery("");
@@ -450,7 +488,7 @@ const BuyerMarketplace = () => {
           </div>
 
           {/* Active filters strip */}
-          {(selectedCategory || selectedCountry || selectedCondition || selectedBidFilter) && (
+          {(selectedCategory || selectedCountry || selectedCondition || selectedBidFilter || selectedGroup) && (
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="text-xs text-muted-foreground">{t("buyer.active")}:</span>
               {selectedCategory && (
@@ -460,6 +498,20 @@ const BuyerMarketplace = () => {
                   onClick={() => handleCategoryChange("")}
                 >
                   {selectedCategory} ×
+                </Badge>
+              )}
+              {selectedGroup && (
+                <Badge
+                  variant="secondary"
+                  className="text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors rounded-full px-3"
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('group');
+                    newParams.delete('page');
+                    setSearchParams(newParams);
+                  }}
+                >
+                  Auction Group ×
                 </Badge>
               )}
               {selectedCountry && (

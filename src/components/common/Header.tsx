@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -6,24 +6,28 @@ import { useTranslation } from "react-i18next";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useLoginModal } from "@/context/LoginModalContext";
-import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
+import { useLanguageAwareCategories, LabCategory } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, Loader2,
+  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, ChevronRight,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
+import { SITE_NAME } from "@/config/branding";
+import { normalizeStoredLanguage } from "@/utils/languageUtils";
 
 const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
 
+
+
+const formatCategoryName = (name: string) => {
+  return name.replace(/\s*\(.*?\)\s*/g, "");
+};
 const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
   { code: "zh", label: "繁體中文", flag: "🇹🇼" },
   { code: "ja", label: "日本語", flag: "🇯🇵" },
   { code: "th", label: "ไทย", flag: "🇹🇭" },
 ];
-
-import { SITE_CATEGORIES, sortByConfig } from "@/config/categories";
-import { SITE_NAME } from "@/config/branding";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -32,16 +36,18 @@ const Header = () => {
   const [logout] = useLogoutMutation();
   const [openMenu, setOpenMenu] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [hoveredParent, setHoveredParent] = useState<string | null>(null);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
   const [visibleCatCount, setVisibleCatCount] = useState(3);
+  // mobile: which parent is expanded
+  const [mobileExpandedParent, setMobileExpandedParent] = useState<string | null>(null);
 
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
   const { openLoginModal } = useLoginModal();
 
-  // Re-read userId whenever login/logout happens (same tab or other tabs)
   useEffect(() => {
     const syncAuth = () => setUserId(localStorage.getItem("userId"));
     window.addEventListener("auth-changed", syncAuth);
@@ -51,15 +57,10 @@ const Header = () => {
       window.removeEventListener("storage", syncAuth);
     };
   }, []);
+
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
-  const loadedCategories: any[] = Array.isArray(categoriesData)
-    ? categoriesData
-    : (categoriesData as any)?.data ?? [];
-  // Sort loaded categories to match the configured sequence order
-  const sortedLoadedCategories = loadedCategories.length > 0 ? sortByConfig(loadedCategories) : [];
-  // Show static list instantly while API loads; swap to real data (sorted) once available
-  const categories: any[] = sortedLoadedCategories.length > 0 ? sortedLoadedCategories : SITE_CATEGORIES;
+  const categories: LabCategory[] = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Responsive: show fewer categories on smaller screens
   useEffect(() => {
@@ -77,11 +78,48 @@ const Header = () => {
 
   const visibleCategories = categories.slice(0, visibleCatCount);
 
+  const categorySlugKey = useMemo(
+    () => categories.map((c) => c.slug).join("\0"),
+    [categories]
+  );
+
+  // Keep hover target valid when category tree reloads (e.g. language / data refresh)
+  useEffect(() => {
+    if (categories.length === 0) {
+      setHoveredParent(null);
+      return;
+    }
+    const exists = categories.some((c) => c.slug === hoveredParent);
+    if (!exists) {
+      const withSubs = categories.find((c) => (c.subcategories?.length ?? 0) > 0);
+      setHoveredParent(withSubs?.slug ?? categories[0].slug);
+    }
+  }, [categorySlugKey]); // eslint-disable-line react-hooks/exhaustive-deps -- sync when tree identity changes
+
+  // When dropdown opens, pre-highlight the first parent that has subcategories (or first row)
+  const handleCategoryMouseEnter = () => {
+    setIsCategoryOpen(true);
+    if (categories.length === 0) return;
+    const match = categories.find((c) => c.slug === hoveredParent);
+    if (!match) {
+      const preferred =
+        categories.find((c) => (c.subcategories?.length ?? 0) > 0) ?? categories[0];
+      setHoveredParent(preferred.slug);
+    } else if (!hoveredParent) {
+      const preferred =
+        categories.find((c) => (c.subcategories?.length ?? 0) > 0) ?? categories[0];
+      setHoveredParent(preferred.slug);
+    }
+  };
+
+  const hoveredParentData = categories.find((c) => c.slug === hoveredParent) ?? null;
+
   const currentLang = languages.find((l) => l.code === lang) || languages[0];
 
   const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    localStorage.setItem("language", lng);
+    const canonical = normalizeStoredLanguage(lng);
+    i18n.changeLanguage(canonical);
+    localStorage.setItem("language", canonical);
     setIsLangOpen(false);
   };
 
@@ -113,12 +151,8 @@ const Header = () => {
 
   const handleSearch = () => {
     if (searchVal.trim()) {
-      const params = location.pathname === "/buyer-marketplace"
-        ? new URLSearchParams(location.search)
-        : new URLSearchParams();
-      params.set("search", searchVal.trim());
-      params.delete("page");
-      navigate(`/buyer-marketplace?${params.toString()}`);
+      navigate(`/marketplace?search=${encodeURIComponent(searchVal.trim())}`);
+      setSearchVal("");
       setOpenMenu(false);
     }
   };
@@ -132,7 +166,7 @@ const Header = () => {
             <div className="flex items-center gap-4">
               <a href="#" className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                 <Headphones className="h-3 w-3" />
-                FAQ
+                {t("publicHeader.faq")}
               </a>
             </div>
             <div className="flex items-center gap-3">
@@ -155,8 +189,8 @@ const Header = () => {
                           key={l.code}
                           onClick={() => changeLanguage(l.code)}
                           className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${lang === l.code
-                              ? "text-primary bg-primary/5 font-medium"
-                              : "text-popover-foreground hover:bg-secondary"
+                            ? "text-primary bg-primary/5 font-medium"
+                            : "text-popover-foreground hover:bg-secondary"
                             }`}
                         >
                           <span>{l.flag}</span>
@@ -186,18 +220,18 @@ const Header = () => {
               />
               <div className="hidden sm:block leading-tight">
                 <span className="text-sm font-bold text-foreground">{SITE_NAME}</span>
-                <span className="text-sm font-bold text-foreground">101Lab</span>
+                {/* <span className="text-sm font-bold text-foreground">101Lab</span> */}
                 <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
               </div>
             </div>
 
-            {/* Search — hidden on mobile (shown in mobile menu) */}
+            {/* Search */}
             <div className="hidden sm:flex flex-1 max-w-2xl mx-auto relative">
               <input
                 type="text"
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
-                placeholder="Search for online Lots"
+                placeholder={t("publicHeader.searchPlaceholder")}
                 className="w-full h-10 pl-4 pr-12 border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary rounded-l"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch();
@@ -213,17 +247,15 @@ const Header = () => {
 
             {/* Desktop right actions */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
-
-              {/* ── Favourites button ── */}
               <button
                 onClick={() => {
-                  if (!userId) { toastError("Please login to view favourites"); return; }
+                  if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
                   navigate("/my-lots");
                 }}
                 className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors px-2 py-1.5"
               >
                 <Heart className="h-4 w-4" />
-                Favourites
+                {t("publicHeader.favourites")}
               </button>
 
               {userId ? (
@@ -235,7 +267,7 @@ const Header = () => {
                     onClick={() => window.open("/dashboard", "_blank")}
                   >
                     <User className="h-3.5 w-3.5" />
-                    Dashboard
+                    {t("publicHeader.dashboard")}
                   </Button>
                   <Button
                     size="sm"
@@ -243,7 +275,7 @@ const Header = () => {
                     className="text-muted-foreground hover:text-foreground text-xs h-9"
                     onClick={handleLogout}
                   >
-                    Logout
+                    {t("publicHeader.logout")}
                   </Button>
                 </>
               ) : (
@@ -255,7 +287,7 @@ const Header = () => {
                     onClick={() => window.open("/auth?type=buyer&mode=signup", "_blank")}
                   >
                     <UserPlus className="h-3.5 w-3.5" />
-                    Create account
+                    {t("publicHeader.createAccount")}
                   </Button>
                   <div
                     className="relative"
@@ -267,7 +299,7 @@ const Header = () => {
                       className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5 text-xs h-9 rounded"
                     >
                       <LogIn className="h-3.5 w-3.5" />
-                      Sign in
+                      {t("publicHeader.signIn")}
                     </Button>
                     {isSignInOpen && (
                       <div className="absolute right-0 top-full pt-0.5 z-50">
@@ -277,21 +309,21 @@ const Header = () => {
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <User className="h-3.5 w-3.5 text-muted-foreground" />
-                            Buyer Portal
+                            {t("publicHeader.buyerPortal")}
                           </button>
                           <button
                             onClick={() => window.open("/auth?type=seller&mode=signin", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
-                            Seller Portal
+                            {t("publicHeader.sellerPortal")}
                           </button>
                           <button
                             onClick={() => window.open("/auth?type=admin&mode=signin", "_blank")}
                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
                           >
                             <Store className="h-3.5 w-3.5 text-muted-foreground" />
-                            Admin Portal
+                            {t("publicHeader.adminPortal")}
                           </button>
                         </div>
                       </div>
@@ -305,7 +337,7 @@ const Header = () => {
             <button
               className="lg:hidden ml-auto p-1.5"
               onClick={() => setOpenMenu(!openMenu)}
-              aria-label="Toggle menu"
+              aria-label={t("publicHeader.toggleMenu")}
             >
               {openMenu ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -320,51 +352,91 @@ const Header = () => {
               to="/buyer-marketplace"
               className="flex-shrink-0 px-3 h-full flex items-center text-sm font-semibold text-foreground border-b-2 border-foreground hover:bg-secondary/60 transition-colors"
             >
-              All auctions
+              {t("publicHeader.allAuctions")}
             </Link>
 
-            {/* All categories mega-menu */}
+            {/* All categories — Surplex-style mega menu */}
             <div
               className="relative flex-shrink-0 h-full"
-              onMouseEnter={() => setIsCategoryOpen(true)}
-              onMouseLeave={() => setIsCategoryOpen(false)}
+              onMouseEnter={handleCategoryMouseEnter}
+              onMouseLeave={() => { setIsCategoryOpen(false); setHoveredParent(null); }}
             >
               <button className="flex items-center gap-1 px-3 h-full text-sm text-muted-foreground hover:text-foreground transition-colors">
-                All categories
+                {t("publicHeader.allCategories")}
                 <ChevronDown className={`h-3 w-3 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`} />
               </button>
+
               {isCategoryOpen && (
-                <div className="absolute left-0 top-full z-50 bg-popover border border-border rounded-b-md shadow-lg w-[220px] max-h-[320px] overflow-y-auto" style={{ marginTop: '1px' }}>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.slug}
-                      onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm transition-colors text-popover-foreground hover:bg-secondary/60 hover:text-primary border-b border-border/40 last:border-b-0"
-                    >
-                      <span className="truncate">{cat.name}</span>
-                      <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0 ml-2" />
-                    </button>
-                  ))}
-                <div className="absolute left-0 top-full pt-1 z-50">
-                  <div className="bg-popover border border-border rounded shadow-lg w-[220px] max-h-[320px] overflow-y-auto py-1">
-                    <Link
-                      to="/buyer-marketplace"
-                      onClick={() => setIsCategoryOpen(false)}
-                      className="flex items-center px-3 py-2 text-sm font-medium text-popover-foreground hover:bg-secondary hover:text-primary transition-colors"
-                    >
-                      All categories
-                    </Link>
+                <div
+                  className="absolute left-0 top-full z-50 flex bg-popover border border-border shadow-xl rounded-b-md"
+                  style={{ marginTop: "1px", minWidth: "680px" }}
+                >
+                  {/* Left panel — parent categories */}
+                  <div className="w-[240px] border-r border-border/60 py-1 flex-shrink-0">
                     {categories.map((cat) => (
-                      <Link
+                      <button
                         key={cat.slug}
-                        to={`/buyer-marketplace?category=${cat.slug}`}
-                        onClick={() => setIsCategoryOpen(false)}
-                        className="flex items-center px-3 py-2 text-sm text-popover-foreground hover:bg-secondary hover:text-primary transition-colors"
+                        onMouseEnter={() => setHoveredParent(cat.slug)}
+                        onClick={() => {
+                          navigate(`/buyer-marketplace?category=${cat.slug}`);
+                          setIsCategoryOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                          hoveredParent === cat.slug
+                            ? "bg-secondary text-foreground font-medium"
+                            : "text-popover-foreground hover:bg-secondary/60"
+                        }`}
                       >
-                        {cat.name}
-                      </Link>
+                        <span className="truncate text-left">
+                          {formatCategoryName(cat.name)}
+                        </span>
+                        {cat.subcategories?.length > 0 && (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 ml-2" />
+                        )}
+                      </button>
                     ))}
                   </div>
+
+                  {/* Right panel — subcategories of hovered parent (header always; grid if any) */}
+                  {hoveredParentData && (
+                    <div className="flex-1 p-4 min-w-[400px]">
+                      <div className="mb-3 pb-2 border-b border-border/60">
+                        <h3 className="text-sm font-bold text-foreground">
+                          {/* {hoveredParentData.name} */}
+                            {formatCategoryName(hoveredParentData.name)}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigate(`/buyer-marketplace?category=${encodeURIComponent(hoveredParentData.slug)}`);
+                            setIsCategoryOpen(false);
+                          }}
+                          className="text-xs text-primary hover:underline font-semibold uppercase tracking-wide mt-0.5"
+                        >
+                          {t("publicHeader.showAll")}
+                        </button>
+                      </div>
+
+                      {(hoveredParentData.subcategories?.length ?? 0) > 0 && (
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+                          {hoveredParentData.subcategories!.map((sub) => (
+                            <button
+                              type="button"
+                              key={sub.slug}
+                              onClick={() => {
+                                navigate(`/buyer-marketplace?category=${encodeURIComponent(sub.slug)}`);
+                                setIsCategoryOpen(false);
+                              }}
+                              className="text-left px-0 py-1.5 text-sm text-popover-foreground hover:text-primary transition-colors truncate"
+                            >
+                              {sub.name}
+                              
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -372,7 +444,7 @@ const Header = () => {
             {/* Divider */}
             <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
-            {/* Quick category tabs — responsive count */}
+            {/* Quick category tabs — parent categories, responsive count */}
             <div className="flex items-center flex-1 h-full min-w-0">
               {visibleCategories.map((cat) => (
                 <Link
@@ -380,9 +452,17 @@ const Header = () => {
                   to={`/buyer-marketplace?category=${cat.slug}`}
                   className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap flex-shrink-0"
                 >
-                  {cat.name}
+                     {formatCategoryName(cat.name)}
                 </Link>
               ))}
+              {categories.length > visibleCatCount && (
+                <button
+                  onMouseEnter={handleCategoryMouseEnter}
+                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  {t("publicHeader.moreCategories")}
+                </button>
+              )}
             </div>
 
             {/* Right-side action buttons */}
@@ -392,16 +472,15 @@ const Header = () => {
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-7 rounded px-3"
                 onClick={() => navigate("/sell-with-greenbidz")}
               >
-                Sell with GreenBidz
+                {t("publicHeader.sellWithGreenBidz")}
               </Button>
               <Link to="/direct-sales">
                 <Button
                   size="sm"
                   variant="outline"
                   className="border-border text-foreground hover:bg-secondary text-xs h-7 rounded px-3"
-              
                 >
-                  Direct sales
+                  {t("publicHeader.directSales")}
                 </Button>
               </Link>
             </div>
@@ -417,18 +496,14 @@ const Header = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search machines..."
+                  placeholder={t("publicHeader.searchPlaceholderMobile")}
                   className="w-full h-10 pl-10 pr-4 rounded border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       const val = (e.target as HTMLInputElement).value.trim();
                       if (val) {
-                        const params = location.pathname === "/buyer-marketplace"
-                          ? new URLSearchParams(location.search)
-                          : new URLSearchParams();
-                        params.set("search", val);
-                        params.delete("page");
-                        navigate(`/buyer-marketplace?${params.toString()}`);
+                        navigate(`/marketplace?search=${encodeURIComponent(val)}`);
+                        (e.target as HTMLInputElement).value = "";
                         setOpenMenu(false);
                       }
                     }
@@ -438,15 +513,15 @@ const Header = () => {
 
               {/* Language */}
               <div className="pb-3 border-b border-border">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Language</p>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t("publicHeader.language")}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {languages.map((l) => (
                     <button
                       key={l.code}
                       onClick={() => changeLanguage(l.code)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded border transition-colors ${lang === l.code
-                          ? "border-primary text-primary bg-primary/5 font-medium"
-                          : "border-border text-foreground hover:bg-secondary"
+                        ? "border-primary text-primary bg-primary/5 font-medium"
+                        : "border-border text-foreground hover:bg-secondary"
                         }`}
                     >
                       <span>{l.flag}</span>
@@ -456,26 +531,61 @@ const Header = () => {
                 </div>
               </div>
 
-              {/* Categories */}
+              {/* Categories — parent with collapsible subcategories */}
               <div className="pb-3 border-b border-border">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">Categories</p>
-                <div className="grid grid-cols-2 gap-1">
-                  <Link
-                    to="/buyer-marketplace"
-                    onClick={() => setOpenMenu(false)}
-                    className="px-2 py-1.5 text-sm text-foreground hover:bg-secondary rounded"
-                  >
-                    All
-                  </Link>
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t("publicHeader.categories")}</p>
+                <Link
+                  to="/buyer-marketplace"
+                  onClick={() => setOpenMenu(false)}
+                  className="block px-2 py-1.5 text-sm font-medium text-foreground hover:bg-secondary rounded mb-1"
+                >
+                  {t("publicHeader.allAuctions")}
+                </Link>
+                <div className="space-y-1">
                   {categories.map((cat) => (
-                    <Link
-                      key={cat.slug}
-                      to={`/buyer-marketplace?category=${cat.slug}`}
-                      onClick={() => setOpenMenu(false)}
-                      className="px-2 py-1.5 text-sm text-foreground hover:bg-secondary rounded truncate"
-                    >
-                      {cat.name}
-                    </Link>
+                    <div key={cat.slug}>
+                      <button
+                        className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium text-foreground hover:bg-secondary rounded"
+                        onClick={() => {
+                          if (cat.subcategories?.length > 0) {
+                            setMobileExpandedParent(mobileExpandedParent === cat.slug ? null : cat.slug);
+                          } else {
+                            navigate(`/buyer-marketplace?category=${cat.slug}`);
+                            setOpenMenu(false);
+                          }
+                        }}
+                      >
+                        <span className="truncate text-left">
+                          {formatCategoryName(cat.name)}
+                        </span>
+                        {cat.subcategories?.length > 0 && (
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 text-muted-foreground flex-shrink-0 ml-1 transition-transform ${mobileExpandedParent === cat.slug ? "rotate-180" : ""}`}
+                          />
+                        )}
+                      </button>
+                      {mobileExpandedParent === cat.slug && cat.subcategories?.length > 0 && (
+                        <div className="ml-3 mt-1 space-y-0.5 border-l-2 border-border pl-3">
+                          <Link
+                            to={`/buyer-marketplace?category=${cat.slug}`}
+                            onClick={() => setOpenMenu(false)}
+                            className="block px-1 py-1 text-xs font-semibold text-primary hover:underline uppercase tracking-wide"
+                          >
+                            {t("publicHeader.showAllMobile")}
+                          </Link>
+                          {cat.subcategories.map((sub) => (
+                            <Link
+                              key={sub.slug}
+                              to={`/buyer-marketplace?category=${sub.slug}`}
+                              onClick={() => setOpenMenu(false)}
+                              className="block px-1 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded truncate"
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -487,29 +597,29 @@ const Header = () => {
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9"
                   onClick={() => { setSellModalOpen(true); setOpenMenu(false); }}
                 >
-                  Sell with GreenBidz
+                  {t("publicHeader.sellWithGreenBidz")}
                 </Button>
 
                 {userId ? (
                   <>
                     <Button variant="outline" size="sm" className="w-full border-border text-foreground h-9"
                       onClick={() => { window.open("/dashboard", "_blank"); setOpenMenu(false); }}>
-                      Dashboard
+                      {t("publicHeader.dashboard")}
                     </Button>
                     <Button size="sm" variant="ghost" className="w-full text-muted-foreground h-9"
                       onClick={handleLogout}>
-                      Logout
+                      {t("publicHeader.logout")}
                     </Button>
                   </>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
                       onClick={() => { navigate("/auth?type=buyer&mode=signup"); setOpenMenu(false); }}>
-                      Create account
+                      {t("publicHeader.createAccount")}
                     </Button>
                     <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
                       onClick={() => { navigate("/auth?type=buyer&mode=signin"); setOpenMenu(false); }}>
-                      Sign in
+                      {t("publicHeader.signIn")}
                     </Button>
                   </div>
                 )}

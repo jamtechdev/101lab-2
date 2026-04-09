@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { toastSuccess } from "@/helper/toasterNotification";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/common/Header";
@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Check, ChevronDown, ChevronUp, Send, TrendingUp, Globe2,
-  FileText, Truck, Shield, DollarSign, BarChart3, Users,
+  FileText, Truck, Shield, DollarSign, BarChart3, Users, Upload,
 } from "lucide-react";
+import { PHONE_CODES } from "@/config/phoneCodes";
 import heroImg from "@/assets/seller-landing/hero-handshake.jpg";
 import benefitsImg from "@/assets/seller-landing/benefits-worker.jpg";
 import servicesImg from "@/assets/seller-landing/services-inspector.jpg";
@@ -120,26 +121,68 @@ const SellerLandingPage = () => {
   const [form, setForm] = useState({
     companyName: "",
     fullName: "",
-    email: "",
+    phoneCode: "+886",
     phone: "",
-    postCode: "",
-    country: "",
-    industry: "",
-    offer: "",
+    companyEmail: "",
+    message: "",
+    attachment: null as File | null,
   });
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setForm((prev) => ({ ...prev, attachment: file }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: integrate with API
-    console.log("Seller lead:", form);
-    toastSuccess("Your enquiry has been submitted! We'll be in touch shortly.");
-    setForm({ companyName: "", fullName: "", email: "", phone: "", postCode: "", country: "", industry: "", offer: "" });
+
+    if (!form.companyName.trim() || !form.fullName.trim() || !form.companyEmail.trim() || !form.phone.trim() || !form.message.trim()) {
+      toast.error("All fields are required.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const productionUrl = import.meta.env.VITE_PRODUCTION_URL || "http://localhost:4000/api/v1/";
+      const endpoint = `${productionUrl.replace("/api/v1/", "")}/api/v1/sales/submit-deal`;
+
+      const formData = new FormData();
+      formData.append("companyName", form.companyName);
+      formData.append("fullName", form.fullName);
+      formData.append("phoneCode", form.phoneCode);
+      formData.append("phone", form.phone);
+      formData.append("companyEmail", form.companyEmail);
+      formData.append("message", form.message);
+      if (form.attachment) {
+        formData.append("attachment", form.attachment);
+      }
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json() as { ok?: boolean; error?: string; itemId?: string };
+
+      if (result?.ok) {
+        toast.success("Your enquiry has been submitted! We'll be in touch shortly.");
+        setForm({ companyName: "", fullName: "", phoneCode: "+886", phone: "", companyEmail: "", message: "", attachment: null });
+        return;
+      }
+
+      toast.error(result?.error || "Could not submit. Please try again.");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not submit. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const steps = [
@@ -230,39 +273,59 @@ const SellerLandingPage = () => {
               </h1>
 
               <form onSubmit={handleSubmit} className="space-y-5">
-                {[
-                  { name: "companyName", label: "Company name", placeholder: "Company name", required: true },
-                  { name: "fullName", label: "Your full name", placeholder: "First and last name", required: true },
-                  { name: "email", label: "Your email address", placeholder: "address@mail.com", required: true, type: "email" },
-                  { name: "phone", label: "Phone number", placeholder: "+44 33333", required: true },
-                  { name: "postCode", label: "Post code", placeholder: "", required: true },
-                  { name: "country", label: "Country", placeholder: "", required: true },
-                  { name: "industry", label: "Your Industry", placeholder: "Metal, Wood, Construction, Food, Transport…", required: true },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block text-sm font-medium text-foreground mb-1.5">
-                      {field.label} {field.required && <span className="text-destructive">*</span>}
-                    </label>
-                    <Input
-                      name={field.name}
-                      type={field.type || "text"}
-                      placeholder={field.placeholder}
-                      value={(form as any)[field.name]}
-                      onChange={handleChange}
-                      required={field.required}
-                      className="border-border"
-                    />
-                  </div>
-                ))}
-
+                {/* Company Name */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Your offer <span className="text-destructive">*</span>
+                    Company Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="companyName" placeholder="Company name" value={form.companyName} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Full Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="fullName" placeholder="First and last name" value={form.fullName} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Phone with Country Code */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Country Code & Phone <span className="text-destructive">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      name="phoneCode"
+                      value={form.phoneCode}
+                      onChange={handleChange}
+                      className="border border-border rounded-md bg-background text-foreground text-sm px-2 py-2 focus:outline-none focus:ring-2 focus:ring-primary w-40 shrink-0"
+                    >
+                      {PHONE_CODES.filter(c => ["China", "Indonesia", "India", "Malaysia", "Taiwan", "Thailand", "Japan", "Vietnam"].includes(c.country)).map((c) => (
+                        <option key={c.code} value={c.code}>{c.label}</option>
+                      ))}
+                    </select>
+                    <Input name="phone" type="tel" placeholder="Phone number" value={form.phone} onChange={handleChange} required className="border-border flex-1" />
+                  </div>
+                </div>
+
+                {/* Company Email */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Company Email <span className="text-destructive">*</span>
+                  </label>
+                  <Input name="companyEmail" type="email" placeholder="company@example.com" value={form.companyEmail} onChange={handleChange} required className="border-border" />
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Message <span className="text-destructive">*</span>
                   </label>
                   <Textarea
-                    name="offer"
-                    placeholder="Describe the machines you want to sell…"
-                    value={form.offer}
+                    name="message"
+                    placeholder="Describe your inquiry or what you want to sell…"
+                    value={form.message}
                     onChange={handleChange}
                     required
                     rows={4}
@@ -270,9 +333,27 @@ const SellerLandingPage = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full sm:w-auto px-8">
+                {/* Attachment */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">
+                    Attachment (Optional)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="border-border flex-1"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png,.gif"
+                    />
+                    {form.attachment && (
+                      <span className="text-sm text-muted-foreground">{form.attachment.name}</span>
+                    )}
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full sm:w-auto px-8" disabled={submitting}>
                   <Send className="h-4 w-4 mr-2" />
-                  Send request
+                  {submitting ? "Sending…" : "Send request"}
                 </Button>
               </form>
             </div>
@@ -331,7 +412,7 @@ const SellerLandingPage = () => {
                 <CheckItem text="Prompt payment" />
                 <CheckItem text="Comprehensive services" />
               </div>
-            </div>
+            </div>        
           </div>
         </div>
       </section>

@@ -945,11 +945,13 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
 // ─── Category Product Rows (all categories) ───────────────────────────────────
 const CategoryProductRows = () => {
   const { data, isLoading } = useLanguageAwareCategorySummary();
+  console.log("data is",data);
+  
   const loaded: { slug: string; name: string }[] = data?.data ?? [];
 
   // Sort by config order; fall back to static list while loading
   const categories = loaded.length > 0
-    ? sortByConfig(loaded).slice(0, HOME_PRODUCT_ROWS_COUNT)
+    ? (loaded).slice(0, HOME_PRODUCT_ROWS_COUNT)
     : SITE_CATEGORIES.slice(0, HOME_PRODUCT_ROWS_COUNT);
 
   if (isLoading) return null;
@@ -969,7 +971,20 @@ const CategoryProductRows = () => {
 // ─── Auction Group Card — same mosaic style as CategoryCard ──────────────────
 const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // Get language-aware title and description
+  const getLocalizedValue = (defaultVal: string, en?: string, zh?: string, ja?: string, th?: string): string => {
+    const lang = i18n.language || 'en';
+    if (lang === 'zh' && zh) return zh;
+    if (lang === 'ja' && ja) return ja;
+    if (lang === 'th' && th) return th;
+    if (en) return en;
+    return defaultVal;
+  };
+
+  const localizedTitle = getLocalizedValue(group.title, group.title_en, group.title_zh, group.title_ja, group.title_th);
+  const localizedDescription = getLocalizedValue(group.description || '', group.description_en, group.description_zh, group.description_ja, group.description_th);
 
   const imgs = group.previewImages;
   const mainImg = imgs[0] || "/placeholder.svg";
@@ -1026,7 +1041,11 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
 
   return (
     <div
-      onClick={() => navigate(`/buyer-marketplace?category=scrap&auction_group=${group.group_id}`)}
+      onClick={() => {
+        // Use slug if available, otherwise fallback to group_id
+        const identifier = group.slug || group.group_id;
+        navigate(`/buyer-marketplace?group=${identifier}`);
+      }}
       className="cursor-pointer group flex-shrink-0 w-[calc(85vw-2rem)] sm:w-[380px] md:w-[420px] lg:w-[460px] border border-border rounded overflow-hidden bg-card hover:shadow-md transition-shadow"
     >
       {/* Mosaic image area */}
@@ -1034,7 +1053,7 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
         <div className="flex-[3] min-w-0 overflow-hidden">
           <img
             src={mainImg}
-            alt={group.title}
+            alt={localizedTitle}
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
           />
         </div>
@@ -1077,7 +1096,7 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
       {/* Details below image */}
       <div className="px-3 pt-2.5 pb-2.5">
         <h3 className="font-bold text-[14px] text-foreground leading-snug uppercase group-hover:text-primary transition-colors line-clamp-1">
-          {group.title}
+          {localizedTitle}
         </h3>
         <p className="text-[12px] text-muted-foreground mt-0.5 flex items-center gap-1">
           <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
@@ -1090,13 +1109,89 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
   );
 };
 
+// ─── Highlighted Auction Groups Section ──────────────────────────────────────
+const HighlightedAuctionGroupSection = () => {
+  const { t } = useTranslation();
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE, featured_type: 'highlighted' });
+  const groups = (data?.data ?? []).filter(
+    (g) => g.batchCount > 0 // Filter for highlighted section is done on backend with featured_type param
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeft(el.scrollLeft > 10);
+    setShowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && groups.length > 0) setTimeout(checkScroll, 200);
+  }, [groups, isLoading, checkScroll]);
+
+  const scroll = (dir: "left" | "right") =>
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -480 : 480, behavior: "smooth" });
+
+  if (isLoading || groups.length === 0) return null;
+
+  return (
+    <section className="py-6 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Star className="h-4 w-4 text-amber-500" />
+            {t("landing.highlightedAuctions") || "Featured Auctions"}
+          </h2>
+          <Link
+            to="/buyer-marketplace"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+          >
+            {t("landing.viewAll")} <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        <div className="relative">
+          {showLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div
+            ref={scrollRef}
+            onScroll={checkScroll}
+            className="flex gap-4 overflow-x-auto pb-1"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {groups.map((group) => (
+              <AuctionGroupCard key={group.group_id} group={group} />
+            ))}
+          </div>
+          {showRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 // ─── Auction Group Section — horizontal scroll, same layout as CategorySection ─
 const AuctionGroupSection = () => {
   const { t } = useTranslation();
-  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "LabGreenbidz" });
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE });
   const groups = (data?.data ?? []).filter(
-    (g) =>
-      g
+    (g) => g.batchCount > 0 // Only show groups with batches
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1122,11 +1217,11 @@ const AuctionGroupSection = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <Clock className="h-4 w-4 text-destructive" />
-            {t("landing.auctionsClosingSoon")}
+            <Sparkles className="h-4 w-4 text-primary" />
+            {t("landing.newAuctions")}
           </h2>
           <Link
-            to="/buyer-marketplace?bidFilter=closing_soon"
+            to="/buyer-marketplace"
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             {t("landing.viewAll")} <ChevronRight className="h-3.5 w-3.5" />
@@ -1211,15 +1306,11 @@ const Landing = () => {
         highlighted={true}
       />
 
-      {/* ── New Auctions — by Category ────────────────────────────── */}
-      <CategorySection
-        title={t("landing.newAuctions")}
-        icon={Sparkles}
-        iconClass="text-primary"
-        viewAllLink="/buyer-marketplace?bidFilter=upcoming"
-        sort="upcoming"
-        emptyMessage={t("landing.noUpcomingAuctions")}
-      />
+      {/* ── Highlighted Auction Groups ────────────────────────────── */}
+      {/* <HighlightedAuctionGroupSection /> */}
+
+      {/* ── New Auctions — Auction Groups ────────────────────────── */}
+      <AuctionGroupSection />
 
       {/* ── Brand Trust Bar ───────────────────────────────────────── */}
       <section className="py-5 bg-card border-y border-border">
@@ -1274,16 +1365,14 @@ const Landing = () => {
           <h2 className="text-lg font-bold text-foreground mb-5">Find deals in:</h2>
           <div className="flex flex-wrap justify-center gap-2.5">
             {[
-              { code: "tw", name: "Taiwan" },
-              { code: "jp", name: "Japan" },
               { code: "cn", name: "China" },
-              { code: "kr", name: "South Korea" },
+              { code: "id", name: "Indonesia" },
               { code: "in", name: "India" },
+              { code: "my", name: "Malaysia" },
+              { code: "tw", name: "Taiwan" },
               { code: "th", name: "Thailand" },
+              { code: "jp", name: "Japan" },
               { code: "vn", name: "Vietnam" },
-              { code: "de", name: "Germany" },
-              { code: "us", name: "USA" },
-              { code: "gb", name: "UK" },
             ].map((country) => (
               <Link
                 key={country.name}

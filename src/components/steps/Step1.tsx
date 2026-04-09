@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import SunEditor from "suneditor-react";
 import "suneditor/dist/css/suneditor.min.css";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
 interface MediaFile {
   url: string;
@@ -27,7 +28,8 @@ interface Location {
 
 interface InventoryItem {
   id: string;
-  category: string;
+  parentCategory: string;
+  category: string;        // subcategory slug — sent to API
   title: string;
   description: string;
   condition: string;
@@ -43,9 +45,13 @@ interface InventoryItem {
 const UploadMethod = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { data: labCategoriesData } = useLanguageAwareCategories();
+  const labCategories = Array.isArray(labCategoriesData) ? labCategoriesData : [];
+
   const [items, setItems] = useState<InventoryItem[]>([
     {
       id: "1",
+      parentCategory: "",
       category: "",
       title: "",
       description: "",
@@ -68,6 +74,7 @@ const UploadMethod = () => {
       ...items,
       {
         id: newId,
+        parentCategory: "",
         category: "",
         title: "",
         description: "",
@@ -232,14 +239,18 @@ const UploadMethod = () => {
   };
 
   const handleConfirm = () => {
-    const hasEmptyFields = items.some(
-      (item) =>
-        !item.category ||
+    const hasEmptyFields = items.some((item) => {
+      const parent = labCategories.find((c) => c.slug === item.parentCategory);
+      const needsSubcategory = parent && parent.subcategories?.length > 0;
+      return (
+        !item.parentCategory ||
+        (needsSubcategory && !item.category) ||
         !item.title ||
         !item.condition ||
         !item.operationStatus ||
         item.locations.some((loc) => !loc.address)
-    );
+      );
+    });
 
     if (hasEmptyFields) {
       toast.error(t('steps.step1.fillRequired'));
@@ -423,39 +434,52 @@ const UploadMethod = () => {
                         />
                       </div>
 
-                      <div>
-                        <Label htmlFor={`category-${item.id}`}>{t('steps.step1.categoryRequired')}</Label>
-                        <Select
-                          value={item.category}
-                          onValueChange={(value) => updateItem(item.id, "category", value)}
-                        >
-                          <SelectTrigger id={`category-${item.id}`} className="mt-1">
-                            <SelectValue placeholder={t('upload.selectCategory')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="mix-lot">Mix lot 混合批次</SelectItem>
-                            <SelectItem value="mixed-industrial">Mixed Industrial Waste 混合工業廢棄物</SelectItem>
-                            <SelectItem value="metal-scrap">Metal Scrap 金屬廢料</SelectItem>
-                            <SelectItem value="plastic-scrap">Plastic Scrap 塑膠廢料</SelectItem>
-                            <SelectItem value="paper-cardboard">Paper & Cardboard Waste 紙類及紙板廢棄物</SelectItem>
-                            <SelectItem value="glass">Glass Waste 玻璃廢棄物</SelectItem>
-                            <SelectItem value="wood">Wood Waste 木材廢棄物</SelectItem>
-                            <SelectItem value="textile-fabric">Textile & Fabric Waste 紡織及布料廢棄物</SelectItem>
-                            <SelectItem value="rubber-tire">Rubber & Tire Waste 橡膠及輪胎廢棄物</SelectItem>
-                            <SelectItem value="electronic">Electronic Waste (E-waste) 電子廢棄物</SelectItem>
-                            <SelectItem value="industrial-equipment">Industrial Equipment & Machinery 工業設備及機械</SelectItem>
-                            <SelectItem value="construction-demolition">Construction & Demolition Waste 建築及拆除廢棄物</SelectItem>
-                            <SelectItem value="organic-food">Organic & Food Waste 有機及食物廢棄物</SelectItem>
-                            <SelectItem value="waste-oils">Waste Oils & Lubricants 廢油及潤滑油</SelectItem>
-                            <SelectItem value="chemical-solvent">Chemical & Solvent Waste 化學品及溶劑廢棄物</SelectItem>
-                            <SelectItem value="paint-ink-coating">Paint, Ink & Coating Waste 油漆、墨水及塗料廢棄物</SelectItem>
-                            <SelectItem value="batteries">Batteries & Accumulators 電池及蓄電池</SelectItem>
-                            <SelectItem value="medical-clinical">Medical / Clinical Waste 醫療/臨床廢棄物</SelectItem>
-                            <SelectItem value="hazardous">Special / Hazardous Waste (Other) 特殊/危險廢棄物（其他）</SelectItem>
-                            <SelectItem value="residual">Residual / Non-recyclable Waste 殘餘/不可回收廢棄物</SelectItem>
-                            <SelectItem value="other">Other (Please Specify) 其他（請註明）</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="space-y-2">
+                        <div>
+                          <Label htmlFor={`parent-category-${item.id}`}>{t('steps.step1.categoryRequired')}</Label>
+                          <Select
+                            value={item.parentCategory}
+                            onValueChange={(value) => {
+                              updateItem(item.id, "parentCategory", value);
+                              updateItem(item.id, "category", "");
+                            }}
+                          >
+                            <SelectTrigger id={`parent-category-${item.id}`} className="mt-1">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {labCategories.map((cat) => (
+                                <SelectItem key={cat.slug} value={cat.slug}>
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {item.parentCategory && (() => {
+                          const parent = labCategories.find((c) => c.slug === item.parentCategory);
+                          return parent?.subcategories?.length ? (
+                            <div>
+                              <Label htmlFor={`category-${item.id}`}>Subcategory *</Label>
+                              <Select
+                                value={item.category}
+                                onValueChange={(value) => updateItem(item.id, "category", value)}
+                              >
+                                <SelectTrigger id={`category-${item.id}`} className="mt-1">
+                                  <SelectValue placeholder="Select subcategory" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {parent.subcategories.map((sub) => (
+                                    <SelectItem key={sub.slug} value={sub.slug}>
+                                      {sub.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
 
                       <div>

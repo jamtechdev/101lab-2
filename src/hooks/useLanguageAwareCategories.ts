@@ -1,33 +1,35 @@
-import { useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useGetMachinesCategoriesQuery } from '@/rtk/slices/apiSlice';
+import { useGetMachinesCategoriesQuery, LabCategory } from '@/rtk/slices/apiSlice';
 import { useGetCategorySummaryQuery as useBatchCategorySummary } from '@/rtk/slices/batchApiSlice';
-import { processCategories, processCategorySummary } from '@/utils/categoryTranslations';
+import { processCategorySummary, processLabCategoryTree } from '@/utils/categoryTranslations';
+import { toBackendContentLang, toUiCategoryLang } from '@/utils/languageUtils';
+
+export type { LabCategory };
 
 /**
- * Custom hook for language-aware category fetching
- * Automatically refetches categories when language changes and translates them
+ * Lab category tree for navigation (mega menu, filters).
+ * Always loads WP `product-labs?language=en` for hierarchy: the zh-hant endpoint returns
+ * parents with empty `subcategories[]` (WPML data gap), which hides submenus in Chinese UI.
+ * Display names are localized via processLabCategoryTree + categoryTranslations.
  */
 export const useLanguageAwareCategories = (_platform?: string) => {
   const { i18n } = useTranslation();
-  const currentLang = i18n.language as 'en' | 'zh';
+  const uiLang = toUiCategoryLang(i18n.language);
 
-  const machinesCategoriesQuery = useGetMachinesCategoriesQuery(currentLang);
+  const machinesCategoriesQuery = useGetMachinesCategoriesQuery('en');
 
-  // Refetch when language changes
-  useEffect(() => {
-    machinesCategoriesQuery.refetch();
-  }, [currentLang]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rawCategories: LabCategory[] = machinesCategoriesQuery.data?.data ?? [];
+  const categories = useMemo(
+    () => processLabCategoryTree(rawCategories, uiLang),
+    [rawCategories, uiLang]
+  );
 
-  // Process the data to ensure proper language
-  const processedData = machinesCategoriesQuery.data ?
-    processCategories(machinesCategoriesQuery.data, currentLang) :
-    machinesCategoriesQuery.data;
-
+  const { data: _serverPayload, ...queryRest } = machinesCategoriesQuery;
   return {
-    ...machinesCategoriesQuery,
-    data: processedData,
-    currentLanguage: currentLang,
+    ...queryRest,
+    data: categories,
+    currentLanguage: uiLang,
   };
 };
 
@@ -41,21 +43,22 @@ export const useLanguageAwareCategorySummary = (params: {
   sort?: string;
 } = {}) => {
   const { i18n } = useTranslation();
-  const currentLang = i18n.language as 'en' | 'zh';
+  const apiLang = toBackendContentLang(i18n.language);
+  const uiLang = toUiCategoryLang(i18n.language);
 
   const categorySummaryQuery = useBatchCategorySummary({
     ...params,
-    lang: currentLang,
+    lang: apiLang,
   });
 
   // Refetch when language changes
   useEffect(() => {
     categorySummaryQuery.refetch();
-  }, [currentLang]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [apiLang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Process the data to ensure proper language
-  const processedData = categorySummaryQuery.data?.data ? 
-    processCategorySummary(categorySummaryQuery.data.data, currentLang) : 
+  const processedData = categorySummaryQuery.data?.data ?
+    processCategorySummary(categorySummaryQuery.data.data, uiLang) :
     categorySummaryQuery.data?.data;
 
   return {
@@ -64,6 +67,6 @@ export const useLanguageAwareCategorySummary = (params: {
       ...categorySummaryQuery.data,
       data: processedData
     } : categorySummaryQuery.data,
-    currentLanguage: currentLang,
+    currentLanguage: uiLang,
   };
 };

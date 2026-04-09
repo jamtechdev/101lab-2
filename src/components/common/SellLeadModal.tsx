@@ -81,7 +81,7 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
                     {cat.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem key="other" value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
