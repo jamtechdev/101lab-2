@@ -13,11 +13,17 @@ import Header from "@/components/common/Header";
 import CategoryBar from "@/components/common/CategoryBar";
 import BuyerMarketplaceFilters from "@/components/common/BuyerMarketplaceFilters";
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
+import SEOMeta from "@/components/common/SEOMeta";
+
+// ✨ Smoothness - skeleton loaders
+import { ProductCardSkeleton } from "@/components/common/Skeletons";
 
 const Marketplace = () => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
   const navigate = useNavigate();
+  const categoryCache = useCategoryCache();
 
   // URL-synced state
   const [searchParams, setSearchParams] = useSearchParams();
@@ -128,6 +134,8 @@ const Marketplace = () => {
     bidDate: (selectedBidFilter === "custom" && selectedBidDate) ? selectedBidDate : undefined,
     lang: currentLang,
     type: SITE_TYPE,
+    country: selectedCountry || undefined,
+    condition: selectedCondition || undefined,
   });
 
   const pagination = batchData?.pagination;
@@ -136,30 +144,56 @@ const Marketplace = () => {
   const hasNextPage = pagination?.hasNextPage ?? false;
   const hasPrevPage = pagination?.hasPrevPage ?? false;
 
+  // Compute dynamic bid status from dates (same logic as details page)
+  const computeDynamicStatus = (batch: any): string => {
+    const now = Date.now();
+    if (batch.bid_start_date && batch.bid_end_date) {
+      const start = new Date(batch.bid_start_date).getTime();
+      const end = new Date(batch.bid_end_date).getTime();
+      if (now >= start && now <= end) return "live";
+      if (now < start) return "upcoming";
+      if (now > end) return "ended";
+    }
+    return batch.status || "none";
+  };
+
   // Transform API data for MarketplaceCardGrid
   const listings = useMemo(
     () =>
-      batchData?.data?.map((batch: any) => ({
-        id: batch.batchId,
-        batch_id: batch.batchId,
-        title: batch.title,
-        description: batch.description,
-        category: batch.category,
-        askingPrice: `$${batch.value}`,
-        status: batch.status,
-        bid_start_date: batch.bid_start_date || null,
-        bid_end_date: batch.bid_end_date || null,
-        bids: batch.bids ?? 0,
-        productCount: batch.itemsCount,
-        city: "N/A",
-        image: batch.firstProductImages?.[0] || null,
-        images: batch.firstProductImages || [],
-        firstProductId: batch.firstProductId || null,
-        country: batch.country || null,
-        bid_type: batch.bid_type || null,
-        target_price: batch.target_price || null,
-        currency: batch.currency || null,
-      })) || [],
+      batchData?.data?.map((batch: any) => {
+        const dynamicStatus = computeDynamicStatus(batch);
+        return {
+          id: batch.batchId,
+          batch_id: batch.batchId,
+          title: batch.title,
+          description: batch.description,
+          title_en: batch.title_en,
+          title_zh: batch.title_zh,
+          title_ja: batch.title_ja,
+          title_th: batch.title_th,
+          description_en: batch.description_en,
+          description_zh: batch.description_zh,
+          description_ja: batch.description_ja,
+          description_th: batch.description_th,
+          category: batch.category,
+          askingPrice: `$${batch.value}`,
+          status: batch.status,
+          dynamicStatus,
+          bid_start_date: batch.bid_start_date || null,
+          bid_end_date: batch.bid_end_date || null,
+          bids: batch.bids ?? 0,
+          productCount: batch.itemsCount,
+          city: "N/A",
+          image: batch.firstProductImages?.[0] || null,
+          images: batch.firstProductImages || [],
+          firstProductId: batch.firstProductId || null,
+          country: batch.country || null,
+          condition: batch.condition || null,
+          bid_type: batch.bid_type || null,
+          target_price: batch.target_price || null,
+          currency: batch.currency || null,
+        };
+      }) || [],
     [batchData?.data]
   );
 
@@ -186,8 +220,21 @@ const Marketplace = () => {
 
   const hasActiveFilter = selectedCategory || selectedCountry || selectedCondition || selectedBidFilter;
 
+  const pageTitle = searchQuery
+    ? `Buy ${searchQuery} - GreenBidz Marketplace`
+    : "Industrial Equipment Marketplace - GreenBidz";
+  const pageDescription = searchQuery
+    ? `Browse and buy quality ${searchQuery} on GreenBidz. Connect with trusted sellers of industrial equipment and machinery.`
+    : "Discover industrial equipment, machinery, and recyclable materials from verified sellers worldwide on GreenBidz.";
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta
+        title={pageTitle}
+        description={pageDescription}
+        keywords="buy equipment, marketplace, industrial equipment, machinery, sellers, equipment for sale"
+        type="website"
+      />
       <Header />
 
       {/* <CategoryBar
@@ -278,13 +325,16 @@ const Marketplace = () => {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Loading */}
+            {/* Loading - Skeleton */}
             {isLoading && (
-              <div className="flex justify-center items-center py-20">
-                <div className="text-center space-y-4">
-                  <Loader2 className="w-12 h-12 animate-spin text-accent mx-auto" />
-                  <p className="text-muted-foreground">Loading marketplace listings...</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <Store className="w-4 h-4 text-primary" />
+                    Loading listings...
+                  </h2>
                 </div>
+                <ProductCardSkeleton count={12} />
               </div>
             )}
 

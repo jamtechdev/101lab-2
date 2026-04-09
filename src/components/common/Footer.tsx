@@ -4,6 +4,7 @@ import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
+import { SITE_FULL_NAME } from "@/config/branding";
 
 const MONDAY_FORM_URL = "https://forms.monday.com/";
 
@@ -53,7 +54,7 @@ const Footer = () => {
           <div className="lg:col-span-1">
             <div className="mb-4">
               <img src={logo} alt="GreenBidz" className="h-7 w-auto brightness-200" />
-              <p className="text-xs text-card/50 mt-1">101machines by Greenbidz</p>
+              <p className="text-xs text-card/50 mt-1">{SITE_FULL_NAME}</p>
             </div>
             <p className="text-sm text-card/60 leading-relaxed mb-6">
               Asia's leading B2B marketplace for used industrial metalworking machinery.
@@ -133,7 +134,7 @@ const Footer = () => {
       <div className="border-t border-card/10">
         <div className="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-card/40">
-            © {new Date().getFullYear()} GreenBidz — 101machines. All rights reserved.
+            © {new Date().getFullYear()} GreenBidz — {SITE_FULL_NAME}. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-xs text-card/40">
             <a href="#" className="hover:text-card/70 transition-colors">Privacy</a>

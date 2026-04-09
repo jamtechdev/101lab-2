@@ -22,6 +22,9 @@ const languages = [
   { code: "th", label: "ไทย", flag: "🇹🇭" },
 ];
 
+import { SITE_CATEGORIES, sortByConfig } from "@/config/categories";
+import { SITE_NAME } from "@/config/branding";
+
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,9 +53,13 @@ const Header = () => {
   }, []);
   const lang = i18n.language || "en";
   const { data: categoriesData } = useLanguageAwareCategories();
-  const categories: any[] = Array.isArray(categoriesData)
+  const loadedCategories: any[] = Array.isArray(categoriesData)
     ? categoriesData
     : (categoriesData as any)?.data ?? [];
+  // Sort loaded categories to match the configured sequence order
+  const sortedLoadedCategories = loadedCategories.length > 0 ? sortByConfig(loadedCategories) : [];
+  // Show static list instantly while API loads; swap to real data (sorted) once available
+  const categories: any[] = sortedLoadedCategories.length > 0 ? sortedLoadedCategories : SITE_CATEGORIES;
 
   // Responsive: show fewer categories on smaller screens
   useEffect(() => {
@@ -178,6 +185,7 @@ const Header = () => {
                 className="h-7 sm:h-8 w-auto"
               />
               <div className="hidden sm:block leading-tight">
+                <span className="text-sm font-bold text-foreground">{SITE_NAME}</span>
                 <span className="text-sm font-bold text-foreground">101Lab</span>
                 <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
               </div>
@@ -326,6 +334,17 @@ const Header = () => {
                 <ChevronDown className={`h-3 w-3 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`} />
               </button>
               {isCategoryOpen && (
+                <div className="absolute left-0 top-full z-50 bg-popover border border-border rounded-b-md shadow-lg w-[220px] max-h-[320px] overflow-y-auto" style={{ marginTop: '1px' }}>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.slug}
+                      onClick={() => { navigate(`/buyer-marketplace?category=${cat.slug}`); setIsCategoryOpen(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm transition-colors text-popover-foreground hover:bg-secondary/60 hover:text-primary border-b border-border/40 last:border-b-0"
+                    >
+                      <span className="truncate">{cat.name}</span>
+                      <ChevronDown className="h-3 w-3 -rotate-90 text-muted-foreground flex-shrink-0 ml-2" />
+                    </button>
+                  ))}
                 <div className="absolute left-0 top-full pt-1 z-50">
                   <div className="bg-popover border border-border rounded shadow-lg w-[220px] max-h-[320px] overflow-y-auto py-1">
                     <Link

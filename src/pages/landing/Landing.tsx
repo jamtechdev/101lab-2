@@ -3,9 +3,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
+import SEOMeta from "@/components/common/SEOMeta";
+import { getSEO } from "@/config/seoConfig";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
+import { SITE_CATEGORIES, HOME_CATEGORY_COUNT, HOME_PRODUCT_ROWS_COUNT, sortByConfig } from "@/config/categories";
 import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight, Clock, ShieldCheck, ChevronRight, ChevronLeft,
@@ -711,9 +715,14 @@ const CategorySection = ({
 const BrowseByCategorySection = () => {
   const { t } = useTranslation();
   const { data: categoriesData, isLoading } = useLanguageAwareCategories();
-  const categories: { slug: string; name: string }[] = Array.isArray(categoriesData)
+  const loaded: { slug: string; name: string }[] = Array.isArray(categoriesData)
     ? categoriesData
     : (categoriesData as any)?.data ?? [];
+
+  // Static fallback → real data sorted by config order
+  const categories = loaded.length > 0
+    ? sortByConfig(loaded).slice(0, HOME_CATEGORY_COUNT)
+    : SITE_CATEGORIES.slice(0, HOME_CATEGORY_COUNT);
 
   return (
     <section className="py-10 bg-secondary/30 border-b border-border">
@@ -721,33 +730,30 @@ const BrowseByCategorySection = () => {
         <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">TOP PICKS</p>
         <h2 className="text-lg font-bold text-foreground mb-6">{t("landing.browseByCat") || "Popular Categories"}</h2>
 
-        {isLoading && (
-          <div className="flex flex-wrap justify-center gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-10 w-32 bg-secondary animate-pulse rounded-md" />
-            ))}
-          </div>
-        )}
-
-        {!isLoading && categories.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.slice(0, 6).map((cat) => (
-              <Link
-                key={cat.slug}
-                to={`/buyer-marketplace?category=${cat.slug}`}
-                className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
-              >
-                {cat.name}
-              </Link>
-            ))}
+        <div className="flex flex-wrap justify-center gap-3">
+          {isLoading
+            ? SITE_CATEGORIES.slice(0, HOME_CATEGORY_COUNT).map((cat) => (
+                <div key={cat.slug} className="h-10 w-40 bg-secondary animate-pulse rounded-md" />
+              ))
+            : categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  to={`/buyer-marketplace?category=${cat.slug}`}
+                  className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
+                >
+                  {cat.name}
+                </Link>
+              ))
+          }
+          {!isLoading && (
             <Link
               to="/buyer-marketplace"
               className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
             >
               More industrial categories
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
@@ -755,11 +761,16 @@ const BrowseByCategorySection = () => {
 
 // ─── Category Product Card (Surplex style) ──────────────────────────────────
 const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => void }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
   const isLive = batch.status === "live_for_bids";
   const images: string[] = (batch.firstProductImages as string[]) || [];
   const bids: number = batch.bids ?? 0;
   const location: string = batch.location || batch.city || batch.country || "";
+
+  // Get translated title based on current language
+  const translationKey = `title_${currentLang}`;
+  const translatedTitle = batch[translationKey] || batch.title || `Batch #${batch.batchId}`;
 
   return (
     <div
@@ -794,7 +805,7 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
           {t("landing.batchId")} #{batch.batchId}
         </p>
         <h4 className="font-bold text-[12px] text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {batch.title || `${batch.category || "Industrial"} Lot #${batch.batchId}`}
+          {translatedTitle}
         </h4>
         <div className="flex items-center gap-1.5 mt-1">
           <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
@@ -827,7 +838,9 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
 
 // ─── Single Category Row (horizontal scroll + arrows) ─────────────────────────
 const CategoryProductRow = ({ category }: { category: { slug: string; name: string } }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { getTranslatedCategory } = useCategoryCache();
+  const currentLang = (i18n.language as 'en' | 'zh') || 'en';
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
@@ -838,6 +851,7 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
     page: 1,
     limit: 10,
     type: SITE_TYPE,
+    lang: currentLang,
   });
   const batches: any[] = data?.data ?? [];
 
@@ -860,7 +874,9 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
   return (
     <div className="py-6 border-b border-border last:border-0">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-bold text-foreground">{category.name}</h3>
+        <h3 className="text-base font-bold text-foreground">
+          {currentLang === 'zh' ? getTranslatedCategory(category.name, 'zh') : category.name}
+        </h3>
         <Link
           to={`/buyer-marketplace?category=${category.slug}`}
           className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-0.5 transition-colors"
@@ -905,7 +921,7 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
           >
             {batches.map((batch) => (
               <CategoryProductCard
-                key={batch.batchId}
+                key={`${batch.batchId}-${currentLang}`}
                 batch={batch}
                 onClick={() => navigate(`/buyer-marketplace/${batch.batchId}`)}
               />
@@ -929,15 +945,20 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
 // ─── Category Product Rows (all categories) ───────────────────────────────────
 const CategoryProductRows = () => {
   const { data, isLoading } = useLanguageAwareCategorySummary();
-  const categories: { slug: string; name: string }[] = data?.data ?? [];
+  const loaded: { slug: string; name: string }[] = data?.data ?? [];
+
+  // Sort by config order; fall back to static list while loading
+  const categories = loaded.length > 0
+    ? sortByConfig(loaded).slice(0, HOME_PRODUCT_ROWS_COUNT)
+    : SITE_CATEGORIES.slice(0, HOME_PRODUCT_ROWS_COUNT);
 
   if (isLoading) return null;
-  if (categories.length === 0) return null;
+  if (loaded.length === 0) return null;
 
   return (
     <section className="bg-background">
       <div className="container mx-auto px-4">
-        {categories.slice(0, 3).map((cat) => (
+        {categories.map((cat) => (
           <CategoryProductRow key={cat.slug} category={cat} />
         ))}
       </div>
@@ -1075,7 +1096,7 @@ const AuctionGroupSection = () => {
   const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: "LabGreenbidz" });
   const groups = (data?.data ?? []).filter(
     (g) =>
-      !(g.earliestBidEndDate && new Date(g.earliestBidEndDate).getTime() < Date.now())
+      g
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1170,13 +1191,16 @@ const Landing = () => {
   const { t } = useTranslation();
   const [sellModalOpen, setSellModalOpen] = useState(false);
 
+  const seoData = getSEO('home');
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta {...seoData} />
       <Header />
 
 
       {/* ── Auctions Closing Soon — Auction Groups ───────────────── */}
-      <AuctionGroupSection />
+      {/* <AuctionGroupSection /> */}
 
       {/* ── Highlighted Lots — by Category ───────────────────────── */}
       <CategorySection

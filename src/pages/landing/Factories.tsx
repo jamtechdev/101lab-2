@@ -23,6 +23,8 @@ import heroImage from "@/assets/factories-hero.jpg";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { useTranslation } from 'react-i18next';
 import Header from "@/components/common/Header";
+import SEOMeta from "@/components/common/SEOMeta";
+import { getSEO } from "@/config/seoConfig";
 
 const Factories = () => {
   const navigate = useNavigate();
@@ -112,8 +114,11 @@ const Factories = () => {
     }
   ];
 
+  const seoData = getSEO('factories');
+
   return (
     <div className="min-h-screen bg-background">
+      <SEOMeta {...seoData} />
       {/* Header */}
       {/* <header className="border-b border-border bg-card shadow-soft">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">

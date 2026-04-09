@@ -114,8 +114,16 @@ const mapApiProductToUI = (product: any) => {
   return {
     id: product.product_id,
     title: product.title,
+    title_en: meta["title_en"],
+    title_zh: meta["title_zh"],
+    title_ja: meta["title_ja"],
+    title_th: meta["title_th"],
     description: product.description,
-    images: product.attachments?.map((a: any) => a.url) || [],
+    description_en: meta["description_en"],
+    description_zh: meta["description_zh"],
+    description_ja: meta["description_ja"],
+    description_th: meta["description_th"],
+    images: product.attachments?.filter((a: any) => a.type?.startsWith('image') || a.type?.startsWith('video')).map((a: any) => a.url) || [],
     documents: product.documents?.map((doc: any) => ({
       id: doc.id,
       url: doc.url,
@@ -876,13 +884,17 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     if (!buyerId) { toast.error("Please login to make an offer"); return; }
     if (!batchId) { toast.error("Invalid batch ID"); return; }
 
+    const sellerId = data?.data?.batch?.seller_id;
+
     const formData = new FormData();
     formData.append("batch_id", String(batchId));
+    formData.append("seller_id", String(sellerId));
     formData.append("buyer_id", String(buyerId));
     formData.append("company_name", companyBuyerName?.trim() || "");
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
+    formData.append("offer_quantity",1)
     if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
     if (documentFile) formData.append("document_image", documentFile);
 
@@ -972,6 +984,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     }
   };
 
+  // Get translated title or description based on current language
+  const getTranslatedField = (product: any, fieldName: string) => {
+    const key = `${fieldName}_${i18n.language}`;
+    return product[key] || product[`${fieldName}_en`] || product[fieldName] || '';
+  };
+
   const allowWholePrice = bidDetail?.allowWholePrice ?? false;
   const allowWeightPrice = bidDetail?.allowWeightPrice ?? false;
 
@@ -1018,7 +1036,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                 {/* Left: Image Gallery (2/3 width) */}
                 <div className="lg:col-span-2">
-                  <ProductMedia product={product} />
+                  <ProductMedia product={product} getTranslatedField={getTranslatedField} />
                 </div>
 
                 {/* Right: Action Panel (2/5 width) */}
@@ -1027,7 +1045,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                     {/* Title + ID */}
                     <div>
-                      <h1 className="text-xl font-bold text-foreground leading-tight">{product.title}</h1>
+                      <h1 className="text-xl font-bold text-foreground leading-tight">{getTranslatedField(product, 'title')}</h1>
                       <p className="text-xs text-muted-foreground mt-1 font-mono">Batch #{id}</p>
                     </div>
 
@@ -1501,7 +1519,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   {/* Description */}
                   <div>
                     <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">{t("buyer.description")}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{product.description || "No description available."}</p>
+                    {(() => {
+                      const desc = getTranslatedField(product, 'description') || "";
+                      return /<[a-z][\s\S]*>/i.test(desc)
+                        ? <div className="text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                        : <p className="text-sm text-muted-foreground leading-relaxed">{desc || "No description available."}</p>;
+                    })()}
                   </div>
 
                   {/* Documents */}
@@ -1562,7 +1585,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
           ))}
         </div>
       </div>
-
+ 
       {/* ------------- Dialogs ------------- */}
 
       {/* Place Bid Dialog */}
@@ -1760,14 +1783,15 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
             </div>
             <DialogHeader className="items-center">
               <DialogTitle className="text-xl font-bold text-foreground">
-                {t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
+                {bidDialogMode === "make_offer"
+                  ? t("buyer.offerSuccessTitle", "Offer Submitted Successfully!")
+                  : t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
               </DialogTitle>
             </DialogHeader>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              {t(
-                "buyer.bidSuccessMessage",
-                "Your bid has been submitted. The seller will review it and you will be notified of any updates."
-              )}
+              {bidDialogMode === "make_offer"
+                ? t("buyer.offerSuccessMessage", "Your offer has been submitted. The seller will review it and you will be notified of any updates.")
+                : t("buyer.bidSuccessMessage", "Your bid has been submitted. The seller will review it and you will be notified of any updates.")}
             </p>
             <div className="flex flex-col w-full gap-2 pt-2">
               <Button
@@ -1963,9 +1987,10 @@ type ProductMediaProps = {
     title: string;
     images: string[];
   };
+  getTranslatedField: (product: any, fieldName: string) => string;
 };
 
-function ProductMedia({ product }: ProductMediaProps) {
+function ProductMedia({ product, getTranslatedField }: ProductMediaProps) {
   const media = product?.images || [];
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
@@ -1989,13 +2014,13 @@ function ProductMedia({ product }: ProductMediaProps) {
           ) : (
             <img
               src={activeMedia}
-              alt={product.title}
+              alt={getTranslatedField(product, 'title')}
               className="w-full h-full object-contain"
             />
           )
         ) : (
           <div className="text-center p-8">
-            <p className="text-muted-foreground text-lg">{product.title}</p>
+            <p className="text-muted-foreground text-lg">{getTranslatedField(product, 'title')}</p>
           </div>
         )}
         {/* Image count badge */}

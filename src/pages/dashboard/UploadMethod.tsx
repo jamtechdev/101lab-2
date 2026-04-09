@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState, useRef } from "react";
+import { decodeHtml } from "@/utils/decodeHtml";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +12,8 @@ import logo from "@/assets/greenbidz_logo.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import { useGetCategoriesQuery, useVerifyUserQuery, useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { useGetUsersQuery } from "@/rtk/slices/adminApiSlice";
@@ -449,14 +451,20 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       return;
     }
 
+    const currentItem = items.find(i => i.id === itemId);
+    const currentDocCount = currentItem?.documentFile?.length || 0;
+    const validFiles = files.slice(0, Math.max(0, 5 - currentDocCount));
+    if (validFiles.length < files.length) {
+      toast.error(t("upload.maxDocumentsAllowed"));
+    }
+    if (validFiles.length === 0) return;
 
     setItems(prev =>
       prev.map(item =>
         item.id === itemId
           ? {
             ...item,
-
-            documentFile: [...(item.documentFile || []), ...files],
+            documentFile: [...(item.documentFile || []), ...validFiles],
           }
           : item
       )
@@ -491,9 +499,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
       const item = items.find(i => i.id === itemId);
       if (!item) continue;
 
-      // Check max 10 photos + 1 video
-      const hasVideo = item.media.some(m => m.type === "video");
-      if (isVideo && hasVideo) {
+      // Check max 10 photos + 2 videos
+      if (isVideo && item.media.filter(m => m.type === "video").length >= 2) {
         toast.error(t('upload.onlyOneVideoAllowed'));
         continue;
       }
@@ -759,7 +766,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
         // ---------- Call backend WP route ----------
         const response = await axios.post(
-          `${baseURL}wp/create-product?lang=${lang}&type=${SITE_TYPE}`,
+          `${baseURL}wp/create-product-direct?lang=${lang}&type=${SITE_TYPE}`,
+
           formData,
           {
             headers: {
@@ -966,8 +974,22 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           }),
           estimatedValue: "",
           currency: "TWD",
-          category: product.categories[0]?.term_id.toString() || "",
-          category_name: product.categories[0]?.term || "",
+          category: (() => {
+            const productCat = product.categories?.[0];
+            if (!productCat) return "";
+            const catList: any[] = (data as any)?.data ?? (Array.isArray(data) ? data : []);
+            const match = catList.find(
+              (c: any) =>
+                c.slug === productCat.term_slug ||
+                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_taxonomy_id?.toString() ||
+                (c.id ?? c.term_taxonomy_id ?? c.term_id)?.toString() === productCat.term_id?.toString() ||
+                decodeHtml(c.name).toLowerCase() === decodeHtml(productCat.term).toLowerCase()
+            );
+            return match
+              ? (match.id ?? match.term_taxonomy_id ?? match.term_id)?.toString() ?? ""
+              : productCat.term_id?.toString() ?? "";
+          })(),
+          category_name: decodeHtml(product.categories[0]?.term) || "",
           media: product.attachments.map(att => ({
             file: null,
             url: att.url,
@@ -1173,6 +1195,9 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("upload.addPhotosVideo")}
                         </p>
+                        <p className="text-xs text-muted-foreground/70 mt-1 bg-muted/40 rounded px-2 py-1">
+                          {t("upload.mediaLimitsHint")}
+                        </p>
                       </div>
 
                       {item.media.length > 0 && (
@@ -1208,7 +1233,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         </div>
                       )}
 
-                      {item.media.length < 11 && (
+                      {(item.media.filter(m => m.type === "image").length < 10 || item.media.filter(m => m.type === "video").length < 2) && (
                         <label className="border-2 border-dashed border-border/50 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:border-accent hover:bg-accent/5 transition-all group">
                           <ImagePlus className="w-8 h-8 text-muted-foreground mb-2 group-hover:text-accent transition-colors" />
                           <p className="text-sm font-medium text-foreground">{t("upload.addPhotosOrVideo")}</p>
@@ -1248,8 +1273,11 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         {t("upload.uploadInventoryFile")}{" "}
                         <span className="text-muted-foreground font-normal">({t("upload.optional")})</span>
                       </Label>
-                      <p className="text-xs text-muted-foreground mb-3 mt-1">
+                      <p className="text-xs text-muted-foreground mb-1 mt-1">
                         {t("upload.uploadFileTypes")}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mb-3 bg-muted/40 rounded px-2 py-1">
+                        {t("upload.documentLimitsHint")}
                       </p>
 
                       <div className="flex items-center gap-3 flex-wrap">
@@ -1311,69 +1339,69 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         const errorsForItem = itemErrors[item.id] || {};
                         return (
                           <>
-                      <div>
-                        <Label
-                          htmlFor={`title-${item.id}`}
-                          className={cn(
-                            "text-sm font-medium",
-                            errorsForItem.title && "text-destructive"
-                          )}
-                        >
-                          {t("upload.title")} <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id={`title-${item.id}`}
-                          value={item.title}
-                          onChange={(e) =>
-                            updateItem(item.id, "title", e.target.value)
-                          }
-                          placeholder={t("upload.titlePlaceholder")}
-                          className={cn(
-                            "mt-1 border-border/50 focus:border-accent",
-                            errorsForItem.title &&
-                              "border-destructive focus-visible:ring-destructive"
-                          )}
-                        />
-                      </div>
+                            <div>
+                              <Label
+                                htmlFor={`title-${item.id}`}
+                                className={cn(
+                                  "text-sm font-medium",
+                                  errorsForItem.title && "text-destructive"
+                                )}
+                              >
+                                {t("upload.title")} <span className="text-destructive">*</span>
+                              </Label>
+                              <Input
+                                id={`title-${item.id}`}
+                                value={item.title}
+                                onChange={(e) =>
+                                  updateItem(item.id, "title", e.target.value)
+                                }
+                                placeholder={t("upload.titlePlaceholder")}
+                                className={cn(
+                                  "mt-1 border-border/50 focus:border-accent",
+                                  errorsForItem.title &&
+                                  "border-destructive focus-visible:ring-destructive"
+                                )}
+                              />
+                            </div>
 
-                      <div>
-                        <Label
-                          htmlFor={`quantity-${item.id}`}
-                          className={cn(
-                            "text-sm font-medium",
-                            errorsForItem.quantity && "text-destructive"
-                          )}
-                        >
-                          {t("upload.quantity")}{" "}
-                          <span className="text-destructive">*</span>
-                        </Label>
-                        <Input
-                          id={`quantity-${item.id}`}
-                          type="number"
-                          min={1}
-                          value={item.quantity === 0 ? "" : item.quantity}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                            <div>
+                              <Label
+                                htmlFor={`quantity-${item.id}`}
+                                className={cn(
+                                  "text-sm font-medium",
+                                  errorsForItem.quantity && "text-destructive"
+                                )}
+                              >
+                                {t("upload.quantity")}{" "}
+                                <span className="text-destructive">*</span>
+                              </Label>
+                              <Input
+                                id={`quantity-${item.id}`}
+                                type="number"
+                                min={1}
+                                value={item.quantity === 0 ? "" : item.quantity}
+                                onChange={(e) => {
+                                  const val = e.target.value;
 
-                            if (val === "") {
-                              // Allow empty string (prevents default 0)
-                              // Store as 0 internally to keep type, but display empty
-                              updateItem(item.id, "quantity", 0 as any);
-                              return;
-                            }
+                                  if (val === "") {
+                                    // Allow empty string (prevents default 0)
+                                    // Store as 0 internally to keep type, but display empty
+                                    updateItem(item.id, "quantity", 0 as any);
+                                    return;
+                                  }
 
-                            updateItem(item.id, "quantity", Number(val) as any);
-                          }}
-                          className={cn(
-                            "mt-1 border-border/50 focus:border-accent",
-                            errorsForItem.quantity &&
-                              "border-destructive focus-visible:ring-destructive"
-                          )}
-                        />
-                      </div>
+                                  updateItem(item.id, "quantity", Number(val) as any);
+                                }}
+                                className={cn(
+                                  "mt-1 border-border/50 focus:border-accent",
+                                  errorsForItem.quantity &&
+                                  "border-destructive focus-visible:ring-destructive"
+                                )}
+                              />
+                            </div>
 
 
-                      {/* <div className="mt-4">
+                            {/* <div className="mt-4">
                         <div className="flex items-center gap-2">
                           <Checkbox
                             checked={item.enableBuyNow}
@@ -1438,384 +1466,393 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
 
 
-                      {/* Replacement */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {/* Replacement Cost */}
-                        {false &&
-                          <div className="relative group">
-                            <label className="text-sm font-medium flex items-center gap-1">
-                              {t("upload.replacementCostPerUnit")}
-                              {/* Green info icon */}
-                              <span className="relative cursor-pointer text-green-600">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="w-4 h-4"
-                                  fill="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm.75 15h-1.5v-1.5h1.5zm0-3h-1.5V7h1.5z" />
-                                </svg>
-                                {/* Tooltip */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all bg-gray-800 text-white text-xs rounded-md p-2 z-10">
-                                  {t("upload.replacementCostTooltip")}
+                            {/* Replacement */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                              {/* Replacement Cost */}
+                              {false &&
+                                <div className="relative group">
+                                  <label className="text-sm font-medium flex items-center gap-1">
+                                    {t("upload.replacementCostPerUnit")}
+                                    {/* Green info icon */}
+                                    <span className="relative cursor-pointer text-green-600">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-4 h-4"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm.75 15h-1.5v-1.5h1.5zm0-3h-1.5V7h1.5z" />
+                                      </svg>
+                                      {/* Tooltip */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all bg-gray-800 text-white text-xs rounded-md p-2 z-10">
+                                        {t("upload.replacementCostTooltip")}
+                                      </div>
+                                    </span>
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    className="mt-1 w-full border rounded-md px-3 py-2"
+                                    value={item.replacementCostPerUnit}
+                                    onChange={(e) =>
+                                      updateItem(item.id, "replacementCostPerUnit", e.target.value)
+                                    }
+                                    placeholder="e.g. 1200"
+                                  />
                                 </div>
-                              </span>
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              className="mt-1 w-full border rounded-md px-3 py-2"
-                              value={item.replacementCostPerUnit}
-                              onChange={(e) =>
-                                updateItem(item.id, "replacementCostPerUnit", e.target.value)
                               }
-                              placeholder="e.g. 1200"
-                            />
-                          </div>
-                        }
 
-                        {/* Weight */}
-                        <div className="relative group">
-                          <label className="text-sm font-medium flex items-center gap-1">
-                            {t("upload.weightPerUnit")}
-                            {/* Green info icon */}
-                            <span className="relative cursor-pointer text-green-600">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="w-4 h-4"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm.75 15h-1.5v-1.5h1.5zm0-3h-1.5V7h1.5z" />
-                              </svg>
-                              {/* Tooltip */}
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all bg-gray-800 text-white text-xs rounded-md p-2 z-10">
-                                {t("upload.weightPerUnitTooltip")}
-                              </div>
-                            </span>
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="mt-1 w-full border rounded-md px-3 py-2"
-                            value={item.weightPerUnit}
-                            onChange={(e) =>
-                              updateItem(item.id, "weightPerUnit", e.target.value)
-                            }
-                            placeholder="e.g. 2.5"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label
-                          htmlFor={`category-${item.id}`}
-                          className={cn(
-                            "text-sm font-medium",
-                            (errorsForItem.category || errorsForItem.category_name) &&
-                              "text-destructive"
-                          )}
-                        >
-                          {t("upload.category")}{" "}
-                          <span className="text-destructive">*</span>
-                        </Label>
-
-                        <Select
-                          value={item.category}
-                          onValueChange={(value) => {
-                            const matched = data?.data?.find((cat: any) =>
-                              (cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString() === value
-                            );
-                            updateItem(item.id, "category", value);
-                            updateItem(item.id, "category_name", matched?.name || "");
-                          }}
-                        >
-                          <SelectTrigger
-                            id={`category-${item.id}`}
-                            className={cn(
-                              "mt-1 border-border/50 focus:border-accent",
-                              errorsForItem.category &&
-                                "border-destructive focus-visible:ring-destructive"
-                            )}
-                          >
-                            <SelectValue placeholder={t("upload.selectCategory")} />
-                          </SelectTrigger>
-
-                          <SelectContent>
-                            {Array.isArray(data?.data) &&
-                              data?.data.length > 0 &&
-                              data.data.map((cat: any) => (
-                                <SelectItem
-                                  key={cat.id ?? cat.term_id}
-                                  value={(cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString()}
-                                >
-                                  {cat.name}
-                                </SelectItem>
-                              ))}
-                            <SelectItem key="other" value="other">
-                              {t("upload.others")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {item.category === "other" && (
-                          <Input
-                            className={cn(
-                              "mt-2",
-                              errorsForItem.category_name &&
-                                "border-destructive focus-visible:ring-destructive"
-                            )}
-                            placeholder={t("upload.enterCategory")}
-                            value={item.category_name || ""}
-                            onChange={(e) =>
-                              updateItem(item.id, "category_name", e.target.value)
-                            }
-                          />
-                        )}
-                      </div>
-
-                      {false &&
-                        <div>
-                          <Label htmlFor={`price-${item.id}`}>{t("upload.priceLabel")}</Label>
-                          <div className="space-y-2 mt-1">
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                variant={item.priceType === "offer" ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => updateItem(item.id, "priceType", "offer")}
-                                className="flex-1"
-                              >
-                                {t("upload.negotiate")}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant={item.priceType === "fixed" ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => updateItem(item.id, "priceType", "fixed")}
-                                className="flex-1"
-                              >
-                                {t("upload.fixedPrice")}
-                              </Button>
+                              {/* Weight */}
+                              {false &&
+                                <div className="relative group">
+                                  <label className="text-sm font-medium flex items-center gap-1">
+                                    {t("upload.weightPerUnit")}
+                                    {/* Green info icon */}
+                                    <span className="relative cursor-pointer text-green-600">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="w-4 h-4"
+                                        fill="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm.75 15h-1.5v-1.5h1.5zm0-3h-1.5V7h1.5z" />
+                                      </svg>
+                                      {/* Tooltip */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all bg-gray-800 text-white text-xs rounded-md p-2 z-10">
+                                        {t("upload.weightPerUnitTooltip")}
+                                      </div>
+                                    </span>
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="mt-1 w-full border rounded-md px-3 py-2"
+                                    value={item.weightPerUnit}
+                                    onChange={(e) =>
+                                      updateItem(item.id, "weightPerUnit", e.target.value)
+                                    }
+                                    placeholder="e.g. 2.5"
+                                  />
+                                </div>
+                              }
                             </div>
 
-                            {item.priceType === "fixed" && (
-                              <div className="flex gap-2">
-                                <Select
-                                  value={item.currency}
-                                  onValueChange={(value) => updateItem(item.id, "currency", value)}
+                            <div>
+                              <Label
+                                htmlFor={`category-${item.id}`}
+                                className={cn(
+                                  "text-sm font-medium",
+                                  (errorsForItem.category || errorsForItem.category_name) &&
+                                  "text-destructive"
+                                )}
+                              >
+                                {t("upload.category")}{" "}
+                                <span className="text-destructive">*</span>
+                              </Label>
+
+                              <Select
+                                value={item.category}
+                                onValueChange={(value) => {
+                                  const matched = data?.data?.find((cat: any) =>
+                                    (cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString() === value
+                                  );
+                                  updateItem(item.id, "category", value);
+                                  updateItem(item.id, "category_name", decodeHtml(matched?.name) || "");
+                                }}
+                              >
+                                <SelectTrigger
+                                  id={`category-${item.id}`}
+                                  className={cn(
+                                    "mt-1 border-border/50 focus:border-accent",
+                                    errorsForItem.category &&
+                                    "border-destructive focus-visible:ring-destructive"
+                                  )}
                                 >
-                                  <SelectTrigger className="w-[100px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="TWD">TWD</SelectItem>
-                                    <SelectItem value="USD">USD</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  <SelectValue placeholder={t("upload.selectCategory")} />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                  {Array.isArray(data?.data) &&
+                                    data?.data.length > 0 &&
+                                    data.data.map((cat: any) => (
+                                      <SelectItem
+                                        key={cat.id ?? cat.term_id}
+                                        value={(cat.id ?? cat.term_taxonomy_id ?? cat.term_id)?.toString()}
+                                      >
+                                        {decodeHtml(cat.name)}
+                                      </SelectItem>
+                                    ))}
+                                  <SelectItem key="other" value="other">
+                                    {t("upload.others")}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              {item.category === "other" && (
                                 <Input
-                                  id={`price-${item.id}`}
-                                  value={item.estimatedValue}
-                                  onChange={(e) => updateItem(item.id, "estimatedValue", e.target.value)}
-                                  placeholder="0.00"
-                                  type="number"
+                                  className={cn(
+                                    "mt-2",
+                                    errorsForItem.category_name &&
+                                    "border-destructive focus-visible:ring-destructive"
+                                  )}
+                                  placeholder={t("upload.enterCategory")}
+                                  value={item.category_name || ""}
+                                  onChange={(e) =>
+                                    updateItem(item.id, "category_name", e.target.value)
+                                  }
                                 />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      }
-
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor={`condition-${item.id}`}
-                          className={cn(
-                            "text-sm font-medium",
-                            errorsForItem.condition && "text-destructive"
-                          )}
-                        >
-                          {t("upload.condition")} <span className="text-destructive">*</span>
-                        </Label>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <div
-                              className={cn(
-                                "mt-1 border border-border/50 rounded-xl px-3 py-2 cursor-pointer flex flex-wrap gap-2 min-h-[46px] bg-background shadow-sm hover:shadow-md transition-all duration-200",
-                                errorsForItem.condition &&
-                                  "border-destructive ring-1 ring-destructive/40"
                               )}
-                            >
-                              {Array.isArray(item?.condition) && item.condition?.length > 0 ? (
-                                normalizeCondition(item.condition).map((cond) => (
-                                  <span
-                                    key={cond}
-                                    className="flex items-center gap-1 bg-accent text-accent-foreground  text-xs px-3 py-1 rounded-full shadow-sm hover:shadow transition-all duration-200"
-                                  >
-                                    {VALID_CONDITION_KEYS.includes(cond as any) ? t(`upload.conditionOptions.${cond}`) : cond}
+                            </div>
 
-                                    {/* Remove icon */}
-                                    <X
-                                      size={12}
-                                      className="cursor-pointer hover:text-red-500 transition"
-                                      onPointerDown={(e) => e.stopPropagation()}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const updated = (item.condition || []).filter((c) => c !== cond);
+                            {false &&
+                              <div>
+                                <Label htmlFor={`price-${item.id}`}>{t("upload.priceLabel")}</Label>
+                                <div className="space-y-2 mt-1">
+                                  <div className="flex gap-2">
+                                    <Button
+                                      type="button"
+                                      variant={item.priceType === "offer" ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => updateItem(item.id, "priceType", "offer")}
+                                      className="flex-1"
+                                    >
+                                      {t("upload.negotiate")}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant={item.priceType === "fixed" ? "default" : "outline"}
+                                      size="sm"
+                                      onClick={() => updateItem(item.id, "priceType", "fixed")}
+                                      className="flex-1"
+                                    >
+                                      {t("upload.fixedPrice")}
+                                    </Button>
+                                  </div>
+
+                                  {item.priceType === "fixed" && (
+                                    <div className="flex gap-2">
+                                      <Select
+                                        value={item.currency}
+                                        onValueChange={(value) => updateItem(item.id, "currency", value)}
+                                      >
+                                        <SelectTrigger className="w-[100px]">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="TWD">TWD</SelectItem>
+                                          <SelectItem value="USD">USD</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Input
+                                        id={`price-${item.id}`}
+                                        value={item.estimatedValue}
+                                        onChange={(e) => updateItem(item.id, "estimatedValue", e.target.value)}
+                                        placeholder="0.00"
+                                        type="number"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            }
+
+                            <div className="space-y-1.5">
+                              <Label
+                                htmlFor={`condition-${item.id}`}
+                                className={cn(
+                                  "text-sm font-medium",
+                                  errorsForItem.condition && "text-destructive"
+                                )}
+                              >
+                                {t("upload.condition")} <span className="text-destructive">*</span>
+                              </Label>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <div
+                                    className={cn(
+                                      "mt-1 border border-border/50 rounded-xl px-3 py-2 cursor-pointer flex flex-wrap gap-2 min-h-[46px] bg-background shadow-sm hover:shadow-md transition-all duration-200",
+                                      errorsForItem.condition &&
+                                      "border-destructive ring-1 ring-destructive/40"
+                                    )}
+                                  >
+                                    {Array.isArray(item?.condition) && item.condition?.length > 0 ? (
+                                      normalizeCondition(item.condition).map((cond) => (
+                                        <span
+                                          key={cond}
+                                          className="flex items-center gap-1 bg-accent text-accent-foreground  text-xs px-3 py-1 rounded-full shadow-sm hover:shadow transition-all duration-200"
+                                        >
+                                          {VALID_CONDITION_KEYS.includes(cond as any) ? t(`upload.conditionOptions.${cond}`) : cond}
+
+                                          {/* Remove icon */}
+                                          <X
+                                            size={12}
+                                            className="cursor-pointer hover:text-red-500 transition"
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const updated = (item.condition || []).filter((c) => c !== cond);
+                                              updateItem(item.id, "condition", updated);
+                                            }}
+                                          />
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-muted-foreground text-sm">
+                                        {t("upload.selectCondition")}
+                                      </span>
+                                    )}
+                                  </div>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2 z-[9999]"
+                                >
+                                  {[
+                                    "new",
+                                    "usedFunctional",
+                                    "forParts",
+                                    "wasteDisposal",
+                                    "demolitionRemoval",
+                                  ].map((cond) => (
+                                    <DropdownMenuCheckboxItem
+                                      key={cond}
+                                      checked={normalizeCondition(item.condition || []).includes(cond)}
+                                      onCheckedChange={(checked) => {
+                                        const currentConditions = normalizeCondition(item.condition || []);
+
+                                        const updated = checked
+                                          ? (currentConditions.includes(cond) ? currentConditions : [...currentConditions, cond])
+                                          : currentConditions.filter((c) => c !== cond);
+    
                                         updateItem(item.id, "condition", updated);
                                       }}
-                                    />
-                                  </span>
-                                ))
-                              ) : (
-                                <span className="text-muted-foreground text-sm">
-                                  {t("upload.selectCondition")}
-                                </span>
-                              )}
+                                      className="rounded-md px-3 py-2 text-sm font-medium cursor-pointer  hover:bg-muted/70 transition-all duration-150"
+                                    >
+                                      {t(`upload.conditionOptions.${cond}`)}
+                                    </DropdownMenuCheckboxItem>
+
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="start"
-                            className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2"
-                          >
-                            {[
-                              "new",
-                              "usedFunctional",
-                              "forParts",
-                              "wasteDisposal",
-                              "demolitionRemoval",
-                            ].map((cond) => (
-                              <DropdownMenuCheckboxItem
-                                key={cond}
-                                checked={normalizeCondition(item.condition || []).includes(cond)}
-                                onCheckedChange={(checked) => {
-                                  const currentConditions = normalizeCondition(item.condition || []);
 
-                                  const updated = checked
-                                    ? (currentConditions.includes(cond) ? currentConditions : [...currentConditions, cond])
-                                    : currentConditions.filter((c) => c !== cond);
-
-                                  updateItem(item.id, "condition", updated);
-                                }}
-                                className="rounded-md px-3 py-2 text-sm font-medium cursor-pointer  hover:bg-muted/70 transition-all duration-150"
+                            <div className="space-y-1.5">
+                              <Label
+                                htmlFor={`operation-${item.id}`}
+                                className={cn(
+                                  "text-sm font-semibold text-foreground",
+                                  errorsForItem.operationStatus && "text-destructive"
+                                )}
                               >
-                                {t(`upload.conditionOptions.${cond}`)}
-                              </DropdownMenuCheckboxItem>
+                                {t("upload.operationStatus")} <span className="text-destructive">*</span>
+                              </Label>
 
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor={`operation-${item.id}`}
-                          className={cn(
-                            "text-sm font-semibold text-foreground",
-                            errorsForItem.operationStatus && "text-destructive"
-                          )}
-                        >
-                          {t("upload.operationStatus")} <span className="text-destructive">*</span>
-                        </Label>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <div
-                              className={cn(
-                                "mt-1 border border-border rounded-xl px-3 py-2 cursor-pointer flex flex-wrap gap-2 min-h-[46px] bg-background shadow-sm hover:shadow-md transition-all duration-200",
-                                errorsForItem.operationStatus &&
-                                  "border-destructive ring-1 ring-destructive/40"
-                              )}
-                            >
-                              {Array.isArray(item?.operationStatus) && item.operationStatus?.length > 0 ? (
-                                item.operationStatus.map((status, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="flex items-center gap-1 bg-accent text-accent-foreground 
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <div
+                                    className={cn(
+                                      "mt-1 border border-border rounded-xl px-3 py-2 cursor-pointer flex flex-wrap gap-2 min-h-[46px] bg-background shadow-sm hover:shadow-md transition-all duration-200",
+                                      errorsForItem.operationStatus &&
+                                      "border-destructive ring-1 ring-destructive/40"
+                                    )}
+                                  >
+                                    {Array.isArray(item?.operationStatus) && item.operationStatus?.length > 0 ? (
+                                      item.operationStatus.map((status, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="flex items-center gap-1 bg-accent text-accent-foreground 
                          text-xs px-3 py-1 rounded-full shadow-sm hover:shadow 
                          transition-all duration-200"
-                                  >
-                                    {t(`upload.operationStatusOptions.${status}`)}
+                                        >
+                                          {t(`upload.operationStatusOptions.${status}`)}
 
-                                    <X
-                                      size={12}
-                                      className="cursor-pointer hover:text-red-500 transition"
-                                      onPointerDown={(e) => e.stopPropagation()} // BLOCK dropdown trigger
-                                      onMouseDown={(e) => e.stopPropagation()}   // BLOCK open event
-                                      onClick={(e) => {
-                                        e.stopPropagation(); // final safety
-                                        const updated = item.operationStatus.filter(
-                                          (s) => s !== status
-                                        );
-                                        updateItem(item.id, "operationStatus", updated);
-                                      }}
-                                    />
-                                  </span>
-                                ))
-                              ) : (
-                                <span className="text-muted-foreground text-sm">
-                                  {t("upload.selectStatus")}
-                                </span>
-                              )}
-                            </div>
-                          </DropdownMenuTrigger>
+                                          <X
+                                            size={12}
+                                            className="cursor-pointer hover:text-red-500 transition"
+                                            onPointerDown={(e) => e.stopPropagation()} // BLOCK dropdown trigger
+                                            onMouseDown={(e) => e.stopPropagation()}   // BLOCK open event
+                                            onClick={(e) => {
+                                              e.stopPropagation(); // final safety
+                                              const updated = item.operationStatus.filter(
+                                                (s) => s !== status
+                                              );
+                                              updateItem(item.id, "operationStatus", updated);
+                                            }}
+                                          />
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-muted-foreground text-sm">
+                                        {t("upload.selectStatus")}
+                                      </span>
+                                    )}
+                                  </div>
+                                </DropdownMenuTrigger>
 
-                          <DropdownMenuContent
-                            align="start"
-                            className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2"
-                          >
-                            {["deinstalled", "needDeinstall", "collected", "other"].map(
-                              (status) => (
-                                <DropdownMenuCheckboxItem
-                                  key={status}
-                                  checked={item.operationStatus.includes(status)}
-                                  onCheckedChange={(checked) => {
-                                    const updated = checked
-                                      ? [...item.operationStatus, status]
-                                      : item.operationStatus.filter((s) => s !== status);
-
-                                    updateItem(item.id, "operationStatus", updated);
-                                  }}
-                                  className="rounded-md px-3 py-2 text-sm font-medium cursor-pointer
-                       hover:bg-muted/70 transition-all duration-150"
+                                <DropdownMenuContent
+                                  align="start"
+                                  className="w-60 rounded-xl shadow-xl border border-border bg-popover p-2 z-[9999]"
                                 >
-                                  {t(`upload.operationStatusOptions.${status}`)}
-                                </DropdownMenuCheckboxItem>
-                              )
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                                  {["deinstalled", "needDeinstall", "collected", "other"].map(
+                                    (status) => (
+                                      <DropdownMenuCheckboxItem
+                                        key={status}
+                                        checked={item.operationStatus.includes(status)}
+                                        onCheckedChange={(checked) => {
+                                          const updated = checked
+                                            ? [...item.operationStatus, status]
+                                            : item.operationStatus.filter((s) => s !== status);
 
-                      <div>
-                        <Label
-                          htmlFor={`description-${item.id}`}
-                          className={cn(
-                            "text-sm font-medium",
-                            errorsForItem.description && "text-destructive"
-                          )}
-                        >
-                          {t("upload.description")}
-                          <span className="text-destructive">*</span>
-                        </Label>
-                        <Textarea
-                          id={`description-${item.id}`}
-                          value={item.description}
-                          onChange={(e) =>
-                            updateItem(item.id, "description", e.target.value)
-                          }
-                          placeholder={t("upload.descriptionPlaceholder")}
-                          className={cn(
-                            "mt-1 min-h-[100px] border-border/50 focus:border-accent",
-                            errorsForItem.description &&
-                              "border-destructive focus-visible:ring-destructive"
-                          )}
-                        />
-                      </div>
+                                          updateItem(item.id, "operationStatus", updated);
+                                        }}
+                                        className="rounded-md px-3 py-2 text-sm font-medium cursor-pointer
+                       hover:bg-muted/70 transition-all duration-150"
+                                      >
+                                        {t(`upload.operationStatusOptions.${status}`)}
+                                      </DropdownMenuCheckboxItem>
+                                    )
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
 
-                      {/* <div>
+                            <div>
+                              <Label
+                                htmlFor={`description-${item.id}`}
+                                className={cn(
+                                  "text-sm font-medium",
+                                  errorsForItem.description && "text-destructive"
+                                )}
+                              >
+                                {t("upload.description")}
+                                <span className="text-destructive">*</span>
+                              </Label>
+                              <div className="mt-1">
+                                <SunEditor
+                                  setContents={item.description}
+                                  onChange={(content) => updateItem(item.id, "description", content)}
+                                  setOptions={{
+                                    height: "250",
+                                    buttonList: [
+                                      ["undo", "redo"],
+                                      ["font", "fontSize", "formatBlock"],
+                                      ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+                                      ["fontColor", "hiliteColor"],
+                                      ["outdent", "indent"],
+                                      ["align", "horizontalRule", "list", "lineHeight"],
+                                      ["table", "link", "image"],
+                                      ["fullScreen", "showBlocks", "codeView"],
+                                      ["removeFormat"],
+                                    ],
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* <div>
                         <Label htmlFor={`seller-name-${item.id}`}>{t("upload.sellerNameLabel")} ({t("upload.optional")})</Label>
                         <Input
                           id={`seller-name-${item.id}`}
@@ -1826,150 +1863,150 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         />
                       </div> */}
 
-                      <div className="flex items-center gap-2 mt-3">
-                        <input
-                          type="checkbox"
-                          id={`sellerVisible-${item.id}`}
-                          checked={
-                            item.sellerVisible === undefined ||
-                            item.sellerVisible === "1" ||
-                            item.sellerVisible === true
-                          }
-                          onChange={(e) =>
-                            updateItem(
-                              item.id,
-                              "sellerVisible",
-                              e.target.checked ? "1" : ""
-                            )
-                          }
-                          className="h-4 w-4"
-                        />
+                            <div className="flex items-center gap-2 mt-3">
+                              <input
+                                type="checkbox"
+                                id={`sellerVisible-${item.id}`}
+                                checked={
+                                  item.sellerVisible === undefined ||
+                                  item.sellerVisible === "1" ||
+                                  item.sellerVisible === true
+                                }
+                                onChange={(e) =>
+                                  updateItem(
+                                    item.id,
+                                    "sellerVisible",
+                                    e.target.checked ? "1" : ""
+                                  )
+                                }
+                                className="h-4 w-4"
+                              />
 
-                        <Label
-                          htmlFor={`sellerVisible-${item.id}`}
-                          className="text-sm"
-                        >
-                          {t("upload.sellerVisible")}
-                        </Label>
-                      </div>
-
-                      {/* Location */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Checkbox
-                            id={`multiple-${item.id}`}
-                            checked={multipleLocations[item.id] || false}
-                            onCheckedChange={(checked) =>
-                              setMultipleLocations({
-                                ...multipleLocations,
-                                [item.id]: checked as boolean,
-                              })
-                            }
-                          />
-                          <Label htmlFor={`multiple-${item.id}`} className="text-muted-foreground">
-                            {t("upload.multipleLocations")}
-                          </Label>
-                        </div>
-
-                        <div className="space-y-3">
-                          {item.locations.map((location, locIndex) => (
-                            <div key={location.id} className="flex gap-2">
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between">
-                          <Label
-                            htmlFor={`address-${item.id}-${location.id}`}
-                            className={cn(
-                              errorsForItem.address && "text-destructive"
-                            )}
-                          >
-                            {t("upload.addressLabel")} *
-                          </Label>
-                                  {savedAddress && location.address === savedAddress && (
-                                    <span className="text-xs text-accent flex items-center gap-1">
-                                      <MapPin className="w-3 h-3" />
-                                      Autofilled
-                                    </span>
-                                  )}
-                                </div>
-                                <Input
-                                  id={`address-${item.id}-${location.id}`}
-                                  value={location.address}
-                                  onChange={(e) =>
-                                    updateLocation(
-                                      item.id,
-                                      location.id,
-                                      "address",
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder={t("upload.addressPlaceholder")}
-                                  className={cn(
-                                    "mt-1",
-                                    errorsForItem.address &&
-                                      "border-destructive focus-visible:ring-destructive"
-                                  )}
-                                />
-                                {/* Country select */}
-                                <div className="mt-2">
-                                  <Label htmlFor={`country-${item.id}-${location.id}`}>
-                                    Country
-                                  </Label>
-                                  <Select
-                                    value={location.country || ""}
-                                    onValueChange={(val) =>
-                                      updateLocation(item.id, location.id, "country", val)
-                                    }
-                                  >
-                                    <SelectTrigger id={`country-${item.id}-${location.id}`} className="mt-1 border-border/50 focus:border-accent">
-                                      <SelectValue placeholder="Select country" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {[
-                                        "Taiwan","China","Japan","South Korea","India","United States","United Kingdom",
-                                        "Germany","France","Australia","Canada","Singapore","Malaysia","Thailand",
-                                        "Vietnam","Indonesia","Philippines","Hong Kong","Netherlands","Italy",
-                                        "Spain","Brazil","Mexico","United Arab Emirates","Saudi Arabia","Turkey",
-                                        "Poland","Sweden","Switzerland","Belgium","Austria","Denmark","Finland",
-                                        "Norway","Portugal","Czech Republic","Hungary","Romania","New Zealand",
-                                        "South Africa","Egypt","Nigeria","Kenya","Bangladesh","Pakistan","Sri Lanka",
-                                        "Nepal","Cambodia","Myanmar","Laos","Mongolia","Kazakhstan","Other"
-                                      ].map((c) => (
-                                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                              {multipleLocations[item.id] && item.locations.length > 1 && (
-                                <div className="flex items-end">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeLocation(item.id, location.id)}
-                                  >
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  </Button>
-                                </div>
-                              )}
+                              <Label
+                                htmlFor={`sellerVisible-${item.id}`}
+                                className="text-sm"
+                              >
+                                {t("upload.sellerVisible")}
+                              </Label>
                             </div>
-                          ))}
 
-                          {multipleLocations[item.id] && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addLocation(item.id)}
-                            >
-                              <Plus className="w-4 h-4 mr-2" />
-                              {t("upload.addLocation")}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                            {/* Location */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Checkbox
+                                  id={`multiple-${item.id}`}
+                                  checked={multipleLocations[item.id] || false}
+                                  onCheckedChange={(checked) =>
+                                    setMultipleLocations({
+                                      ...multipleLocations,
+                                      [item.id]: checked as boolean,
+                                    })
+                                  }
+                                />
+                                <Label htmlFor={`multiple-${item.id}`} className="text-muted-foreground">
+                                  {t("upload.multipleLocations")}
+                                </Label>
+                              </div>
+
+                              <div className="space-y-3">
+                                {item.locations.map((location, locIndex) => (
+                                  <div key={location.id} className="flex gap-2">
+                                    <div className="flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <Label
+                                          htmlFor={`address-${item.id}-${location.id}`}
+                                          className={cn(
+                                            errorsForItem.address && "text-destructive"
+                                          )}
+                                        >
+                                          {t("upload.addressLabel")} *
+                                        </Label>
+                                        {savedAddress && location.address === savedAddress && (
+                                          <span className="text-xs text-accent flex items-center gap-1">
+                                            <MapPin className="w-3 h-3" />
+                                            Autofilled
+                                          </span>
+                                        )}
+                                      </div>
+                                      <Input
+                                        id={`address-${item.id}-${location.id}`}
+                                        value={location.address}
+                                        onChange={(e) =>
+                                          updateLocation(
+                                            item.id,
+                                            location.id,
+                                            "address",
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder={t("upload.addressPlaceholder")}
+                                        className={cn(
+                                          "mt-1",
+                                          errorsForItem.address &&
+                                          "border-destructive focus-visible:ring-destructive"
+                                        )}
+                                      />
+                                      {/* Country select */}
+                                      <div className="mt-2">
+                                        <Label htmlFor={`country-${item.id}-${location.id}`}>
+                                          Country
+                                        </Label>
+                                        <Select
+                                          value={location.country || ""}
+                                          onValueChange={(val) =>
+                                            updateLocation(item.id, location.id, "country", val)
+                                          }
+                                        >
+                                          <SelectTrigger id={`country-${item.id}-${location.id}`} className="mt-1 border-border/50 focus:border-accent">
+                                            <SelectValue placeholder="Select country" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {[
+                                              "Taiwan", "China", "Japan", "South Korea", "India", "United States", "United Kingdom",
+                                              "Germany", "France", "Australia", "Canada", "Singapore", "Malaysia", "Thailand",
+                                              "Vietnam", "Indonesia", "Philippines", "Hong Kong", "Netherlands", "Italy",
+                                              "Spain", "Brazil", "Mexico", "United Arab Emirates", "Saudi Arabia", "Turkey",
+                                              "Poland", "Sweden", "Switzerland", "Belgium", "Austria", "Denmark", "Finland",
+                                              "Norway", "Portugal", "Czech Republic", "Hungary", "Romania", "New Zealand",
+                                              "South Africa", "Egypt", "Nigeria", "Kenya", "Bangladesh", "Pakistan", "Sri Lanka",
+                                              "Nepal", "Cambodia", "Myanmar", "Laos", "Mongolia", "Kazakhstan", "Other"
+                                            ].map((c) => (
+                                              <SelectItem key={c} value={c}>{c}</SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    {multipleLocations[item.id] && item.locations.length > 1 && (
+                                      <div className="flex items-end">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeLocation(item.id, location.id)}
+                                        >
+                                          <Trash2 className="w-4 h-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+
+                                {multipleLocations[item.id] && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => addLocation(item.id)}
+                                  >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    {t("upload.addLocation")}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
 
 
-                      {/* Publishing Sites */}
-                      {/* <div className="mt-3">
+                            {/* Publishing Sites */}
+                            {/* <div className="mt-3">
                         <label className="text-sm font-medium">
                           {t("upload.allowedSites")}
                         </label>
@@ -1995,7 +2032,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                       </div>  */}
 
 
-                      {/* <Card className="border-border/50">
+                            {/* <Card className="border-border/50">
                         <CardContent className="pt-6">
                           <div className="flex items-center gap-2 mb-4">
                             <div className="w-1 h-5 bg-accent rounded-full"></div>

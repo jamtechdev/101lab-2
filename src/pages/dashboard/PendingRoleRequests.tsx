@@ -16,8 +16,6 @@ const PendingRoleRequests: React.FC = () => {
         status: "approved" | "rejected"
     ) => {
         try {
-            
-            console.log("data is",data);
             const userId = localStorage.getItem("userId");
             if (!userId) {
                 toast.error("User ID not found");

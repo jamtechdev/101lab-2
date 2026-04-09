@@ -22,6 +22,7 @@ import {
   ArrowRight,
   CircleCheck,
   BarChart3,
+  TableProperties,
 } from "lucide-react";
 import {
   useGetSellerDashboardQuery,

@@ -17,7 +17,7 @@ import BuyerOfferSection from './BuyerOfferSection';
 
 
 export default function BrowserListingDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,6 +93,12 @@ export default function BrowserListingDetail() {
     } catch {
       return t('browserListingDetail.contactForPrice');
     }
+  };
+
+  // Get translated title or description based on current language
+  const getTranslatedField = (fieldName: string) => {
+    const translationKey = `${fieldName}_${i18n.language}`;
+    return getMetaValue(product?.meta, translationKey) || getMetaValue(product?.meta, `${fieldName}_en`) || product?.[fieldName] || '';
   };
 
   const handleQuantityChange = (delta) => {
@@ -236,16 +242,21 @@ export default function BrowserListingDetail() {
             <div className="bg-white rounded-lg overflow-hidden shadow-sm">
               <img
                 src={mainImage}
-                alt={product.title}
+                alt={getTranslatedField('title')}
                 className="w-full h-auto object-contain"
               />
             </div>
 
             {/* Description */}
-            {product.description && (
+            {(getTranslatedField('description') || product?.description) && (
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl font-semibold text-neutral-900 mb-4">{t('browserListingDetail.details')}</h2>
-                <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{product.description}</p>
+                {(() => {
+                  const desc = getTranslatedField('description') || "";
+                  return /<[a-z][\s\S]*>/i.test(desc)
+                    ? <div className="text-neutral-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                    : <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{desc}</p>;
+                })()}
 
                 {product.categories && product.categories.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-neutral-200">
@@ -263,7 +274,7 @@ export default function BrowserListingDetail() {
 
             {/* Title & Price Card */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-2">{product.title}</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900 mb-2">{getTranslatedField('title')}</h1>
 
               {/* Price Display */}
               {priceNowEnabled && pricePerUnit > 0 && (

@@ -1,0 +1,506 @@
+/**
+ * ========================================
+ * SMOOTHNESS CSS UTILITIES
+ * ========================================
+ *
+ * Add smoothness to existing components
+ * Include this in your main CSS file
+ */
+
+/* ===================================== */
+/* SMOOTH TRANSITIONS */
+/* ===================================== */
+
+.smooth-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-transform {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-opacity {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-colors {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.smooth-shadow {
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================== */
+/* HOVER EFFECTS */
+/* ===================================== */
+
+.hover-scale-105 {
+  @apply hover:scale-105 active:scale-95 smooth-transform;
+}
+
+.hover-scale-110 {
+  @apply hover:scale-110 smooth-transform;
+}
+
+.hover-lift {
+  @apply hover:shadow-lg hover:-translate-y-1 smooth-all;
+}
+
+.hover-glow {
+  @apply hover:shadow-lg hover:shadow-blue-200 smooth-shadow;
+}
+
+.hover-dim {
+  @apply hover:opacity-75 smooth-opacity;
+}
+
+.hover-brighten {
+  @apply hover:brightness-110 smooth-all;
+}
+
+.hover-text-blue {
+  @apply hover:text-blue-600 text-gray-700 smooth-colors;
+}
+
+.hover-bg-light {
+  @apply hover:bg-gray-50 smooth-colors;
+}
+
+/* ===================================== */
+/* BUTTON STYLES */
+/* ===================================== */
+
+.btn-smooth {
+  @apply px-4 py-2 rounded-lg font-medium smooth-all;
+}
+
+.btn-smooth-primary {
+  @apply btn-smooth bg-blue-500 text-white hover:bg-blue-600 hover-scale-105;
+}
+
+.btn-smooth-secondary {
+  @apply btn-smooth bg-gray-200 text-gray-900 hover:bg-gray-300 hover-scale-105;
+}
+
+.btn-smooth-ghost {
+  @apply btn-smooth text-gray-700 hover:bg-gray-100 hover-scale-105;
+}
+
+.btn-smooth-danger {
+  @apply btn-smooth bg-red-500 text-white hover:bg-red-600 hover-scale-105;
+}
+
+/* ===================================== */
+/* CARD STYLES */
+/* ===================================== */
+
+.card-smooth {
+  @apply rounded-lg shadow-sm hover:shadow-md smooth-shadow hover-lift;
+}
+
+.card-smooth-hover {
+  @apply cursor-pointer smooth-all;
+}
+
+/* ===================================== */
+/* INPUT STYLES */
+/* ===================================== */
+
+.input-smooth {
+  @apply px-4 py-2 rounded-lg border border-gray-300 smooth-all;
+}
+
+.input-smooth:focus {
+  @apply outline-none ring-2 ring-blue-500 border-transparent;
+}
+
+.input-smooth::placeholder {
+  @apply text-gray-400 smooth-colors;
+}
+
+/* ===================================== */
+/* SCROLL BEHAVIOR */
+/* ===================================== */
+
+/* Smooth scrolling - enabled globally */
+html,
+html.smooth-scroll,
+body {
+  scroll-behavior: smooth !important;
+}
+
+.scroll-smooth-container {
+  scroll-behavior: smooth;
+}
+
+/* ===================================== */
+/* ANIMATIONS - FADE IN */
+/* ===================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-fade-in-slow {
+  animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================== */
+/* ANIMATIONS - SLIDE IN */
+/* ===================================== */
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-in-down {
+  animation: slideInDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================== */
+/* ANIMATIONS - SCALE */
+/* ===================================== */
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.05);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ===================================== */
+/* ANIMATIONS - BOUNCE */
+/* ===================================== */
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-slight {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-bounce-slight {
+  animation: bounce-slight 2s infinite;
+}
+
+/* ===================================== */
+/* ANIMATIONS - PULSE */
+/* ===================================== */
+
+@keyframes pulse-smooth {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-smooth {
+  animation: pulse-smooth 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===================================== */
+/* ANIMATIONS - SHIMMER (Loading) */
+/* ===================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ===================================== */
+/* ANIMATIONS - GRADIENT */
+/* ===================================== */
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* ===================================== */
+/* STAGGER DELAYS */
+/* ===================================== */
+
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+
+.stagger-6 {
+  animation-delay: 0.3s;
+}
+
+/* ===================================== */
+/* TRANSFORM UTILITIES */
+/* ===================================== */
+
+.transform-gpu {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.smooth-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+/* ===================================== */
+/* FOCUS STYLES */
+/* ===================================== */
+
+.focus-smooth {
+  @apply outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 smooth-all;
+}
+
+.focus-smooth:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===================================== */
+/* DISABLED STATES */
+/* ===================================== */
+
+.disabled-smooth {
+  @apply opacity-50 cursor-not-allowed smooth-all;
+}
+
+button:disabled {
+  @apply disabled-smooth;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  @apply disabled-smooth bg-gray-100;
+}
+
+/* ===================================== */
+/* LOADING SPINNER */
+/* ===================================== */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: currentColor;
+  animation: spin 0.8s linear infinite;
+}
+
+.spinner-sm {
+  @apply spinner;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.spinner-lg {
+  @apply spinner;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ===================================== */
+/* RESPONSIVE SMOOTHNESS */
+/* ===================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html.smooth-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* ===================================== */
+/* HIGH PERFORMANCE MODE */
+/* ===================================== */
+
+@media (max-width: 640px) {
+  .smooth-all {
+    transition: none;
+  }
+
+  .hover-scale-105:hover {
+    transform: none;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
