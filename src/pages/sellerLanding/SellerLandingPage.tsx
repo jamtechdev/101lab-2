@@ -336,19 +336,37 @@ const SellerLandingPage = () => {
                 {/* Attachment */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Attachment (Optional)
+                    Attachment <span className="text-muted-foreground font-normal">(Optional)</span>
                   </label>
-                  <div className="flex items-center gap-3">
+                  <label
+                    htmlFor="attachment-input"
+                    className={`flex flex-col items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed cursor-pointer transition-colors
+                      ${form.attachment
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-muted/40 hover:border-primary hover:bg-primary/5"
+                      }`}
+                    style={{ minHeight: "110px", padding: "20px 16px" }}
+                  >
+                    <Upload className={`h-7 w-7 ${form.attachment ? "text-primary" : "text-muted-foreground"}`} />
+                    {form.attachment ? (
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-primary break-all">{form.attachment.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Click to change file</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-foreground">Click to upload a file</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">PDF, Word, Excel, JPG, PNG, GIF</p>
+                      </div>
+                    )}
                     <Input
+                      id="attachment-input"
                       type="file"
                       onChange={handleFileChange}
-                      className="border-border flex-1"
+                      className="hidden"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png,.gif"
                     />
-                    {form.attachment && (
-                      <span className="text-sm text-muted-foreground">{form.attachment.name}</span>
-                    )}
-                  </div>
+                  </label>
                 </div>
 
                 <Button type="submit" className="w-full sm:w-auto px-8" disabled={submitting}>

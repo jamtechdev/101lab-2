@@ -527,6 +527,30 @@ export interface UpdateCommissionRulePayload {
   is_active?: boolean;
 }
 
+/* ---------- ADMIN AUCTION GROUP TYPES ---------- */
+export interface AdminAuctionGroupItem {
+  group_id: number;
+  title: string;
+  title_en?: string;
+  title_zh?: string;
+  title_ja?: string;
+  title_th?: string;
+  slug?: string;
+  description?: string;
+  description_en?: string;
+  description_zh?: string;
+  country: string;
+  languages: string[];
+  site_id: number;
+  seller_id: number;
+  status: "active" | "inactive";
+  approval_status: "pending" | "approved";
+  featured_type: "none" | "featured" | "highlighted" | "both";
+  auction_count: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: axiosBaseQuery,
@@ -541,6 +565,7 @@ export const adminApi = createApi({
     "AutoApprovalRules",
     "SellerAutoApprovalRequests",
     "CommissionRules",
+    "AdminAuctionGroups",
   ],
 
   endpoints: (builder) => ({
@@ -952,6 +977,29 @@ export const adminApi = createApi({
         };
       },
     }),
+
+    /* ---------------- ADMIN AUCTION GROUPS ---------------- */
+    getAdminAuctionGroups: builder.query<
+      { success: boolean; data: AdminAuctionGroupItem[] },
+      { approval_status?: "pending" | "approved" | "all"; site_id?: string }
+    >({
+      query: ({ approval_status = "all", site_id = "recycle" } = {}) => ({
+        url: `/admin/auction-groups?approval_status=${approval_status}&site_id=${site_id}`,
+        method: "GET",
+      }),
+      providesTags: ["AdminAuctionGroups"],
+    }),
+
+    approveAuctionGroup: builder.mutation<
+      { success: boolean; message: string; data: AdminAuctionGroupItem },
+      number
+    >({
+      query: (groupId) => ({
+        url: `/admin/auction-groups/${groupId}/approve`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["AdminAuctionGroups"],
+    }),
   }),
 });
 
@@ -1007,4 +1055,8 @@ export const {
   useCreateCommissionRuleMutation,
   useUpdateCommissionRuleMutation,
   useGetEffectiveCommissionQuery,
+
+  /* ---------- ADMIN AUCTION GROUPS ---------- */
+  useGetAdminAuctionGroupsQuery,
+  useApproveAuctionGroupMutation,
 } = adminApi;

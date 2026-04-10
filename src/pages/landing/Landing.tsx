@@ -1109,13 +1109,20 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
   );
 };
 
-// ─── Highlighted Auction Groups Section ──────────────────────────────────────
+// ─── Highlighted Lots Section — individual products ───────────────────────────
 const HighlightedAuctionGroupSection = () => {
-  const { t } = useTranslation();
-  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE, featured_type: 'highlighted' });
-  const groups = (data?.data ?? []).filter(
-    (g) => g.batchCount > 0 // Filter for highlighted section is done on backend with featured_type param
-  );
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const currentLang = (i18n.language as 'en' | 'zh') || 'en';
+
+  const { data, isLoading } = useGetBatchesQuery({
+    highlighted: true,
+    page: 1,
+    limit: 20,
+    type: SITE_TYPE,
+    lang: currentLang,
+  });
+  const batches: any[] = data?.data ?? [];
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
@@ -1129,13 +1136,13 @@ const HighlightedAuctionGroupSection = () => {
   }, []);
 
   useEffect(() => {
-    if (!isLoading && groups.length > 0) setTimeout(checkScroll, 200);
-  }, [groups, isLoading, checkScroll]);
+    if (!isLoading && batches.length > 0) setTimeout(checkScroll, 200);
+  }, [batches, isLoading, checkScroll]);
 
   const scroll = (dir: "left" | "right") =>
-    scrollRef.current?.scrollBy({ left: dir === "left" ? -480 : 480, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -460 : 460, behavior: "smooth" });
 
-  if (isLoading || groups.length === 0) return null;
+  if (isLoading || batches.length === 0) return null;
 
   return (
     <section className="py-6 bg-background">
@@ -1143,10 +1150,10 @@ const HighlightedAuctionGroupSection = () => {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
             <Star className="h-4 w-4 text-amber-500" />
-            {t("landing.highlightedAuctions") || "Featured Auctions"}
+            {t("landing.highlightLots")}
           </h2>
           <Link
-            to="/buyer-marketplace"
+            to="/buyer-marketplace?highlighted=true"
             className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
             {t("landing.viewAll")} <ChevronRight className="h-3.5 w-3.5" />
@@ -1157,7 +1164,7 @@ const HighlightedAuctionGroupSection = () => {
           {showLeft && (
             <button
               onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+              className="absolute left-0 top-[90px] -translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -1168,14 +1175,18 @@ const HighlightedAuctionGroupSection = () => {
             className="flex gap-4 overflow-x-auto pb-1"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
-            {groups.map((group) => (
-              <AuctionGroupCard key={group.group_id} group={group} />
+            {batches.map((batch) => (
+              <CategoryProductCard
+                key={`highlighted-${batch.batchId}-${currentLang}`}
+                batch={batch}
+                onClick={() => navigate(`/buyer-marketplace/${batch.batchId}`)}
+              />
             ))}
           </div>
           {showRight && (
             <button
               onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+              className="absolute right-0 top-[90px] translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -1297,20 +1308,14 @@ const Landing = () => {
       {/* ── Auctions Closing Soon — Auction Groups ───────────────── */}
       {/* <AuctionGroupSection /> */}
 
-      {/* ── Highlighted Lots — by Category ───────────────────────── */}
-      <CategorySection
-        title={t("landing.highlightLots")}
-        icon={Star}
-        iconClass="text-amber-500"
-        viewAllLink="/buyer-marketplace"
-        highlighted={true}
-      />
-
-      {/* ── Highlighted Auction Groups ────────────────────────────── */}
-      {/* <HighlightedAuctionGroupSection /> */}
 
       {/* ── New Auctions — Auction Groups ────────────────────────── */}
       <AuctionGroupSection />
+
+
+            {/* ── Highlighted Lots — individual products ───────────────── */}
+      <HighlightedAuctionGroupSection />
+
 
       {/* ── Brand Trust Bar ───────────────────────────────────────── */}
       <section className="py-5 bg-card border-y border-border">

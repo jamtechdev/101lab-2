@@ -59,6 +59,7 @@ import AdminUsersManagement from "./pages/Admin/UserManagement";
 import AdminUserDetails from "./pages/Admin/AdminUserDetails";
 import AdminAutoApproval from "./pages/Admin/AdminAutoApproval";
 import AdminCommission from "./pages/Admin/AdminCommission.js";
+import AdminAuctionGroups from "./pages/Admin/AdminAuctionGroups";
 
 import AIChat from "./pages/buyer/AiChat";
 import SmoothnessDemo from "./pages/SmoothnessDemo";
@@ -319,6 +320,7 @@ const App = () => {
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="/admin/auto-approval" element={<AdminAutoApproval />} />
                 <Route path="/admin/commission" element={<AdminCommission />} />
+                <Route path="/admin/auction-groups" element={<AdminAuctionGroups />} />
                 <Route path="/admin/settings/email" element={<EmailTypesPage />} />
                 <Route path="/admin/email-types/:typeId" element={<TypeDetailsModal />} />
               </Route>

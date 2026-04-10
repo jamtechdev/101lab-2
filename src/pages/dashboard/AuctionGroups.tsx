@@ -47,6 +47,7 @@ import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { SITE_TYPE } from "@/config/site";
 import {
   useGetAuctionGroupsQuery,
+  useGetAuctionGroupsHomeQuery,
   useCreateAuctionGroupMutation,
   useUpdateAuctionGroupMutation,
   useDeleteAuctionGroupMutation,
@@ -91,7 +92,14 @@ const LANGUAGE_OPTIONS = [
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BatchOption = { batchId: number; title: string | null; category: string };
+type BatchOption = { batchId: number; title: string | null; category: string; status?: string };
+
+const ACTIVE_BATCH_STATUSES = new Set([
+  "publish",
+  "inspection_schedule",
+  "inspection_complete",
+  "live_for_bids",
+]);
 
 // ─── Enhanced Language Selector ────────────────────────────────────────────────
 
@@ -418,166 +426,197 @@ const BatchSelector = ({
 const GroupCard = ({
   group,
   sellerBatches,
+  previewImages,
   onEdit,
   onDelete,
 }: {
   group: any;
   sellerBatches: BatchOption[];
+  previewImages: string[];
   onEdit: (group: any, currentBatchIds: number[]) => void;
   onDelete: (id: number) => void;
 }) => {
   const { data: auctionData, isLoading: loadingAuctions } =
     useGetAuctionsInGroupQuery(group.group_id);
 
-  // Flatten all batch_ids from all auction items
-  const allBatchIds: number[] = (auctionData?.data ?? []).flatMap(
-    (a: any) => a.batch_ids ?? []
-  );
+  // Flatten batch_ids and enrich with title/category from the batches field
+  const allAuctionBatches: { batch_id: number; title?: string; category?: string }[] =
+    (auctionData?.data ?? []).flatMap((a: any) =>
+      a.batches && a.batches.length > 0
+        ? a.batches
+        : (a.batch_ids ?? []).map((id: number) => ({ batch_id: id }))
+    );
+
+  // Deduplicate by batch_id
+  const seenIds = new Set<number>();
+  const uniqueBatches = allAuctionBatches.filter((b) => {
+    if (seenIds.has(b.batch_id)) return false;
+    seenIds.add(b.batch_id);
+    return true;
+  });
+
+  const allBatchIds = uniqueBatches.map((b) => b.batch_id);
 
   const handleEditClick = () => onEdit(group, allBatchIds);
 
-  // Get status based on batches
-  const getGroupStatus = () => {
-    if (loadingAuctions) return { status: 'loading', color: 'bg-gray-100 text-gray-600' };
-    if (allBatchIds.length === 0) return { status: 'empty', color: 'bg-yellow-100 text-yellow-700' };
-    return { status: 'active', color: 'bg-green-100 text-green-700' };
-  };
-
-  const statusInfo = getGroupStatus();
+  const isActive = allBatchIds.length > 0;
 
   return (
-    <Card className="border shadow-sm hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
-      {/* Status indicator */}
-      <div className={`absolute top-0 right-0 w-2 h-full ${statusInfo.status === 'active' ? 'bg-green-500' : statusInfo.status === 'empty' ? 'bg-yellow-500' : 'bg-gray-300'}`} />
-      
-      <CardHeader className="pb-3">
+    <Card className="border shadow-sm hover:shadow-lg transition-all duration-300 group relative overflow-hidden flex flex-col">
+      {/* Status stripe */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${isActive ? 'bg-green-500' : 'bg-yellow-400'}`} />
+
+      {/* Preview images */}
+      {previewImages.length > 0 && (
+        <div className="flex gap-0.5 h-28 overflow-hidden mt-1">
+          {previewImages.slice(0, 3).map((src, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-muted overflow-hidden"
+              style={{ minWidth: 0 }}
+            >
+              <img
+                src={src}
+                alt={`preview-${i}`}
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          ))}
+          {previewImages.length === 0 && (
+            <div className="flex-1 bg-muted flex items-center justify-center">
+              <Package className="h-8 w-8 text-muted-foreground/30" />
+            </div>
+          )}
+        </div>
+      )}
+      {previewImages.length === 0 && (
+        <div className="h-20 bg-muted/40 flex items-center justify-center mt-1">
+          <Package className="h-8 w-8 text-muted-foreground/20" />
+        </div>
+      )}
+
+      <CardHeader className="pb-2 pt-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <CardTitle className="text-lg truncate group-hover:text-primary transition-colors">
+            <CardTitle className="text-base leading-tight truncate group-hover:text-primary transition-colors">
               {group.title}
             </CardTitle>
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              <Badge variant="outline" className="text-xs gap-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1.5">
+              <Badge variant="outline" className="text-xs gap-1 py-0">
                 <Globe className="h-3 w-3" />
                 {group.country}
               </Badge>
-              <Badge variant="secondary" className="text-xs gap-1">
-                <Languages className="h-3 w-3" />
-                {(group.languages ?? []).length} lang(s)
+              <Badge
+                className={`text-xs py-0 ${isActive ? 'bg-green-100 text-green-700 border-green-200' : 'bg-yellow-100 text-yellow-700 border-yellow-200'}`}
+                variant="outline"
+              >
+                {loadingAuctions ? 'Loading…' : isActive ? `${allBatchIds.length} Batch${allBatchIds.length !== 1 ? 'es' : ''}` : 'No Batches'}
               </Badge>
-              <Badge className={`text-xs ${statusInfo.color}`}>
-                {statusInfo.status === 'loading' ? 'Loading...' : 
-                 statusInfo.status === 'empty' ? 'No Batches' : 
-                 `${allBatchIds.length} Batches`}
-              </Badge>
+              {/* Admin approval status */}
+              {group.approval_status === 'approved' ? (
+                <Badge className="text-xs py-0 bg-emerald-50 text-emerald-700 border-emerald-200" variant="outline">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Approved
+                </Badge>
+              ) : (
+                <Badge className="text-xs py-0 bg-amber-50 text-amber-700 border-amber-200" variant="outline">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Pending Approval
+                </Badge>
+              )}
             </div>
           </div>
-          
+
           {/* Action buttons */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 hover:bg-primary/10"
+              className="h-7 w-7 hover:bg-primary/10"
               onClick={handleEditClick}
               title="Edit Group"
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+              className="h-7 w-7 text-destructive hover:bg-destructive/10"
               onClick={() => onDelete(group.group_id)}
               title="Delete Group"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 space-y-4">
-        {/* Languages detail */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Languages className="h-4 w-4" />
-            <span>Languages:</span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {(group.languages ?? []).map((lang: string, idx: number) => (
-              <Badge key={idx} variant="outline" className="text-xs">
-                {lang}
-              </Badge>
-            ))}
-          </div>
+      <CardContent className="pt-0 space-y-3 flex-1 flex flex-col">
+        {/* Languages */}
+        <div className="flex flex-wrap gap-1">
+          {(group.languages ?? []).map((lang: string, idx: number) => (
+            <Badge key={idx} variant="secondary" className="text-xs py-0">
+              {lang}
+            </Badge>
+          ))}
         </div>
 
-        {/* Batches section */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Package className="h-4 w-4" />
-              <span>Batches ({allBatchIds.length})</span>
-            </div>
-            {allBatchIds.length > 0 && (
-              <Button variant="ghost" size="sm" className="h-6 text-xs">
-                <Eye className="h-3 w-3 mr-1" />
-                View All
-              </Button>
-            )}
-          </div>
-          
+        {/* Batch list */}
+        <div className="flex-1">
           {loadingAuctions ? (
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-6 w-3/4" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-9 w-4/5" />
             </div>
-          ) : allBatchIds.length === 0 ? (
-            <div className="text-center py-6 border-2 border-dashed rounded-lg">
-              <Package className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-              <p className="text-sm text-muted-foreground mb-2">
-                No batches added yet
-              </p>
-              <Button size="sm" variant="outline" onClick={handleEditClick}>
+          ) : uniqueBatches.length === 0 ? (
+            <div className="text-center py-5 border-2 border-dashed rounded-lg">
+              <Package className="h-6 w-6 mx-auto text-muted-foreground/40 mb-1.5" />
+              <p className="text-xs text-muted-foreground mb-2">No batches yet</p>
+              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleEditClick}>
                 <Plus className="h-3 w-3 mr-1" />
                 Add Batches
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                {allBatchIds.slice(0, 6).map((bId: number) => {
-                  const b = sellerBatches.find((x) => x.batchId === bId);
-                  return (
-                    <Badge key={bId} variant="outline" className="text-xs gap-1">
-                      <span className="font-mono">#{bId}</span>
-                      {(b?.title || b?.category) && (
-                        <span className="max-w-[80px] truncate">
-                          {b.title || b.category}
-                        </span>
+            <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+              {uniqueBatches.map((b) => {
+                const local = sellerBatches.find((x) => x.batchId === b.batch_id);
+                const title = b.title || local?.title || null;
+                const category = b.category || local?.category || null;
+                return (
+                  <div
+                    key={b.batch_id}
+                    className="flex items-center gap-2 rounded-md bg-muted/50 px-2.5 py-1.5 text-xs"
+                  >
+                    <span className="font-mono text-muted-foreground shrink-0">#{b.batch_id}</span>
+                    <div className="min-w-0 flex-1">
+                      {title && (
+                        <p className="font-medium truncate leading-tight">{title}</p>
                       )}
-                    </Badge>
-                  );
-                })}
-                {allBatchIds.length > 6 && (
-                  <Badge variant="secondary" className="text-xs">
-                    +{allBatchIds.length - 6} more
-                  </Badge>
-                )}
-              </div>
+                      {category && (
+                        <p className="text-muted-foreground truncate leading-tight">{category}</p>
+                      )}
+                      {!title && !category && (
+                        <p className="text-muted-foreground italic">Batch #{b.batch_id}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Footer with creation date */}
-        <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground mt-auto">
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            Created {new Date(group.created_at).toLocaleDateString()}
+            {new Date(group.created_at).toLocaleDateString()}
           </span>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-            <MoreVertical className="h-3 w-3" />
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs hover:bg-primary/10" onClick={handleEditClick}>
+            <Pencil className="h-3 w-3 mr-1" />
+            Edit
           </Button>
         </div>
       </CardContent>
@@ -759,15 +798,30 @@ const AuctionGroups = () => {
   const { data: groupsData, isLoading: groupsLoading, refetch: refetchGroups } =
     useGetAuctionGroupsQuery({ seller_id: sellerId, site_id: SITE_TYPE });
 
+  // Home data provides previewImages per group
+  const { data: homeData } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE });
+  const homeGroupMap = useMemo(() => {
+    const map: Record<number, string[]> = {};
+    for (const g of homeData?.data ?? []) {
+      map[g.group_id] = g.previewImages ?? [];
+    }
+    return map;
+  }, [homeData]);
+
   const { data: batchesData, isLoading: batchesLoading } = useGetBatchesBySellerQuery(
     { sellerId: String(sellerId), page: 1, type: SITE_TYPE, limit: 1000 },
     { skip: !sellerId }
   );
-  const sellerBatches: BatchOption[] = (batchesData?.data?.data ?? []).map((b: any) => ({
-    batchId: b.batchId,
-    title: b.title ?? null,
-    category: b.category ?? "",
-  }));
+  const sellerBatches: BatchOption[] = (batchesData?.data?.data ?? [])
+    .filter((b: any) =>
+      ACTIVE_BATCH_STATUSES.has(b.status) && b.approval_status === "approved"
+    )
+    .map((b: any) => ({
+      batchId: b.batchId,
+      title: b.title ?? null,
+      category: b.category ?? "",
+      status: b.status,
+    }));
 
   // ── Mutations ──────────────────────────────────────────────────────────────
   const [createGroup] = useCreateAuctionGroupMutation();
@@ -775,6 +829,9 @@ const AuctionGroups = () => {
   const [deleteGroup] = useDeleteAuctionGroupMutation();
   const [addAuction] = useAddAuctionToGroupMutation();
   const [replaceBatches] = useReplaceGroupBatchesMutation();
+
+  // ── Filter state ──────────────────────────────────────────────────────────
+  const [activeOnly, setActiveOnly] = useState(true);
 
   // ── Dialog state ───────────────────────────────────────────────────────────
   const [dialog, setDialog] = useState<null | "create" | "edit">(null);
@@ -888,9 +945,16 @@ const AuctionGroups = () => {
     }
   };
 
-  const groups = groupsData?.data ?? [];
+  const allGroups = groupsData?.data ?? [];
 
-  console.log("groups is ",groups);
+  // Active = group has at least one batch (batch_ids present in home data)
+  const groups = useMemo(() => {
+    if (!activeOnly) return allGroups;
+    return allGroups.filter((g: any) => {
+      const homeGroup = homeData?.data?.find((h: any) => h.group_id === g.group_id);
+      return homeGroup ? homeGroup.batchCount > 0 : true; // keep if no home data yet
+    });
+  }, [allGroups, activeOnly, homeData]);
   
 
   return (
@@ -908,9 +972,20 @@ const AuctionGroups = () => {
               Create groups with title, country &amp; languages, then assign machine batches.
             </p>
           </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" /> New Group
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={activeOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveOnly((v) => !v)}
+              className="gap-1.5"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {activeOnly ? "Active Only" : "Show All"}
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> New Group
+            </Button>
+          </div>
         </div>
 
         {/* ── Stats Cards ── */}
@@ -1012,17 +1087,23 @@ const AuctionGroups = () => {
               <Gavel className="h-12 w-12 opacity-50" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-semibold">No auction groups yet</h3>
+              <h3 className="text-xl font-semibold">
+                {activeOnly ? "No active auction groups" : "No auction groups yet"}
+              </h3>
               <p className="text-sm max-w-md">
-                Create your first auction group to organize your machine batches by country and language.
+                {activeOnly
+                  ? "No groups have batches assigned. Toggle \"Show All\" to see all groups, or add batches to existing groups."
+                  : "Create your first auction group to organize your machine batches by country and language."}
               </p>
             </div>
             <div className="flex gap-2">
+              {activeOnly && (
+                <Button variant="outline" size="lg" onClick={() => setActiveOnly(false)}>
+                  <Eye className="h-4 w-4 mr-2" /> Show All Groups
+                </Button>
+              )}
               <Button onClick={openCreate} size="lg">
-                <Plus className="h-4 w-4 mr-2" /> Create First Group
-              </Button>
-              <Button variant="outline" size="lg">
-                <Eye className="h-4 w-4 mr-2" /> View Guide
+                <Plus className="h-4 w-4 mr-2" /> Create Group
               </Button>
             </div>
           </div>
@@ -1033,6 +1114,7 @@ const AuctionGroups = () => {
                 key={group.group_id}
                 group={group}
                 sellerBatches={sellerBatches}
+                previewImages={homeGroupMap[group.group_id] ?? []}
                 onEdit={openEdit}
                 onDelete={handleDelete}
               />

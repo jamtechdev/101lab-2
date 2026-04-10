@@ -16,6 +16,9 @@ export interface AuctionGroup {
   created_at: string;
   updated_at: string;
   auction_count?: number;
+  approval_status?: "pending" | "approved";
+  status?: "active" | "inactive";
+  featured_type?: "none" | "featured" | "highlighted" | "both";
 }
 
 export interface AuctionGroupHomeItem {

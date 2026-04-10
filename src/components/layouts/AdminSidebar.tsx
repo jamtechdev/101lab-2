@@ -15,7 +15,8 @@ import {
     Mail,
     User,
     Zap,
-    Percent
+    Percent,
+    Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
@@ -38,6 +39,7 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
     const navItems = [
         { icon: LayoutDashboard, label: t("admin.sidebar.dashboard"), path: "/admin" },
         { icon: Package, label: t("admin.sidebar.listings"), path: "/admin/listings" },
+        { icon: Gavel, label: t("admin.sidebar.auctionGroups", "Auction Groups"), path: "/admin/auction-groups" },
         { icon: ShoppingCart, label: t("admin.sidebar.buyers"), path: "/admin/buyers" },
         { icon: Store, label: t("admin.sidebar.sellers"), path: "/admin/sellers" },
         { icon: BarChart3, label: t("admin.sidebar.analytics"), path: "/admin/analytics" },
@@ -46,6 +48,7 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
         { icon: User, label: t("admin.sidebar.users"), path: "/admin/users" },
         { icon: Zap, label: t("admin.sidebar.autoApproval", "Auto-approval"), path: "/admin/auto-approval" },
         { icon: Percent, label: t("admin.sidebar.commission", "Commission"), path: "/admin/commission" },
+
         { icon: Settings, label: t("admin.sidebar.settings"), path: "/admin/settings" },
 
     ];
