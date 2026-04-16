@@ -431,7 +431,7 @@ const BuyerMarketplace = () => {
             className="hover:text-primary cursor-pointer transition-colors hover:underline"
             onClick={() => navigate("/buyer-marketplace")}
           >
-            All auctions
+            {t("publicHeader.allAuctions")}
           </span>
           {selectedCategory && (
             <>

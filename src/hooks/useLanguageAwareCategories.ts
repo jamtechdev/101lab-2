@@ -2,30 +2,33 @@ import { useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useGetMachinesCategoriesQuery, LabCategory } from '@/rtk/slices/apiSlice';
 import { useGetCategorySummaryQuery as useBatchCategorySummary } from '@/rtk/slices/batchApiSlice';
-import { processCategorySummary, processLabCategoryTree } from '@/utils/categoryTranslations';
+import { processCategorySummary } from '@/utils/categoryTranslations';
 import { toBackendContentLang, toUiCategoryLang } from '@/utils/languageUtils';
 
 export type { LabCategory };
 
 /**
  * Lab category tree for navigation (mega menu, filters).
- * Always loads WP `product-labs?language=en` for hierarchy: the zh-hant endpoint returns
- * parents with empty `subcategories[]` (WPML data gap), which hides submenus in Chinese UI.
- * Display names are localized via processLabCategoryTree + categoryTranslations.
+ *
+ * The backend now handles translation server-side:
+ *  - Always fetches WordPress with language=en for proper slugs + full subcategory tree
+ *  - Applies the static Chinese translation map before returning
+ * So we just pass the current language and get back the correctly named tree.
  */
 export const useLanguageAwareCategories = (_platform?: string) => {
   const { i18n } = useTranslation();
+  const apiLang = toBackendContentLang(i18n.language); // 'zh-hant' for zh, 'en' otherwise
   const uiLang = toUiCategoryLang(i18n.language);
 
-  const machinesCategoriesQuery = useGetMachinesCategoriesQuery('en');
+  // Pass the current language — backend returns English slugs + translated names
+  const categoriesQuery = useGetMachinesCategoriesQuery(apiLang);
 
-  const rawCategories: LabCategory[] = machinesCategoriesQuery.data?.data ?? [];
-  const categories = useMemo(
-    () => processLabCategoryTree(rawCategories, uiLang),
-    [rawCategories, uiLang]
+  const categories: LabCategory[] = useMemo(
+    () => categoriesQuery.data?.data ?? [],
+    [categoriesQuery.data?.data]
   );
 
-  const { data: _serverPayload, ...queryRest } = machinesCategoriesQuery;
+  const { data: _serverPayload, ...queryRest } = categoriesQuery;
   return {
     ...queryRest,
     data: categories,

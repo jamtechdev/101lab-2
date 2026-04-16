@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLanguageAwareCategories, LabCategory } from "@/hooks/useLanguageAwareCategories";
 
 interface CategoryBarProps {
@@ -8,6 +9,7 @@ interface CategoryBarProps {
 }
 
 const CategoryBar = ({ selectedCategory, onCategoryChange }: CategoryBarProps) => {
+  const { t } = useTranslation();
   const { data: categoriesData } = useLanguageAwareCategories();
   const categories: LabCategory[] = Array.isArray(categoriesData) ? categoriesData : [];
 
@@ -69,7 +71,7 @@ const CategoryBar = ({ selectedCategory, onCategoryChange }: CategoryBarProps) =
                 : "border-transparent text-foreground/60 hover:text-foreground hover:border-foreground/20"
             }`}
           >
-            All auctions
+            {t("publicHeader.allAuctions")}
           </button>
 
           {/* Divider */}
@@ -129,7 +131,7 @@ const CategoryBar = ({ selectedCategory, onCategoryChange }: CategoryBarProps) =
                     : "border-transparent text-primary/70 hover:text-primary hover:border-primary/40"
                 }`}
               >
-                Show all
+                {t("publicHeader.showAll")}
               </button>
 
               <div className="w-px h-4 bg-border mx-1 flex-shrink-0" />

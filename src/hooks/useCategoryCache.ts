@@ -28,7 +28,7 @@ export const useCategoryCache = () => {
   
 
   useEffect(() => {
-    if (!globalCategoryCache.loaded && enCategories && zhCategories) {
+    if (enCategories && zhCategories) {
       // Extract data from RTK response (which has { success, data, ... } structure)
       const enData = Array.isArray(enCategories) ? enCategories : (enCategories as any)?.data || [];
       const zhData = Array.isArray(zhCategories) ? zhCategories : (zhCategories as any)?.data || [];
@@ -37,12 +37,25 @@ export const useCategoryCache = () => {
       if (Array.isArray(enData) && Array.isArray(zhData)) {
         enData.forEach((enCat: any, index: number) => {
           const zhCat = zhData[index];
-          if (zhCat) {
-            console.log(`Match [${index}]: EN="${enCat.name}" → ZH="${zhCat.name}"`);
-            globalCategoryCache.translations[enCat.name] = {
-              en: enCat.name,
-              zh: zhCat.name,
-            };
+          if (!zhCat) return;
+
+          // Map parent category
+          globalCategoryCache.translations[enCat.name] = {
+            en: enCat.name,
+            zh: zhCat.name,
+          };
+
+          // Map subcategories — card item.category is usually a subcategory name
+          if (Array.isArray(enCat.subcategories) && Array.isArray(zhCat.subcategories)) {
+            enCat.subcategories.forEach((enSub: any, subIndex: number) => {
+              const zhSub = zhCat.subcategories[subIndex];
+              if (zhSub && enSub.name) {
+                globalCategoryCache.translations[enSub.name] = {
+                  en: enSub.name,
+                  zh: zhSub.name,
+                };
+              }
+            });
           }
         });
       }

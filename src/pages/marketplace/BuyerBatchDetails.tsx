@@ -43,6 +43,7 @@ import { subscribeBuyerEvents } from "@/socket/buyerEvents"
 import BuyerDashboard from "../dashboard/BuyerDashboard";
 import BuyerHeader from "../buyer/BuyerHeader";
 import { extractValuesFromPhpSerialized } from "@/utils/parsePhpSerializedUrl";
+import { useCategoryCache } from "@/hooks/useCategoryCache";
 
 export default function BuyerBatchDetails() {
     const { batchId } = useParams<{ batchId: string }>();
@@ -50,6 +51,7 @@ export default function BuyerBatchDetails() {
     const { t, i18n } = useTranslation();
     const buyerId = Number(localStorage.getItem("userId"));
     const [logout] = useLogoutMutation();
+    const { getTranslatedCategory } = useCategoryCache();
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [paymentData, setPaymentData] = useState({
         transaction_number: "",
@@ -299,7 +301,7 @@ export default function BuyerBatchDetails() {
                             className="hover:text-primary cursor-pointer transition-colors hover:underline"
                             onClick={() => navigate("/buyer-marketplace")}
                         >
-                            All auctions
+                            {t("publicHeader.allAuctions")}
                         </span>
                         {batch?.category && (
                             <>
@@ -308,13 +310,18 @@ export default function BuyerBatchDetails() {
                                     className="hover:text-primary cursor-pointer transition-colors hover:underline capitalize"
                                     onClick={() => navigate(`/buyer-marketplace?category=${batch.category}`)}
                                 >
-                                    {batch.category.replace(/-/g, " ")}
+                                    {i18n.language === 'zh'
+                                        ? getTranslatedCategory(batch.category, 'zh')
+                                        : batch.category.replace(/-/g, " ")}
                                 </span>
                             </>
                         )}
                         <span className="text-muted-foreground/40">/</span>
                         <span className="text-foreground font-medium">
-                            {batch?.title || `Batch #${batchId}`}
+                            {(i18n.language === 'zh' && batch?.title_zh) ? batch.title_zh
+                                : (i18n.language === 'ja' && batch?.title_ja) ? batch.title_ja
+                                : (i18n.language === 'th' && batch?.title_th) ? batch.title_th
+                                : batch?.title_en || batch?.title || `Batch #${batchId}`}
                         </span>
                     </nav>
                 </div>
