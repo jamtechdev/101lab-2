@@ -35,6 +35,7 @@ interface BulkRow {
   replacementCost: string;
   /** From spreadsheet "images" column; converted to File at upload (browser fetch) */
   imageUrls?: string[];
+  auctionGroupId: number | null;  // optional auction group to assign batch to
 }
 
 type RowStatus = "pending" | "uploading" | "success" | "error";
@@ -127,21 +128,21 @@ function catNameToSlug(name: string): string | null {
 }
 
 // Column order — title first so it feels natural; category second with dropdown
-// A=title … M=replacementCost  N=images (optional: comma-separated photo URLs, max 10; fetched at upload)
 // A=title  B=category  C=description  D=condition  E=operationStatus
 // F=location  G=country  H=quantity  I=priceFormat  J=pricePerUnit
-// K=priceCurrency  L=weightPerUnit  M=replacementCost  N=images
+// K=priceCurrency  L=weightPerUnit  M=replacementCost  N=images  O=auctionGroupId
 const DATA_COLS = [
   "title", "category", "description", "condition", "operationStatus",
   "location", "country", "quantity",
   "priceFormat", "pricePerUnit", "priceCurrency",
-  "weightPerUnit", "replacementCost", "images",
+  "weightPerUnit", "replacementCost", "images", "auctionGroupId",
 ];
 
 const COL_WIDTHS: Record<string, number> = {
   title: 32, category: 28, description: 40, condition: 18, operationStatus: 18,
   location: 24, country: 10, quantity: 10, priceFormat: 12,
-  pricePerUnit: 14, priceCurrency: 12,   weightPerUnit: 14, replacementCost: 16, images: 50,
+  pricePerUnit: 14, priceCurrency: 12, weightPerUnit: 14, replacementCost: 16, images: 50,
+  auctionGroupId: 16,
 };
 
 const EXAMPLES: Record<string, string> = {
@@ -158,6 +159,7 @@ const EXAMPLES: Record<string, string> = {
   weightPerUnit: "500",
   replacementCost: "20000",
   images: "",
+  auctionGroupId: "",  // optional, left blank
 };
 
 function downloadTemplate(lang: string = "en", labCategories: any[] = []) {
@@ -243,6 +245,7 @@ interface ParsedRow {
   weightPerUnit: string; replacementCost: string;
   /** Deduped https URLs from optional "images" / "Images" column */
   imageUrls: string[];
+  auctionGroupId: number | null;
 }
 
 function parseSheet(file: File): Promise<ParsedRow[]> {
@@ -287,24 +290,29 @@ function parseSheet(file: File): Promise<ParsedRow[]> {
 
         const parsed: ParsedRow[] = dataRows
           .filter((r) => r[colIdx("title")]?.toString().trim())
-          .map((r, i) => ({
-            rowNum: i + 1,
-            // Try slug lookup first; fall back to raw name so new API subcategory names match by name
-            categorySlugHint: catNameToSlug(r[colIdx("category")]?.toString() ?? "") ?? r[colIdx("category")]?.toString().trim() ?? "",
-            title: r[colIdx("title")]?.toString().trim() ?? "",
-            description: r[colIdx("description")]?.toString().trim() ?? "",
-            condition: r[colIdx("condition")]?.toString().trim() ?? "",
-            operationStatus: r[colIdx("operationStatus")]?.toString().trim() ?? "",
-            location: r[colIdx("location")]?.toString().trim() ?? "",
-            country: r[colIdx("country")]?.toString().trim() ?? "",
-            quantity: r[colIdx("quantity")]?.toString().trim() || "1",
-            priceFormat: r[colIdx("priceFormat")]?.toString().trim() || "offer",
-            pricePerUnit: r[colIdx("pricePerUnit")]?.toString().trim() ?? "",
-            priceCurrency: r[colIdx("priceCurrency")]?.toString().trim() || "USD",
-            weightPerUnit: r[colIdx("weightPerUnit")]?.toString().trim() ?? "",
-            replacementCost: r[colIdx("replacementCost")]?.toString().trim() ?? "",
-            imageUrls: imagesCol >= 0 ? parseImageUrls(r[imagesCol]) : [],
-          }));
+          .map((r, i) => {
+            const auctionGroupIdStr = r[colIdx("auctionGroupId")]?.toString().trim() ?? "";
+            const auctionGroupIdNum = auctionGroupIdStr ? Number(auctionGroupIdStr) : null;
+            return {
+              rowNum: i + 1,
+              // Try slug lookup first; fall back to raw name so new API subcategory names match by name
+              categorySlugHint: catNameToSlug(r[colIdx("category")]?.toString() ?? "") ?? r[colIdx("category")]?.toString().trim() ?? "",
+              title: r[colIdx("title")]?.toString().trim() ?? "",
+              description: r[colIdx("description")]?.toString().trim() ?? "",
+              condition: r[colIdx("condition")]?.toString().trim() ?? "",
+              operationStatus: r[colIdx("operationStatus")]?.toString().trim() ?? "",
+              location: r[colIdx("location")]?.toString().trim() ?? "",
+              country: r[colIdx("country")]?.toString().trim() ?? "",
+              quantity: r[colIdx("quantity")]?.toString().trim() || "1",
+              priceFormat: r[colIdx("priceFormat")]?.toString().trim() || "offer",
+              pricePerUnit: r[colIdx("pricePerUnit")]?.toString().trim() ?? "",
+              priceCurrency: r[colIdx("priceCurrency")]?.toString().trim() || "USD",
+              weightPerUnit: r[colIdx("weightPerUnit")]?.toString().trim() ?? "",
+              replacementCost: r[colIdx("replacementCost")]?.toString().trim() ?? "",
+              imageUrls: imagesCol >= 0 ? parseImageUrls(r[imagesCol]) : [],
+              auctionGroupId: isNaN(auctionGroupIdNum as number) ? null : auctionGroupIdNum,
+            };
+          });
         resolve(parsed);
       } catch (err) {
         reject(err);
@@ -591,6 +599,7 @@ export default function BulkUpload() {
             visibility: "PUBLIC",
             type: SITE_TYPE,
             country: row.country || "",
+            groupId: row.auctionGroupId || undefined,
           }).unwrap();
           rowBatchId = batchResult?.data?.batch_id ?? undefined;
           if (rowBatchId) totalBatches++;
@@ -715,6 +724,7 @@ export default function BulkUpload() {
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colQty')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPrice')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colCountry')}</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Group ID</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPhotos')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium w-16">{t('bulkUpload.colActions')}</th>
                       </tr>
@@ -755,6 +765,15 @@ export default function BulkUpload() {
                             {r.pricePerUnit ? `${r.priceCurrency} ${r.pricePerUnit}` : r.priceFormat}
                           </td>
                           <td className="px-3 py-2 text-muted-foreground">{r.country}</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {r.auctionGroupId ? (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
+                                #{r.auctionGroupId}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40 text-[10px]">—</span>
+                            )}
+                          </td>
                           {/* Inline photo upload cell */}
                           <td className="px-3 py-2">
                             <div className="flex items-center gap-1 flex-wrap min-w-[120px]">

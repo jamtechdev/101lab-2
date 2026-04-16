@@ -12,7 +12,7 @@ function getCookie(name) {
 }
 
 const AdminRoute = () => {
-    const { data, isLoading, isError } = useVerifyUserQuery();
+    const { data, isLoading, isError } = useVerifyUserQuery(undefined, { refetchOnMountOrArgChange: true });
 
     const accessToken = getCookie("accessToken");
     const refreshToken = getCookie("refreshToken");

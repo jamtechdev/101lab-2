@@ -79,6 +79,14 @@ const getCountryIso = (countryName: string): string => {
   return (COUNTRY_TO_ISO[countryName] || "").toLowerCase();
 };
 
+const maskName = (name: string): string => {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0) + "*".repeat(Math.max(word.length - 1, 2)))
+    .join(" ");
+};
+
 const getRealFileUrl = (doc: any) => {
   // If URL contains serialized attachment_id
   const match = doc.url.match(/https?:\/\/[^\s"]+/);
@@ -469,6 +477,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       toast.error(err?.data?.message || "Failed to update bid");
     }
   };
+
+  // Scroll to top whenever batch id changes (e.g. clicking similar batch cards)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [id]);
 
   useEffect(() => {
     const unsub = subscribeBuyerEvents(() => {
@@ -1168,6 +1181,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                 {t("buyer.buyNow") || "Buy Now"}
                               </Button>
                             )}
+
                           </div>
                         )}
                         {isBidScheduled && (
@@ -1228,7 +1242,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     {/* Quick Actions Row */}
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        onClick={() => setShowMessageDialog(true)}
+                        onClick={() => {
+                          if (!localStorage.getItem("userId")) {
+                            openLoginModal({ portalType: "buyer", onSuccess: () => setShowMessageDialog(true) });
+                            return;
+                          }
+                          setShowMessageDialog(true);
+                        }}
                         className="flex items-center justify-center gap-2 px-3 py-2.5 rounded border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors font-medium text-sm"
                       >
                         <MessageCircle className="w-4 h-4 flex-shrink-0" />
@@ -1300,14 +1320,14 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                            <p className="text-xs text-muted-foreground">{t("buyer.verifiedSeller") || "Verified Seller"}:</p>
+                            {/* <p className="text-xs text-muted-foreground">{t("buyer.verifiedSeller") || "Verified Seller"}:</p> */}
                           </div>
-                          <p className="font-semibold text-sm text-foreground truncate">{sellerData?.display_name}</p>
+                          <p className="font-semibold text-sm text-foreground truncate">{maskName(sellerData?.display_name)}</p>
                           {(product?.sellerVisible === undefined ||
                             product?.sellerVisible === "1" ||
                             product?.sellerVisible === true) && (
                               <p className="text-xs text-muted-foreground truncate">
-                                {Array.isArray(sellerData?.meta) && sellerData?.meta[0]?.meta_value}
+                                {Array.isArray(sellerData?.meta) && maskName(sellerData?.meta[0]?.meta_value)}
                               </p>
                             )}
                         </div>

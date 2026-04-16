@@ -18,11 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { Phone } from "lucide-react";
-
-const countries = [
-  "Taiwan", "Thailand", "Indonesia", "Malaysia", "Vietnam",
-  "Philippines", "Singapore", "Japan", "South Korea", "India", "Other",
-];
+import { CountrySelectItems } from "@/components/common/CountrySelect";
 
 const quantityOptions = [
   { value: "single", label: "Single Machine" },
@@ -92,12 +88,8 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
               <SelectTrigger>
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
-              <SelectContent>
-                {countries.map((c) => (
-                  <SelectItem key={c} value={c.toLowerCase()}>
-                    {c}
-                  </SelectItem>
-                ))}
+              <SelectContent className="max-h-60">
+                <CountrySelectItems />
               </SelectContent>
             </Select>
           </div>

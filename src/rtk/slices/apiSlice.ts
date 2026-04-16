@@ -465,6 +465,53 @@ export const apiSlice = createApi({
       }),
     }),
 
+    // ── Seller Upgrade (Buyer → Seller) ──────────────────────────────────────
+    submitSellerUpgradeRequest: builder.mutation<
+      { success: boolean; data?: any; message: string },
+      { company_name: string; company_tax_id?: string; business_type?: string; reason?: string; phone?: string; country?: string }
+    >({
+      query: (body) => ({
+        url: `/seller-upgrade/request?user_id=${localStorage.getItem("userId")}`,
+        method: "POST",
+        data: body,
+      }),
+    }),
+
+    getMySellerUpgradeStatus: builder.query<{ success: boolean; data: any }, void>({
+      query: () => ({
+        url: `/seller-upgrade/my-status?user_id=${localStorage.getItem("userId")}`,
+        method: "GET",
+      }),
+    }),
+
+    getSellerUpgradeRequests: builder.query<{ success: boolean; data: any[] }, { status?: string }>({
+      query: ({ status } = {}) => ({
+        url: `/seller-upgrade/requests${status ? `?status=${status}` : ""}`,
+        method: "GET",
+      }),
+    }),
+
+    approveSellerUpgradeRequest: builder.mutation<
+      { success: boolean; message: string },
+      { id: number; admin_notes?: string }
+    >({
+      query: ({ id, admin_notes }) => ({
+        url: `/seller-upgrade/requests/${id}/approve`,
+        method: "PUT",
+        data: { admin_notes },
+      }),
+    }),
+
+    rejectSellerUpgradeRequest: builder.mutation<
+      { success: boolean; message: string },
+      { id: number; admin_notes?: string }
+    >({
+      query: ({ id, admin_notes }) => ({
+        url: `/seller-upgrade/requests/${id}/reject`,
+        method: "PUT",
+        data: { admin_notes },
+      }),
+    }),
 
   }),
 });
@@ -496,4 +543,9 @@ export const {
   useGetPendingRoleRequestsQuery,
   useUpdateRoleRequestStatusMutation,
   useCreateSellerAutoApprovalRequestMutation,
+  useSubmitSellerUpgradeRequestMutation,
+  useGetMySellerUpgradeStatusQuery,
+  useGetSellerUpgradeRequestsQuery,
+  useApproveSellerUpgradeRequestMutation,
+  useRejectSellerUpgradeRequestMutation,
 } = apiSlice;

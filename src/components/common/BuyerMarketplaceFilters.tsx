@@ -201,12 +201,16 @@ const FilterPanel = ({
         </button>
         {isCountryExpanded && (
           <div className="mt-3 space-y-1">
-            {COUNTRIES.map((country) => (
-              <label key={country.id} className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors ${selectedCountry === country.id ? "bg-primary/8" : "hover:bg-muted/60"}`}>
-                <Checkbox checked={selectedCountry === country.id} onCheckedChange={() => onCountryChange(selectedCountry === country.id ? "" : country.id)} className="h-3.5 w-3.5 rounded-sm" />
-                <span className={`text-xs transition-colors flex-1 ${selectedCountry === country.id ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{country.name}</span>
-              </label>
-            ))}
+            {COUNTRIES.map((country) => {
+              const selectedIds = selectedCountry?.split(",").filter(Boolean) || [];
+              const isSelected = selectedIds.includes(country.id);
+              return (
+                <label key={country.id} className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors ${isSelected ? "bg-primary/8" : "hover:bg-muted/60"}`}>
+                  <Checkbox checked={isSelected} onCheckedChange={() => onCountryChange(country.id)} className="h-3.5 w-3.5 rounded-sm" />
+                  <span className={`text-xs transition-colors flex-1 ${isSelected ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{country.name}</span>
+                </label>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,15 +1,19 @@
 // src/routes/ProtectedRoute.tsx
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useVerifyUserQuery } from "@/rtk/slices/apiSlice";
 
 interface Props {
   allowedRoles?: string[];
 }
 
+// Routes that are seller-only (buyers should not access)
+const SELLER_ONLY_PATHS = ["/dashboard"];
+
 const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   const accessToken = localStorage.getItem("accessToken");
   const refreshToken = localStorage.getItem("refreshToken");
+  const location = useLocation();
   const { data, isLoading, isError } = useVerifyUserQuery();
 
   if (isLoading)
@@ -23,22 +27,32 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
     return <Navigate to="/auth" replace />;
 
   const user = data.user;
+  // jwtRole is the immutable role from login token
+  // activeView is what the seller has toggled to (buyer/seller view)
+  const jwtRole = user.role; // from server verify — always accurate
+  const activeView = localStorage.getItem("activeView") || jwtRole;
   
   // If no role restrictions, allow access
   if (!allowedRoles || allowedRoles.length === 0) {
     return <Outlet />;
   }
   
-  // If route allows both seller and buyer, allow role switching
+  // If route allows both seller and buyer
   if (allowedRoles.includes("seller") && allowedRoles.includes("buyer")) {
-    // Allow access if user is either seller or buyer
-    if (user.role === "seller" || user.role === "buyer") {
+    if (jwtRole === "seller" || jwtRole === "buyer") {
+      // Pure buyers trying to access seller-only paths → redirect to buyer dashboard
+      const isSellerOnlyPath = SELLER_ONLY_PATHS.some(
+        (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+      );
+      if (jwtRole === "buyer" && isSellerOnlyPath) {
+        return <Navigate to="/buyer-dashboard" replace />;
+      }
       return <Outlet />;
     }
   }
   
   // For admin-only routes or single-role routes, check normally
-  if (!allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(jwtRole)) {
     return <Navigate to="/forbidden" replace />;
   }
 

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useMemo, useEffect } from "react";
+import { CountrySelectItems } from "@/components/common/CountrySelect";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,16 +72,6 @@ const generateSlug = (title: string): string => {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const COUNTRY_OPTIONS = [
-  "China",
-  "Indonesia", 
-  "India",
-  "Malaysia",
-  "Taiwan", 
-  "Thailand", 
-  "Japan",
-  "Vietnam",
-];
 
 // Updated language options to match the image
 const LANGUAGE_OPTIONS = [
@@ -610,10 +601,15 @@ const GroupCard = ({
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground mt-auto">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(group.created_at).toLocaleDateString()}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {new Date(group.created_at).toLocaleDateString()}
+            </span>
+            <span className="font-mono text-[11px] text-muted-foreground/70 select-all">
+              Group ID: {group.group_id}
+            </span>
+          </div>
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs hover:bg-primary/10" onClick={handleEditClick}>
             <Pencil className="h-3 w-3 mr-1" />
             Edit
@@ -696,10 +692,8 @@ const AuctionGroupDialog = ({
                 <SelectTrigger className="w-full text-sm sm:text-base">
                   <SelectValue placeholder="Select a country…" />
                 </SelectTrigger>
-                <SelectContent className="max-h-48 sm:max-h-60">
-                  {COUNTRY_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c} className="text-sm">{c}</SelectItem>
-                  ))}
+                <SelectContent className="max-h-60">
+                  <CountrySelectItems />
                 </SelectContent>
               </Select>
             </div>

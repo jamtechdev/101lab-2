@@ -40,7 +40,17 @@ const Header = () => {
   const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
-  const [searchVal, setSearchVal] = useState("");
+  const [searchVal, setSearchVal] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("search") || "";
+  });
+
+  // Sync search input with URL ?search= param on navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const q = params.get("search") || "";
+    setSearchVal(q);
+  }, [location.search]);
   const [visibleCatCount, setVisibleCatCount] = useState(3);
   // mobile: which parent is expanded
   const [mobileExpandedParent, setMobileExpandedParent] = useState<string | null>(null);
@@ -152,7 +162,6 @@ const Header = () => {
   const handleSearch = () => {
     if (searchVal.trim()) {
       navigate(`/marketplace?search=${encodeURIComponent(searchVal.trim())}`);
-      setSearchVal("");
       setOpenMenu(false);
     }
   };

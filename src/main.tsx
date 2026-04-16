@@ -6,6 +6,25 @@ import { HelmetProvider } from "react-helmet-async";
 // import { initSocket } from "./services/socket.ts";
 import React from "react";
 
+// Disable all console output in production
+// if (import.meta.env.PROD) {
+//   console.log = () => {};
+//   console.warn = () => {};
+//   console.error = () => {};
+//   console.info = () => {};
+//   console.debug = () => {};
+// }
+
+
+
+// if (true) {
+//   console.log = () => {};
+//   console.warn = () => {};
+//   console.error = () => {};
+//   console.info = () => {};
+//   console.debug = () => {};
+// }
+
 
 
 

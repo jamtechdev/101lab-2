@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useState, useRef } from "react";
+import { CountrySelectItems } from "@/components/common/CountrySelect";
 import { decodeHtml } from "@/utils/decodeHtml";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -2018,19 +2019,8 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                           <SelectTrigger id={`country-${item.id}-${location.id}`} className="mt-1 border-border/50 focus:border-accent">
                                             <SelectValue placeholder="Select country" />
                                           </SelectTrigger>
-                                          <SelectContent>
-                                            {[
-                                              "Taiwan", "China", "Japan", "South Korea", "India", "United States", "United Kingdom",
-                                              "Germany", "France", "Australia", "Canada", "Singapore", "Malaysia", "Thailand",
-                                              "Vietnam", "Indonesia", "Philippines", "Hong Kong", "Netherlands", "Italy",
-                                              "Spain", "Brazil", "Mexico", "United Arab Emirates", "Saudi Arabia", "Turkey",
-                                              "Poland", "Sweden", "Switzerland", "Belgium", "Austria", "Denmark", "Finland",
-                                              "Norway", "Portugal", "Czech Republic", "Hungary", "Romania", "New Zealand",
-                                              "South Africa", "Egypt", "Nigeria", "Kenya", "Bangladesh", "Pakistan", "Sri Lanka",
-                                              "Nepal", "Cambodia", "Myanmar", "Laos", "Mongolia", "Kazakhstan", "Other"
-                                            ].map((c) => (
-                                              <SelectItem key={c} value={c}>{c}</SelectItem>
-                                            ))}
+                                          <SelectContent className="max-h-60">
+                                            <CountrySelectItems />
                                           </SelectContent>
                                         </Select>
                                       </div>

@@ -17,6 +17,7 @@ interface BatchCreateRequest {
   networkSellers?: number[];
   type?: string;
   country?: string;
+  groupId?: number | null;
 }
 
 interface BatchCreateResponse {

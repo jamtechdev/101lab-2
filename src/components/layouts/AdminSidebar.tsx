@@ -17,6 +17,8 @@ import {
     Zap,
     Percent,
     Gavel,
+    UserCheck,
+    ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
@@ -47,6 +49,8 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
         // { icon: Mail, label: t("admin.sidebar.emailsettings"), path: "/admin/settings/email" },
         { icon: User, label: t("admin.sidebar.users"), path: "/admin/users" },
         { icon: Zap, label: t("admin.sidebar.autoApproval", "Auto-approval"), path: "/admin/auto-approval" },
+        { icon: UserCheck, label: t("admin.sidebar.sellerUpgradeRequests", "Seller Requests"), path: "/admin/seller-upgrade-requests" },
+        { icon: ClipboardList, label: t("admin.sidebar.productRequests", "Product Requests"), path: "/admin/product-requests" },
         { icon: Percent, label: t("admin.sidebar.commission", "Commission"), path: "/admin/commission" },
 
         { icon: Settings, label: t("admin.sidebar.settings"), path: "/admin/settings" },

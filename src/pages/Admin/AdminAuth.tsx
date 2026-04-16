@@ -59,7 +59,7 @@ const AdminAuth = () => {
                                         <Input
                                             id="signin-email"
                                             type="email"
-                                            placeholder="your@email.com"
+                                            placeholder="company@yourcompany.com"
                                             required
                                         />
                                     </div>

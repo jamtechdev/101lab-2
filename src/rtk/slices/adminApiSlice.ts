@@ -566,6 +566,7 @@ export const adminApi = createApi({
     "SellerAutoApprovalRequests",
     "CommissionRules",
     "AdminAuctionGroups",
+    "ProductRequests",
   ],
 
   endpoints: (builder) => ({
@@ -1000,6 +1001,43 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["AdminAuctionGroups"],
     }),
+
+    /* ---------------- PRODUCT REQUESTS ---------------- */
+    submitProductRequest: builder.mutation<
+      { success: boolean; message: string; data: any },
+      { name: string; email: string; phone?: string; category?: string; search_query?: string; message?: string; user_id?: string | null }
+    >({
+      query: (body) => ({
+        url: "/product-request",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
+
+    getAdminProductRequests: builder.query<
+      { success: boolean; data: any[]; total: number; page: number; totalPages: number },
+      { status?: string; page?: number; limit?: number }
+    >({
+      query: ({ status, page = 1, limit = 20 } = {}) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (status) params.append("status", status);
+        return { url: `/product-request/admin?${params.toString()}`, method: "GET" };
+      },
+      providesTags: ["ProductRequests"],
+    }),
+
+    updateProductRequestStatus: builder.mutation<
+      { success: boolean; message: string; data: any },
+      { id: number; status?: string; admin_notes?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/product-request/${id}/status`,
+        method: "PUT",
+        data: body,
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
   }),
 });
 
@@ -1059,4 +1097,9 @@ export const {
   /* ---------- ADMIN AUCTION GROUPS ---------- */
   useGetAdminAuctionGroupsQuery,
   useApproveAuctionGroupMutation,
+
+  /* ---------- PRODUCT REQUESTS ---------- */
+  useSubmitProductRequestMutation,
+  useGetAdminProductRequestsQuery,
+  useUpdateProductRequestStatusMutation,
 } = adminApi;

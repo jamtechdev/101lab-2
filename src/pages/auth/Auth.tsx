@@ -29,6 +29,7 @@ import {
   useResendVerificationCodeMutation,
   useCompleteSignupMutation,
 } from "@/rtk/slices/apiSlice";
+import { CountrySelect } from "@/components/common/CountrySelect";
 
 import {
   toastSuccess,
@@ -83,6 +84,8 @@ const Auth = () => {
   const [completeSignup, { isLoading: isCompleteLoading }] = useCompleteSignupMutation();
   const allowedTypes: UserType[] = ["buyer", "seller", "admin"];
 
+  const isUpgraded = searchParams.get("upgraded") === "true";
+
   useEffect(() => {
     const type = searchParams.get("type") as UserType | null;
     const mode = searchParams.get("mode") as AuthMode | null;
@@ -120,7 +123,7 @@ const Auth = () => {
     if (!termsAccepted) { toastWarning("Please accept the terms to continue."); return; }
 
     try {
-      const result = await signupInitiate({ email: signupEmail, password: signupPassword, role: userType }).unwrap();
+      const result = await signupInitiate({ email: signupEmail, password: signupPassword, role: "buyer" }).unwrap();
       if (result?.success) {
         setPendingEmail(signupEmail);
         setShowVerification(true);
@@ -193,8 +196,11 @@ const Auth = () => {
         if (userId) {
           localStorage.setItem("userId", userId.toString());
           localStorage.setItem("userRole", role);
-          localStorage.setItem("userName", userName);
-          localStorage.setItem("companyName", companyName);
+          localStorage.setItem("jwtRole", role);
+          localStorage.setItem("activeView", role);
+          if (userName) localStorage.setItem("userName", userName);
+          if (companyName && companyName !== "null") localStorage.setItem("companyName", companyName);
+          else localStorage.removeItem("companyName");
         }
         const socket = getSocket();
         socket.connect();
@@ -290,36 +296,12 @@ const Auth = () => {
         <div className="flex-1 flex items-start justify-center py-8 px-6 lg:px-10">
         <div className="w-full max-w-xl">
 
-          {/* ── Buyer / Seller pill toggle ── */}
+          {/* ── Signup: only buyer registration allowed ── */}
           {userType !== "admin" && authMode === "signup" && (
             <div className="flex justify-center mb-6">
-              <div className="inline-flex rounded-full border border-border bg-muted/40 p-1 gap-1">
-                <button
-                  type="button"
-                  onClick={() => handleTypeSwitch("buyer")}
-                  className={cn(
-                    "flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
-                    userType === "buyer"
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  {t("auth.imABuyer")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTypeSwitch("seller")}
-                  className={cn(
-                    "flex items-center gap-2 px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200",
-                    userType === "seller"
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Store className="w-4 h-4" />
-                  {t("auth.imASeller")}
-                </button>
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
+                <ShoppingCart className="w-4 h-4" />
+                {t("auth.imABuyer")}
               </div>
             </div>
           )}
@@ -553,11 +535,10 @@ const Auth = () => {
                             onChange={(e) => setProfileData(p => ({ ...p, postal_code: e.target.value }))}
                             className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                           />
-                          <input
-                            type="text" placeholder="Country"
+                          <CountrySelect
                             value={profileData.country}
-                            onChange={(e) => setProfileData(p => ({ ...p, country: e.target.value }))}
-                            className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                            onChange={(v) => setProfileData(p => ({ ...p, country: v }))}
+                            className="h-11"
                           />
                         </div>
                       </div>
@@ -631,10 +612,10 @@ const Auth = () => {
                   </div>
                   <form onSubmit={handleSignupCreate} className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="s-email" className="text-sm font-medium">Email address</Label>
+                      <Label htmlFor="s-email" className="text-sm font-medium">Company Email</Label>
                       <div className="relative">
                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input id="s-email" type="email" placeholder="Email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
+                        <Input id="s-email" type="email" placeholder="company@yourcompany.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
                       </div>
                     </div>
                     <div className="space-y-1.5">

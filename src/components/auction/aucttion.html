@@ -3,675 +3,1437 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🔖 Saved Posts & Vibes — Testing Suite</title>
+  <title>🏘️ Community — Full Testing Suite</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d0d0d; color: #fff; min-height: 100vh; }
-
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d0d0d; color: #fff; min-height: 100vh;
+    }
     .screen { display: none; min-height: 100vh; }
     .screen.active { display: flex; }
 
     /* LOGIN */
-    #loginScreen { justify-content: center; align-items: center; flex-direction: column; gap: 16px; padding: 20px; background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%); }
-    .login-card { background: #1a1a1a; border-radius: 16px; padding: 40px; width: 100%; max-width: 400px; border: 1px solid #333; }
-    .login-card h1 { text-align: center; margin-bottom: 8px; font-size: 26px; }
-    .login-card p { text-align: center; color: #888; margin-bottom: 24px; font-size: 13px; }
+    #loginScreen {
+      justify-content: center; align-items: center;
+      flex-direction: column; gap: 16px; padding: 20px;
+      background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+    }
+    .login-card {
+      background: #1a1a1a; border-radius: 16px;
+      padding: 40px; width: 100%; max-width: 420px; border: 1px solid #333;
+    }
+    .login-card h1 { text-align: center; margin-bottom: 6px; font-size: 28px; }
+    .login-card p  { text-align: center; color: #888; margin-bottom: 28px; font-size: 13px; }
 
     /* MAIN */
     #mainScreen { flex-direction: column; }
-    .topbar { background: #1a1a1a; border-bottom: 1px solid #333; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .topbar {
+      background: #1a1a1a; border-bottom: 1px solid #333;
+      padding: 12px 24px; display: flex; justify-content: space-between;
+      align-items: center; position: sticky; top: 0; z-index: 100;
+    }
     .topbar h1 { font-size: 18px; }
     .user-badge { display: flex; align-items: center; gap: 12px; }
     .user-badge span { font-size: 13px; color: #aaa; }
-    .user-badge strong { color: #0095FF; }
+    .user-badge strong { color: #007AFF; }
 
-    .tabs-nav { display: flex; gap: 4px; padding: 12px 24px; background: #111; border-bottom: 1px solid #222; overflow-x: auto; }
-    .tab-nav-btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; background: #2a2a2a; color: #aaa; transition: all 0.2s; }
-    .tab-nav-btn.active { background: #0095FF; color: #fff; }
-
+    /* TABS */
+    .tabs-nav {
+      display: flex; gap: 4px; padding: 12px 24px;
+      background: #111; border-bottom: 1px solid #222; overflow-x: auto; flex-shrink: 0;
+    }
+    .tab-nav-btn {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+      background: #2a2a2a; color: #aaa; transition: all 0.2s;
+    }
+    .tab-nav-btn.active { background: #007AFF; color: #fff; }
     .tab-panel { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
     .tab-panel.active { display: block; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; }
+    /* GRID / SECTIONS */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 20px; }
+    .section {
+      background: #1a1a1a; border-radius: 12px;
+      padding: 22px; border: 1px solid #333;
+    }
+    .section h2 {
+      font-size: 15px; margin-bottom: 16px; color: #007AFF;
+      border-bottom: 2px solid #007AFF; padding-bottom: 8px;
+    }
 
-    .section { background: #1a1a1a; border-radius: 12px; padding: 22px; border: 1px solid #333; }
-    .section h2 { font-size: 16px; margin-bottom: 16px; color: #0095FF; border-bottom: 2px solid #0095FF; padding-bottom: 8px; }
-
-    .form-group { margin-bottom: 14px; }
+    /* FORM */
+    .form-group { margin-bottom: 12px; }
     label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #aaa; }
-    input, textarea, select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: #fff; font-size: 13px; outline: none; transition: border-color 0.2s; }
-    input:focus, textarea:focus, select:focus { border-color: #0095FF; }
+    input, textarea, select {
+      width: 100%; padding: 9px 12px; border-radius: 8px;
+      border: 1px solid #333; background: #2a2a2a;
+      color: #fff; font-size: 13px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #007AFF; }
     textarea { resize: vertical; min-height: 70px; font-family: 'Monaco', monospace; }
-    small { color: #666; font-size: 11px; margin-top: 4px; display: block; }
+    input[type="file"] { padding: 8px; }
+    small { color: #666; font-size: 11px; margin-top: 3px; display: block; }
 
-    .btn { padding: 10px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; width: 100%; margin-bottom: 6px; }
+    /* BUTTONS */
+    .btn {
+      padding: 10px 16px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: opacity 0.2s; width: 100%; margin-bottom: 6px;
+    }
     .btn:hover { opacity: 0.8; }
-    .btn-primary  { background: #0095FF; color: #fff; }
-    .btn-success  { background: #30d158; color: #fff; }
-    .btn-danger   { background: #ff453a; color: #fff; }
-    .btn-secondary{ background: #5a5a5c; color: #fff; }
-    .btn-warning  { background: #ffa500; color: #000; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary   { background: #007AFF; color: #fff; }
+    .btn-success   { background: #30d158; color: #fff; }
+    .btn-danger    { background: #ff453a; color: #fff; }
+    .btn-secondary { background: #5a5a5c; color: #fff; }
+    .btn-warning   { background: #ffa500; color: #000; }
     .btn-sm { padding: 6px 10px; font-size: 11px; width: auto; margin-bottom: 0; }
-    .btn-logout { background: #ff453a; color: #fff; padding: 7px 14px; border-radius: 6px; border: none; font-size: 12px; cursor: pointer; font-weight: 600; }
+    .btn-logout {
+      background: #ff453a; color: #fff; padding: 7px 14px;
+      border-radius: 6px; border: none; font-size: 12px; cursor: pointer; font-weight: 600;
+    }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    .response { background: #0d0d0d; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 12px; font-family: 'Monaco', monospace; max-height: 320px; overflow-y: auto; border: 1px solid #333; white-space: pre-wrap; word-break: break-all; }
+    /* RESPONSE */
+    .response {
+      background: #0d0d0d; border-radius: 8px; padding: 12px;
+      margin-top: 10px; font-size: 12px; font-family: 'Monaco', monospace;
+      max-height: 300px; overflow-y: auto; border: 1px solid #333;
+      white-space: pre-wrap; word-break: break-all;
+    }
     .response.success { border-color: #30d158; color: #30d158; }
     .response.error   { border-color: #ff453a; color: #ff453a; }
-    .response.info    { border-color: #0095FF; color: #6bc9ff; }
+    .response.info    { border-color: #007AFF; color: #6bc9ff; }
 
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-    .badge-success { background: #30d158; color: #000; }
-    .badge-error   { background: #ff453a; color: #fff; }
-    .badge-info    { background: #0095FF; color: #fff; }
-    .badge-warning { background: #ffa500; color: #000; }
+    /* QUICK INFO BOX */
+    .info-box {
+      background: #1e2a1e; border: 1px solid #30d158; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #30d158;
+      line-height: 1.7;
+    }
+    .warn-box {
+      background: #2a1e00; border: 1px solid #ffa500; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 16px; font-size: 12px; color: #ffa500;
+      line-height: 1.7;
+    }
 
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
-    .stat-card { background: #2a2a2a; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #333; }
-    .stat-val  { font-size: 22px; font-weight: bold; color: #0095FF; }
-    .stat-lbl  { font-size: 11px; color: #666; margin-top: 4px; }
+    /* COMMUNITY CARD (feed) */
+    .community-card {
+      background: #222; border-radius: 10px; border: 1px solid #333;
+      padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s;
+    }
+    .community-card:hover { border-color: #007AFF; }
+    .community-card.selected { border-color: #007AFF; background: #1a2a3a; }
+    .community-card h3 { font-size: 14px; color: #fff; }
+    .community-card p  { font-size: 12px; color: #888; margin-top: 4px; }
+    .community-card .meta { font-size: 11px; color: #555; margin-top: 6px; }
 
-    /* SAVED ITEM CARD */
-    .item-card { background: #2a2a2a; border-radius: 8px; padding: 14px; margin-bottom: 10px; border: 1px solid #444; display: flex; gap: 12px; align-items: flex-start; }
-    .item-thumb { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; background: #333; flex-shrink: 0; }
-    .item-thumb-placeholder { width: 60px; height: 60px; border-radius: 6px; background: #333; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .item-info { flex: 1; min-width: 0; }
-    .item-info h4 { font-size: 13px; color: #fff; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .item-info p { font-size: 11px; color: #888; margin-bottom: 6px; line-height: 1.5; }
-    .item-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    /* POST CARD */
+    .post-card {
+      background: #222; border-radius: 10px; border: 1px solid #333;
+      padding: 14px; margin-bottom: 10px;
+    }
+    .post-card .post-author { font-size: 12px; color: #888; }
+    .post-card .post-content { font-size: 13px; color: #ddd; margin: 8px 0; }
+    .post-card .post-meta { font-size: 11px; color: #555; }
+    .post-card .post-actions { display: flex; gap: 8px; margin-top: 10px; }
 
-    .toggle-saved-btn { padding: 5px 12px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .toggle-saved-btn.saved { background: #FFD700; color: #000; }
-    .toggle-saved-btn.unsaved { background: #2a2a2a; color: #aaa; border: 1px solid #555; }
+    /* COMMENT CARD */
+    .comment-card {
+      background: #1a1a1a; border-left: 3px solid #007AFF;
+      padding: 10px 14px; margin-bottom: 8px; border-radius: 0 8px 8px 0;
+    }
+    .comment-card .reply { margin-left: 20px; border-left-color: #30d158; }
 
-    .divider { height: 1px; background: #333; margin: 16px 0; }
+    /* STATE BADGE */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 700; margin-left: 6px;
+    }
+    .badge-blue   { background: #007AFF22; color: #007AFF; }
+    .badge-green  { background: #30d15822; color: #30d158; }
+    .badge-red    { background: #ff453a22; color: #ff453a; }
+    .badge-orange { background: #ffa50022; color: #ffa500; }
 
-    .info-box { background: #0d2a0d; border: 1px solid #30d158; border-radius: 8px; padding: 12px; font-size: 12px; color: #30d158; margin-bottom: 16px; line-height: 1.6; }
-    .warn-box  { background: #2a1a00; border: 1px solid #ffa500; border-radius: 8px; padding: 12px; font-size: 12px; color: #ffa500; margin-bottom: 16px; line-height: 1.6; }
-
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state { text-align: center; padding: 40px 20px; color: #555; }
-    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; }
+    /* MEMBER ROW */
+    .member-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #222; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px;
+    }
+    .member-row .member-info h4 { font-size: 13px; }
+    .member-row .member-info p  { font-size: 11px; color: #666; }
   </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════ LOGIN ══════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════════ -->
 <div id="loginScreen" class="screen active">
   <div class="login-card">
-    <h1>🔖 Saved Testing</h1>
-    <p>Test Save / Unsave for Posts & Vibes</p>
+    <h1>🏘️ Community Tester</h1>
+    <p>Login karke community module ke saare features test karo</p>
+
     <div class="form-group">
-      <label>API Base URL</label>
+      <label>Base URL</label>
       <input id="baseUrl" value="https://api.vmeeta.com" />
     </div>
     <div class="form-group">
       <label>Email</label>
-      <input id="loginId" type="email" placeholder="email" />
+      <input id="loginEmail" type="email" placeholder="user@email.com" />
     </div>
     <div class="form-group">
       <label>Password</label>
-      <input id="loginPass" type="password" placeholder="password" />
+      <input id="loginPassword" type="password" placeholder="password" />
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">Login &amp; Start Testing</button>
-    <div id="loginResp" class="response" style="display:none"></div>
+    <button class="btn btn-primary" onclick="loginWithPassword()">🔐 Login</button>
+
+    <div class="form-group" style="margin-top:12px">
+      <label>Ya directly token paste karo</label>
+      <input id="manualToken" placeholder="Bearer token here..." />
+    </div>
+    <button class="btn btn-success" onclick="setManualToken()">✅ Set Token & Enter</button>
+
+    <div id="loginResponse" class="response" style="display:none"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════ MAIN ══════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════
+     MAIN SCREEN
+════════════════════════════════════════════════ -->
 <div id="mainScreen" class="screen">
   <div class="topbar">
-    <h1>🔖 Saved Posts &amp; Vibes — Testing Suite</h1>
+    <h1>🏘️ Community Testing Suite</h1>
     <div class="user-badge">
-      <span>Logged in as <strong id="userLabel">—</strong></span>
-      <button class="btn-logout" onclick="doLogout()">Logout</button>
+      <span>Logged in as <strong id="topbarUser">-</strong></span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
     </div>
   </div>
 
+  <!-- TABS -->
   <div class="tabs-nav">
-    <button class="tab-nav-btn active" onclick="switchTab('tabPosts', this)">📸 Save Posts</button>
-    <button class="tab-nav-btn" onclick="switchTab('tabVibes', this)">🎬 Save Vibes</button>
-    <button class="tab-nav-btn" onclick="switchTab('tabSavedList', this)">📋 My Saved List</button>
-    <button class="tab-nav-btn" onclick="switchTab('tabToggleFlow', this)">🔁 Toggle Flow</button>
+    <button class="tab-nav-btn active" onclick="switchTab('communities')">🏘️ Communities</button>
+    <button class="tab-nav-btn" onclick="switchTab('myCommunities')">⭐ My Spaces</button>
+    <button class="tab-nav-btn" onclick="switchTab('createCommunity')">➕ Create</button>
+    <button class="tab-nav-btn" onclick="switchTab('membership')">👥 Join / Leave</button>
+    <button class="tab-nav-btn" onclick="switchTab('members')">🛡️ Members</button>
+    <button class="tab-nav-btn" onclick="switchTab('posts')">📝 Posts</button>
+    <button class="tab-nav-btn" onclick="switchTab('likes')">❤️ Likes</button>
+    <button class="tab-nav-btn" onclick="switchTab('comments')">💬 Comments</button>
+    <button class="tab-nav-btn" onclick="switchTab('invites')">📨 Invites</button>
+    <button class="tab-nav-btn" onclick="switchTab('events')">📅 Events</button>
   </div>
 
-  <!-- ─────────────────────── TAB: SAVE POSTS ─────────────────────── -->
-  <div id="tabPosts" class="tab-panel active">
+  <!-- ─── TAB: BROWSE COMMUNITIES ─── -->
+  <div id="tab-communities" class="tab-panel active">
+    <div class="info-box">
+      📋 <strong>Browse Communities:</strong> Public communities list karo, search karo, aur community ka detail dekho. Community ID yahan se copy karke doosre tabs mein use karo.
+    </div>
     <div class="grid">
-
-      <!-- Feed Posts List -->
       <div class="section">
-        <h2>📸 Load Feed Posts</h2>
-        <div class="info-box">Loads posts from your feed. Click <strong>Save / Unsave</strong> on any post to toggle saved state. The button updates instantly.</div>
+        <h2>🔍 List Communities</h2>
+        <div class="form-group">
+          <label>Tab</label>
+          <select id="listTab">
+            <option value="">All (Public)</option>
+            <option value="following">Following</option>
+            <option value="trending">Trending</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Search</label>
+          <input id="listSearch" placeholder="community name..." />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input id="listCategory" placeholder="Tech / Design / Business..." />
+        </div>
         <div class="form-group">
           <label>Page</label>
-          <input id="postFeedPage" type="number" value="1" min="1" />
+          <input id="listPage" type="number" value="1" />
         </div>
-        <button class="btn btn-primary" onclick="loadFeedPosts()">Load Feed Posts</button>
-        <div id="feedPostsResp" class="response info" style="display:none"></div>
-        <div id="feedPostsList" style="margin-top:16px"></div>
+        <button class="btn btn-primary" onclick="listCommunities()">🔍 Browse Communities</button>
+        <div id="communitiesList" style="margin-top:14px"></div>
+        <div id="res-list" class="response" style="display:none"></div>
       </div>
 
-      <!-- Manual Post Save by ID -->
       <div class="section">
-        <h2>🎯 Save / Unsave Post by ID</h2>
-        <div class="warn-box">If you already know a post ID, paste it here and toggle directly. Response shows <code>isSaved: true/false</code>.</div>
+        <h2>🔎 Get Community Detail</h2>
         <div class="form-group">
-          <label>Post ID</label>
-          <input id="manualPostId" placeholder="paste post id here" />
+          <label>Community ID</label>
+          <input id="getCommunityId" placeholder="community UUID" />
+          <small>Click any community card above to auto-fill</small>
         </div>
-        <button class="btn btn-warning" onclick="toggleSavePost(document.getElementById('manualPostId').value, 'manualPostResp')">Toggle Save Post</button>
-        <div id="manualPostResp" class="response" style="display:none"></div>
+        <button class="btn btn-primary" onclick="getCommunity()">📋 Get Detail</button>
+        <div id="res-getCommunity" class="response" style="display:none"></div>
       </div>
-
     </div>
   </div>
 
-  <!-- ─────────────────────── TAB: SAVE VIBES ─────────────────────── -->
-  <div id="tabVibes" class="tab-panel">
+  <!-- ─── TAB: MY SPACES ─── -->
+  <div id="tab-myCommunities" class="tab-panel">
+    <div class="info-box">
+      ⭐ <strong>My Spaces:</strong> Woh communities jinka tum owner ho.
+    </div>
     <div class="grid">
-
-      <!-- Feed Vibes List -->
       <div class="section">
-        <h2>🎬 Load Feed Vibes</h2>
-        <div class="info-box">Loads vibes from the feed. Click <strong>Save / Unsave</strong> to toggle. The button shows gold when saved.</div>
+        <h2>⭐ My Communities (Owner)</h2>
+        <button class="btn btn-primary" onclick="getMyCommunities()">📋 Load My Communities</button>
+        <div id="myCommunitiesList" style="margin-top:14px"></div>
+        <div id="res-myCommunities" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>🗑️ Delete Community</h2>
+        <div class="warn-box">⚠️ Sirf owner delete kar sakta hai. Yeh permanent hai.</div>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="deleteCommunityId" placeholder="community UUID" />
+        </div>
+        <button class="btn btn-danger" onclick="deleteCommunity()">🗑️ Delete Community</button>
+        <div id="res-deleteCommunity" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: CREATE COMMUNITY ─── -->
+  <div id="tab-createCommunity" class="tab-panel">
+    <div class="info-box">
+      ➕ <strong>Create Community:</strong> Nayi community/channel banao. Username unique hona chahiye.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>➕ Create Community</h2>
+        <div class="form-group">
+          <label>Name *</label>
+          <input id="cc-name" placeholder="Tech Innovators" />
+        </div>
+        <div class="form-group">
+          <label>Username * (unique, no spaces)</label>
+          <input id="cc-username" placeholder="techinnovators" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="cc-desc" placeholder="About this community..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="cc-category">
+            <option value="">Select...</option>
+            <option>Tech</option><option>Business</option><option>Design</option>
+            <option>Education</option><option>Health</option><option>Entertainment</option>
+            <option>Sports</option><option>Music</option><option>Art</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Privacy</label>
+          <select id="cc-privacy">
+            <option value="PUBLIC">PUBLIC — Anyone can join</option>
+            <option value="PRIVATE">PRIVATE — Admin approval needed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Require Post Approval</label>
+          <select id="cc-approval">
+            <option value="false">No — Posts publish instantly</option>
+            <option value="true">Yes — Admin approves each post</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cover Image</label>
+          <input type="file" id="cc-cover" accept="image/*" />
+        </div>
+        <div class="form-group">
+          <label>Profile Picture</label>
+          <input type="file" id="cc-profilePic" accept="image/*" />
+        </div>
+        <button class="btn btn-success" onclick="createCommunity()">✅ Create Community</button>
+        <div id="res-createCommunity" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>✏️ Update Community</h2>
+        <div class="form-group">
+          <label>Community ID *</label>
+          <input id="uc-id" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>New Name</label>
+          <input id="uc-name" placeholder="New name..." />
+        </div>
+        <div class="form-group">
+          <label>New Description</label>
+          <textarea id="uc-desc" placeholder="Updated description..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Privacy</label>
+          <select id="uc-privacy">
+            <option value="">No change</option>
+            <option value="PUBLIC">PUBLIC</option>
+            <option value="PRIVATE">PRIVATE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>New Cover Image</label>
+          <input type="file" id="uc-cover" accept="image/*" />
+        </div>
+        <div class="form-group">
+          <label>New Profile Picture</label>
+          <input type="file" id="uc-profilePic" accept="image/*" />
+        </div>
+        <button class="btn btn-warning" onclick="updateCommunity()">✏️ Update Community</button>
+        <div id="res-updateCommunity" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: MEMBERSHIP ─── -->
+  <div id="tab-membership" class="tab-panel">
+    <div class="info-box">
+      👥 <strong>Membership:</strong> Join, leave, aur invite handle karo.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>🚪 Join Community</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="join-id" placeholder="community UUID" />
+        </div>
+        <button class="btn btn-success" onclick="joinCommunity()">✅ Join</button>
+        <div id="res-join" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>🚪 Leave Community</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="leave-id" placeholder="community UUID" />
+        </div>
+        <button class="btn btn-danger" onclick="leaveCommunity()">❌ Leave</button>
+        <div id="res-leave" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: MEMBERS ─── -->
+  <div id="tab-members" class="tab-panel">
+    <div class="info-box">
+      🛡️ <strong>Members:</strong> List karo, approve/reject/ban karo. Sirf admins kar sakte hain.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>📋 List Members</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="lm-id" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Status Filter</label>
+          <select id="lm-status">
+            <option value="APPROVED">APPROVED</option>
+            <option value="PENDING">PENDING</option>
+            <option value="BANNED">BANNED</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="listMembers()">📋 Load Members</button>
+        <div id="membersList" style="margin-top:14px"></div>
+        <div id="res-listMembers" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>⚡ Manage Member</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="mm-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Member's User ID</label>
+          <input id="mm-memberId" placeholder="user UUID (from members list)" />
+        </div>
+        <div class="form-group">
+          <label>Action</label>
+          <select id="mm-action">
+            <option value="approve">✅ approve</option>
+            <option value="reject">❌ reject</option>
+            <option value="ban">🚫 ban</option>
+            <option value="assign_role">🎖️ assign_role</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Role (only for assign_role)</label>
+          <select id="mm-role">
+            <option value="">-</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="MODERATOR">MODERATOR</option>
+            <option value="MEMBER">MEMBER</option>
+          </select>
+        </div>
+        <button class="btn btn-warning" onclick="manageMember()">⚡ Execute Action</button>
+        <div id="res-manageMember" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+        <h2 style="font-size:14px; color:#30d158; border-bottom:2px solid #30d158; padding-bottom:6px; margin-bottom:12px">✅✅ Approve All Pending</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="aa-id" placeholder="community UUID" />
+        </div>
+        <button class="btn btn-success" onclick="approveAll()">✅ Approve All Pending Members</button>
+        <div id="res-approveAll" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: POSTS ─── -->
+  <div id="tab-posts" class="tab-panel">
+    <div class="info-box">
+      📝 <strong>Posts:</strong> Post karo, feed dekho, approve/reject karo, pin karo, delete karo.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>📋 List Posts (Feed)</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="lp-id" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Status Filter (admin only)</label>
+          <select id="lp-status">
+            <option value="">Default (APPROVED)</option>
+            <option value="PENDING">PENDING</option>
+          </select>
+        </div>
         <div class="form-group">
           <label>Page</label>
-          <input id="vibeFeedPage" type="number" value="1" min="1" />
+          <input id="lp-page" type="number" value="1" />
         </div>
-        <button class="btn btn-primary" onclick="loadFeedVibes()">Load Feed Vibes</button>
-        <div id="feedVibesResp" class="response info" style="display:none"></div>
-        <div id="feedVibesList" style="margin-top:16px"></div>
+        <button class="btn btn-primary" onclick="listPosts()">📋 Load Posts</button>
+        <div id="postsList" style="margin-top:14px"></div>
+        <div id="res-listPosts" class="response" style="display:none"></div>
       </div>
 
-      <!-- Manual Vibe Save by ID -->
       <div class="section">
-        <h2>🎯 Save / Unsave Vibe by ID</h2>
-        <div class="warn-box">Paste a vibe ID and toggle save directly.</div>
+        <h2>➕ Create Post</h2>
         <div class="form-group">
-          <label>Vibe ID</label>
-          <input id="manualVibeId" placeholder="paste vibe id here" />
+          <label>Community ID *</label>
+          <input id="cp-id" placeholder="community UUID" />
         </div>
-        <button class="btn btn-warning" onclick="toggleSaveVibe(document.getElementById('manualVibeId').value, 'manualVibeResp')">Toggle Save Vibe</button>
-        <div id="manualVibeResp" class="response" style="display:none"></div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ─────────────────────── TAB: MY SAVED LIST ─────────────────────── -->
-  <div id="tabSavedList" class="tab-panel">
-    <div class="grid">
-
-      <!-- Saved Posts -->
-      <div class="section">
-        <h2>📌 My Saved Posts</h2>
-        <div class="info-box">Fetches <code>GET /api/posts/saved</code> — all posts you have saved. You can unsave from here too.</div>
-        <button class="btn btn-primary" onclick="loadSavedPosts()">Fetch Saved Posts</button>
-        <div id="savedPostsResp" class="response info" style="display:none"></div>
-        <div id="savedPostsList" style="margin-top:16px"></div>
-        <div class="stat-grid" id="savedPostsStats" style="display:none">
-          <div class="stat-card"><div class="stat-val" id="statSavedPostCount">0</div><div class="stat-lbl">Saved Posts</div></div>
+        <div class="form-group">
+          <label>Content (text)</label>
+          <textarea id="cp-content" placeholder="Post text here..."></textarea>
         </div>
-      </div>
-
-      <!-- Saved Vibes -->
-      <div class="section">
-        <h2>📌 My Saved Vibes</h2>
-        <div class="info-box">Fetches <code>GET /api/vibes/saved</code> — all vibes you have saved. You can unsave from here too.</div>
-        <button class="btn btn-primary" onclick="loadSavedVibes()">Fetch Saved Vibes</button>
-        <div id="savedVibesResp" class="response info" style="display:none"></div>
-        <div id="savedVibesList" style="margin-top:16px"></div>
-        <div class="stat-grid" id="savedVibesStats" style="display:none">
-          <div class="stat-card"><div class="stat-val" id="statSavedVibeCount">0</div><div class="stat-lbl">Saved Vibes</div></div>
+        <div class="form-group">
+          <label>Media Files (optional, up to 10)</label>
+          <input type="file" id="cp-media" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xlsx,.zip,.txt" />
+          <small>Images, videos, audio, PDF, Word, Excel, ZIP supported</small>
         </div>
-      </div>
+        <button class="btn btn-success" onclick="createPost()">📤 Post</button>
+        <div id="res-createPost" class="response" style="display:none"></div>
 
-    </div>
-  </div>
+        <hr style="border-color:#333; margin:16px 0">
 
-  <!-- ─────────────────────── TAB: TOGGLE FLOW ─────────────────────── -->
-  <div id="tabToggleFlow" class="tab-panel">
-    <div class="grid">
-
-      <!-- Post Toggle Flow -->
-      <div class="section">
-        <h2>🔁 Post Save Toggle Flow</h2>
-        <div class="info-box">
-          Full test flow: Save → verify in saved list → Unsave → verify removed.<br>
-          Paste any post ID to run the complete toggle cycle automatically.
+        <h2 style="font-size:14px; color:#ffa500; border-bottom:2px solid #ffa500; padding-bottom:6px; margin-bottom:12px">✏️ Edit Post</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="ep-communityId" placeholder="community UUID" />
         </div>
         <div class="form-group">
           <label>Post ID</label>
-          <input id="flowPostId" placeholder="post id to test" />
-        </div>
-        <button class="btn btn-success" onclick="runPostToggleFlow()">▶ Run Full Toggle Flow</button>
-        <div id="flowPostResp" class="response" style="display:none"></div>
-      </div>
-
-      <!-- Vibe Toggle Flow -->
-      <div class="section">
-        <h2>🔁 Vibe Save Toggle Flow</h2>
-        <div class="info-box">
-          Full test flow: Save → verify in saved list → Unsave → verify removed.<br>
-          Paste any vibe ID to run the complete toggle cycle automatically.
+          <input id="ep-postId" placeholder="post UUID (from feed above)" />
         </div>
         <div class="form-group">
-          <label>Vibe ID</label>
-          <input id="flowVibeId" placeholder="vibe id to test" />
+          <label>New Content</label>
+          <textarea id="ep-content" placeholder="Updated text..."></textarea>
         </div>
-        <button class="btn btn-success" onclick="runVibeToggleFlow()">▶ Run Full Toggle Flow</button>
-        <div id="flowVibeResp" class="response" style="display:none"></div>
+        <button class="btn btn-warning" onclick="editPost()">✏️ Update Post</button>
+        <div id="res-editPost" class="response" style="display:none"></div>
       </div>
 
+      <div class="section">
+        <h2>🛡️ Admin Post Actions</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="pa-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="pa-postId" placeholder="post UUID" />
+        </div>
+
+        <label style="margin-bottom:8px">Approve / Reject</label>
+        <div class="btn-row" style="margin-bottom:14px">
+          <button class="btn btn-success btn-sm" onclick="approvePost('approve')" style="flex:1">✅ Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="approvePost('reject')" style="flex:1">❌ Reject</button>
+        </div>
+
+        <button class="btn btn-secondary" onclick="pinPost()">📌 Toggle Pin</button>
+        <div id="res-approvePost" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+        <h2 style="font-size:14px; color:#ff453a; border-bottom:2px solid #ff453a; padding-bottom:6px; margin-bottom:12px">🗑️ Delete Post</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="dp-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="dp-postId" placeholder="post UUID" />
+        </div>
+        <button class="btn btn-danger" onclick="deletePost()">🗑️ Delete Post</button>
+        <div id="res-deletePost" class="response" style="display:none"></div>
+      </div>
     </div>
   </div>
 
+  <!-- ─── TAB: LIKES ─── -->
+  <div id="tab-likes" class="tab-panel">
+    <div class="info-box">
+      ❤️ <strong>Likes:</strong> Post pe react karo. Same reaction dobara bhejne se unlike hota hai.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>❤️ Toggle Post Like / Reaction</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="tl-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="tl-postId" placeholder="post UUID" />
+        </div>
+        <div class="form-group">
+          <label>Reaction Type</label>
+          <select id="tl-reaction">
+            <option value="heart">❤️ heart</option>
+            <option value="fire">🔥 fire</option>
+            <option value="haha">😄 haha</option>
+            <option value="like">👍 like</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="toggleLike()">❤️ Toggle Like</button>
+        <div id="res-toggleLike" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: COMMENTS ─── -->
+  <div id="tab-comments" class="tab-panel">
+    <div class="info-box">
+      💬 <strong>Comments:</strong> Comments dekho, daalo, reply karo, like karo, delete karo.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>💬 List Comments</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="lc-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="lc-postId" placeholder="post UUID" />
+        </div>
+        <div class="form-group">
+          <label>Parent Comment ID (for replies)</label>
+          <input id="lc-parentId" placeholder="leave empty for top-level" />
+        </div>
+        <button class="btn btn-primary" onclick="listComments()">💬 Load Comments</button>
+        <div id="commentsList" style="margin-top:14px"></div>
+        <div id="res-listComments" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>➕ Add Comment / Reply</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="ac-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="ac-postId" placeholder="post UUID" />
+        </div>
+        <div class="form-group">
+          <label>Comment Text *</label>
+          <textarea id="ac-content" placeholder="Write a comment..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Parent Comment ID (for reply, optional)</label>
+          <input id="ac-parentId" placeholder="leave empty for top-level comment" />
+        </div>
+        <button class="btn btn-success" onclick="addComment()">💬 Post Comment</button>
+        <div id="res-addComment" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+
+        <h2 style="font-size:14px; color:#30d158; border-bottom:2px solid #30d158; padding-bottom:6px; margin-bottom:12px">❤️ Like Comment</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="cl-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="cl-postId" placeholder="post UUID" />
+        </div>
+        <div class="form-group">
+          <label>Comment ID</label>
+          <input id="cl-commentId" placeholder="comment UUID" />
+        </div>
+        <button class="btn btn-primary" onclick="likeComment()">❤️ Toggle Comment Like</button>
+        <div id="res-likeComment" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+
+        <h2 style="font-size:14px; color:#ff453a; border-bottom:2px solid #ff453a; padding-bottom:6px; margin-bottom:12px">🗑️ Delete Comment</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="dc-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Post ID</label>
+          <input id="dc-postId" placeholder="post UUID" />
+        </div>
+        <div class="form-group">
+          <label>Comment ID</label>
+          <input id="dc-commentId" placeholder="comment UUID" />
+        </div>
+        <button class="btn btn-danger" onclick="deleteComment()">🗑️ Delete Comment</button>
+        <div id="res-deleteComment" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: INVITES ─── -->
+  <div id="tab-invites" class="tab-panel">
+    <div class="info-box">
+      📨 <strong>Invites:</strong> Kisi user ko community mein invite karo, ya apne invites dekho aur respond karo.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>📨 Invite User</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="iv-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>User ID to invite</label>
+          <input id="iv-userId" placeholder="user UUID" />
+        </div>
+        <button class="btn btn-primary" onclick="inviteUser()">📨 Send Invite</button>
+        <div id="res-invite" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>📩 My Invites (Respond)</h2>
+        <button class="btn btn-secondary" onclick="myInvites()">📩 Load My Invites</button>
+        <div id="invitesList" style="margin-top:14px"></div>
+        <div id="res-myInvites" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+        <h2 style="font-size:14px; color:#30d158; border-bottom:2px solid #30d158; padding-bottom:6px; margin-bottom:12px">✅ Respond to Invite</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="ri-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Action</label>
+          <select id="ri-action">
+            <option value="accept">✅ accept</option>
+            <option value="decline">❌ decline</option>
+          </select>
+        </div>
+        <button class="btn btn-success" onclick="respondInvite()">✅ Respond</button>
+        <div id="res-respondInvite" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB: EVENTS ─── -->
+  <div id="tab-events" class="tab-panel">
+    <div class="info-box">
+      📅 <strong>Events:</strong> Community mein podcast / meetup / webinar schedule karo. FCM + socket notification saare members ko jaata hai.
+    </div>
+    <div class="grid">
+      <div class="section">
+        <h2>📅 List Events</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="le-id" placeholder="community UUID" />
+        </div>
+        <button class="btn btn-primary" onclick="listEvents()">📅 Load Events</button>
+        <div id="eventsList" style="margin-top:14px"></div>
+        <div id="res-listEvents" class="response" style="display:none"></div>
+      </div>
+
+      <div class="section">
+        <h2>➕ Create Event (Admin)</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="ce-id" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Title *</label>
+          <input id="ce-title" placeholder="e.g. Weekly Podcast #5" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="ce-desc" placeholder="About this event..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="ce-type">
+            <option value="PODCAST">🎙️ PODCAST</option>
+            <option value="MEETUP">🤝 MEETUP</option>
+            <option value="WEBINAR">💻 WEBINAR</option>
+            <option value="OTHER">📌 OTHER</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Scheduled At *</label>
+          <input type="datetime-local" id="ce-scheduledAt" />
+        </div>
+        <div class="form-group">
+          <label>Link (optional)</label>
+          <input id="ce-link" placeholder="https://meet.google.com/..." />
+        </div>
+        <button class="btn btn-success" onclick="createEvent()">📅 Schedule Event</button>
+        <div id="res-createEvent" class="response" style="display:none"></div>
+
+        <hr style="border-color:#333; margin:16px 0">
+        <h2 style="font-size:14px; color:#ff453a; border-bottom:2px solid #ff453a; padding-bottom:6px; margin-bottom:12px">🗑️ Delete Event</h2>
+        <div class="form-group">
+          <label>Community ID</label>
+          <input id="de-communityId" placeholder="community UUID" />
+        </div>
+        <div class="form-group">
+          <label>Event ID</label>
+          <input id="de-eventId" placeholder="event UUID (from list above)" />
+        </div>
+        <button class="btn btn-danger" onclick="deleteEvent()">🗑️ Delete Event</button>
+        <div id="res-deleteEvent" class="response" style="display:none"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- ════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════ -->
 <script>
   let TOKEN = '';
-  let BASE = '';
-  // Track local saved state per item so button toggles correctly
-  const savedState = { posts: {}, vibes: {} };
+  let BASE  = 'https://api.vmeeta.com';
+  let currentUser = null;
 
-  // ═══════════════════════════════ HELPERS ═══════════════════════════════
+  // ─── HELPERS ───────────────────────────────────────────────
 
-  function api(path, opts = {}) {
-    return fetch(BASE + path, {
-      ...opts,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + TOKEN,
-        ...(opts.headers || {}),
-      },
-    }).then(r => r.json());
-  }
+  function getBase() { return document.getElementById('baseUrl')?.value?.trim() || BASE; }
 
-  function show(id, text, type = 'info') {
+  function show(id, data, type = 'success') {
     const el = document.getElementById(id);
+    if (!el) return;
     el.style.display = 'block';
     el.className = 'response ' + type;
-    el.textContent = typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+    el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
   }
 
-  function switchTab(id, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    btn.classList.add('active');
+  async function api(method, path, body, isForm = false) {
+    const url = getBase() + path;
+    const headers = { Authorization: 'Bearer ' + TOKEN };
+    if (!isForm) headers['Content-Type'] = 'application/json';
+
+    const opts = { method, headers };
+    if (body) opts.body = isForm ? body : JSON.stringify(body);
+
+    const res = await fetch(url, opts);
+    const json = await res.json().catch(() => ({ status: res.status }));
+    return json;
   }
 
-  function doLogout() {
+  function loading(btnEl) {
+    btnEl.disabled = true;
+    btnEl.dataset.orig = btnEl.textContent;
+    btnEl.textContent = 'Loading...';
+    return () => { btnEl.disabled = false; btnEl.textContent = btnEl.dataset.orig; };
+  }
+
+  function copyToInputs(communityId, communityName) {
+    // Auto-fill community ID across all tabs
+    const fields = [
+      'getCommunityId','deleteCommunityId','uc-id','join-id','leave-id',
+      'lm-id','mm-communityId','aa-id','lp-id','cp-id','pa-communityId',
+      'dp-communityId','tl-communityId','lc-communityId','ac-communityId',
+      'cl-communityId','dc-communityId','iv-communityId','ri-communityId',
+      'le-id','ce-id','de-communityId','ep-communityId',
+    ];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = communityId;
+    });
+    show('res-list', `✅ Community selected: "${communityName}" (${communityId})\n\nID auto-filled in ALL tabs!`, 'info');
+  }
+
+  // ─── LOGIN ─────────────────────────────────────────────────
+
+  async function loginWithPassword() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if (!email || !password) { show('loginResponse', 'Email aur password dono daalo', 'error'); return; }
+    try {
+      const data = await api('POST', '/email/login', { email, password });
+      if (data.accessToken) {
+        TOKEN = data.accessToken;
+        enterApp(data);
+      } else {
+        show('loginResponse', data, 'error');
+      }
+    } catch (e) {
+      show('loginResponse', 'Error: ' + e.message, 'error');
+    }
+  }
+
+  function setManualToken() {
+    const t = document.getElementById('manualToken').value.trim();
+    if (!t) { alert('Token daalo pehle'); return; }
+    TOKEN = t.replace(/^Bearer\s+/i, '');
+    enterApp({ message: 'Manual token set' });
+  }
+
+  function enterApp(data) {
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('mainScreen').classList.add('active');
+    document.getElementById('topbarUser').textContent = data?.user?.username || data?.user?.email || data?.data?.user?.username || 'User';
+    document.getElementById('loginResponse').style.display = 'none';
+    localStorage.setItem('community_test_token', TOKEN);
+    localStorage.setItem('community_test_base', getBase());
+  }
+
+  function logout() {
     TOKEN = '';
+    localStorage.removeItem('community_test_token');
     document.getElementById('mainScreen').classList.remove('active');
     document.getElementById('loginScreen').classList.add('active');
   }
 
-  // ═══════════════════════════════ LOGIN ═══════════════════════════════
-
-  async function doLogin() {
-    BASE = document.getElementById('baseUrl').value.replace(/\/$/, '');
-    const id = document.getElementById('loginId').value.trim();
-    const pass = document.getElementById('loginPass').value.trim();
-    if (!id || !pass) { show('loginResp', 'Enter email/phone and password', 'error'); return; }
-
-    show('loginResp', '⏳ Logging in...', 'info');
-    try {
-      const body = { email: id, password: pass };
-      const res = await fetch(BASE + '/email/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }).then(r => r.json());
-
-      if (res.accessToken || res.token) {
-        TOKEN = res.accessToken || res.token;
-        const username = res.user?.username || res.user?.email || id;
-        document.getElementById('userLabel').textContent = username;
-        document.getElementById('loginResp').style.display = 'none';
-        document.getElementById('loginScreen').classList.remove('active');
-        document.getElementById('mainScreen').classList.add('active');
-      } else {
-        show('loginResp', '❌ Login failed:\n' + JSON.stringify(res, null, 2), 'error');
-      }
-    } catch (e) {
-      show('loginResp', '❌ Network error: ' + e.message, 'error');
+  // Auto-restore session
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('community_test_token');
+    const savedBase = localStorage.getItem('community_test_base');
+    if (savedBase) document.getElementById('baseUrl').value = savedBase;
+    if (saved) {
+      TOKEN = saved;
+      enterApp({});
     }
-  }
-
-  // ═══════════════════════════════ TOGGLE SAVE POST ═══════════════════════════════
-
-  async function toggleSavePost(postId, respId) {
-    if (!postId) { show(respId, '❌ Post ID is required', 'error'); return; }
-    show(respId, '⏳ Toggling save...', 'info');
-    try {
-      const res = await api('/api/posts/' + postId + '/save', { method: 'POST' });
-      const ok = res.success !== false;
-      savedState.posts[postId] = res.isSaved;
-      // Update any button on the page for this post
-      const btn = document.querySelector(`[data-post-id="${postId}"]`);
-      if (btn) updateSaveBtn(btn, res.isSaved, 'post');
-      show(respId, (ok ? '✅ ' : '❌ ') + JSON.stringify(res, null, 2), ok ? 'success' : 'error');
-    } catch (e) {
-      show(respId, '❌ Error: ' + e.message, 'error');
+    // Set default datetime for events
+    const dt = document.getElementById('ce-scheduledAt');
+    if (dt) {
+      const d = new Date(Date.now() + 86400000);
+      dt.value = d.toISOString().slice(0, 16);
     }
-  }
-
-  // ═══════════════════════════════ TOGGLE SAVE VIBE ═══════════════════════════════
-
-  async function toggleSaveVibe(vibeId, respId) {
-    if (!vibeId) { show(respId, '❌ Vibe ID is required', 'error'); return; }
-    show(respId, '⏳ Toggling save...', 'info');
-    try {
-      const res = await api('/api/vibes/' + vibeId + '/save', { method: 'POST' });
-      const ok = res.success !== false;
-      savedState.vibes[vibeId] = res.isSaved;
-      const btn = document.querySelector(`[data-vibe-id="${vibeId}"]`);
-      if (btn) updateSaveBtn(btn, res.isSaved, 'vibe');
-      show(respId, (ok ? '✅ ' : '❌ ') + JSON.stringify(res, null, 2), ok ? 'success' : 'error');
-    } catch (e) {
-      show(respId, '❌ Error: ' + e.message, 'error');
-    }
-  }
-
-  function updateSaveBtn(btn, isSaved, type) {
-    btn.textContent = isSaved ? '🔖 Saved' : '☆ Save';
-    btn.className = 'toggle-saved-btn ' + (isSaved ? 'saved' : 'unsaved');
-  }
-
-  // ═══════════════════════════════ FEED POSTS ═══════════════════════════════
-
-  async function loadFeedPosts() {
-    const page = document.getElementById('postFeedPage').value || 1;
-    show('feedPostsResp', '⏳ Loading feed posts...', 'info');
-    document.getElementById('feedPostsList').innerHTML = '';
-    try {
-      const res = await api('/api/posts?page=' + page + '&limit=10');
-      const posts = res.posts || res.data || [];
-      if (!posts.length) { show('feedPostsResp', '⚠️ No posts found', 'info'); return; }
-      show('feedPostsResp', '✅ Loaded ' + posts.length + ' posts', 'success');
-
-      const container = document.getElementById('feedPostsList');
-      posts.forEach(post => {
-        const isSaved = savedState.posts[post.id] || false;
-        const thumb = post.media && post.media[0];
-        container.innerHTML += `
-          <div class="item-card">
-            ${thumb
-              ? `<img class="item-thumb" src="${thumb}" onerror="this.style.display='none'" />`
-              : `<div class="item-thumb-placeholder">📸</div>`}
-            <div class="item-info">
-              <h4>${post.caption || '(no caption)'}</h4>
-              <p>
-                <strong>ID:</strong> ${post.id}<br>
-                <strong>By:</strong> @${post.user?.username || '?'} &nbsp;|&nbsp;
-                <strong>Likes:</strong> ${post._count?.likes ?? 0} &nbsp;|&nbsp;
-                <strong>Type:</strong> ${post.shareType}
-              </p>
-              <div class="item-actions">
-                <button
-                  class="toggle-saved-btn ${isSaved ? 'saved' : 'unsaved'}"
-                  data-post-id="${post.id}"
-                  onclick="toggleSavePost('${post.id}', 'feedPostsResp'); this.textContent='⏳ ...'">
-                  ${isSaved ? '🔖 Saved' : '☆ Save'}
-                </button>
-                <button class="btn-sm btn btn-secondary" onclick="navigator.clipboard.writeText('${post.id}'); this.textContent='✅ Copied!'; setTimeout(()=>this.textContent='Copy ID',1500)">Copy ID</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    } catch (e) {
-      show('feedPostsResp', '❌ Error: ' + e.message, 'error');
-    }
-  }
-
-  // ═══════════════════════════════ FEED VIBES ═══════════════════════════════
-
-  async function loadFeedVibes() {
-    const page = document.getElementById('vibeFeedPage').value || 1;
-    show('feedVibesResp', '⏳ Loading vibes...', 'info');
-    document.getElementById('feedVibesList').innerHTML = '';
-    try {
-      const res = await api('/api/vibes/feed?page=' + page + '&limit=10');
-      const vibes = res.data || res.vibes || [];
-      if (!vibes.length) { show('feedVibesResp', '⚠️ No vibes found', 'info'); return; }
-      show('feedVibesResp', '✅ Loaded ' + vibes.length + ' vibes', 'success');
-
-      const container = document.getElementById('feedVibesList');
-      vibes.forEach(vibe => {
-        const isSaved = savedState.vibes[vibe.id] || false;
-        container.innerHTML += `
-          <div class="item-card">
-            <div class="item-thumb-placeholder">🎬</div>
-            <div class="item-info">
-              <h4>${vibe.caption || '(no caption)'}</h4>
-              <p>
-                <strong>ID:</strong> ${vibe.id}<br>
-                <strong>By:</strong> @${vibe.user?.username || '?'} &nbsp;|&nbsp;
-                <strong>Views:</strong> ${vibe.viewCount ?? 0} &nbsp;|&nbsp;
-                <strong>Likes:</strong> ${vibe._count?.likes ?? vibe.likesCount ?? 0}
-              </p>
-              <div class="item-actions">
-                <button
-                  class="toggle-saved-btn ${isSaved ? 'saved' : 'unsaved'}"
-                  data-vibe-id="${vibe.id}"
-                  onclick="toggleSaveVibe('${vibe.id}', 'feedVibesResp'); this.textContent='⏳ ...'">
-                  ${isSaved ? '🔖 Saved' : '☆ Save'}
-                </button>
-                <button class="btn-sm btn btn-secondary" onclick="navigator.clipboard.writeText('${vibe.id}'); this.textContent='✅ Copied!'; setTimeout(()=>this.textContent='Copy ID',1500)">Copy ID</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    } catch (e) {
-      show('feedVibesResp', '❌ Error: ' + e.message, 'error');
-    }
-  }
-
-  // ═══════════════════════════════ SAVED POSTS LIST ═══════════════════════════════
-
-  async function loadSavedPosts() {
-    show('savedPostsResp', '⏳ Fetching saved posts...', 'info');
-    document.getElementById('savedPostsList').innerHTML = '';
-    document.getElementById('savedPostsStats').style.display = 'none';
-    try {
-      const res = await api('/api/posts/saved');
-      const posts = res.posts || [];
-      show('savedPostsResp', '✅ ' + posts.length + ' saved post(s) found', 'success');
-
-      document.getElementById('statSavedPostCount').textContent = posts.length;
-      document.getElementById('savedPostsStats').style.display = 'grid';
-
-      if (!posts.length) {
-        document.getElementById('savedPostsList').innerHTML = `
-          <div class="empty-state"><div class="icon">🔖</div><p>No saved posts yet</p></div>`;
-        return;
-      }
-
-      const container = document.getElementById('savedPostsList');
-      posts.forEach(post => {
-        savedState.posts[post.id] = true;
-        const thumb = post.media && post.media[0];
-        container.innerHTML += `
-          <div class="item-card">
-            ${thumb
-              ? `<img class="item-thumb" src="${thumb}" onerror="this.style.display='none'" />`
-              : `<div class="item-thumb-placeholder">📸</div>`}
-            <div class="item-info">
-              <h4>${post.caption || '(no caption)'}</h4>
-              <p>
-                <strong>ID:</strong> ${post.id}<br>
-                <strong>By:</strong> @${post.user?.username || '?'} &nbsp;|&nbsp;
-                <strong>Type:</strong> ${post.shareType} &nbsp;|&nbsp;
-                <strong>Saved:</strong> ${new Date(post.savedAt).toLocaleString()}
-              </p>
-              <div class="item-actions">
-                <button
-                  class="toggle-saved-btn saved"
-                  data-post-id="${post.id}"
-                  onclick="toggleSavePost('${post.id}', 'savedPostsResp').then(()=>loadSavedPosts()); this.textContent='⏳ ...'">
-                  🔖 Unsave
-                </button>
-                <button class="btn-sm btn btn-secondary" onclick="navigator.clipboard.writeText('${post.id}'); this.textContent='✅ Copied!'; setTimeout(()=>this.textContent='Copy ID',1500)">Copy ID</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    } catch (e) {
-      show('savedPostsResp', '❌ Error: ' + e.message, 'error');
-    }
-  }
-
-  // ═══════════════════════════════ SAVED VIBES LIST ═══════════════════════════════
-
-  async function loadSavedVibes() {
-    show('savedVibesResp', '⏳ Fetching saved vibes...', 'info');
-    document.getElementById('savedVibesList').innerHTML = '';
-    document.getElementById('savedVibesStats').style.display = 'none';
-    try {
-      const res = await api('/api/vibes/saved');
-      const vibes = res.vibes || [];
-      show('savedVibesResp', '✅ ' + vibes.length + ' saved vibe(s) found', 'success');
-
-      document.getElementById('statSavedVibeCount').textContent = vibes.length;
-      document.getElementById('savedVibesStats').style.display = 'grid';
-
-      if (!vibes.length) {
-        document.getElementById('savedVibesList').innerHTML = `
-          <div class="empty-state"><div class="icon">🎬</div><p>No saved vibes yet</p></div>`;
-        return;
-      }
-
-      const container = document.getElementById('savedVibesList');
-      vibes.forEach(vibe => {
-        savedState.vibes[vibe.id] = true;
-        container.innerHTML += `
-          <div class="item-card">
-            <div class="item-thumb-placeholder">🎬</div>
-            <div class="item-info">
-              <h4>${vibe.caption || '(no caption)'}</h4>
-              <p>
-                <strong>ID:</strong> ${vibe.id}<br>
-                <strong>By:</strong> @${vibe.user?.username || '?'} &nbsp;|&nbsp;
-                <strong>Views:</strong> ${vibe.viewCount ?? 0} &nbsp;|&nbsp;
-                <strong>Saved:</strong> ${new Date(vibe.savedAt).toLocaleString()}
-              </p>
-              <div class="item-actions">
-                <button
-                  class="toggle-saved-btn saved"
-                  data-vibe-id="${vibe.id}"
-                  onclick="toggleSaveVibe('${vibe.id}', 'savedVibesResp').then(()=>loadSavedVibes()); this.textContent='⏳ ...'">
-                  🔖 Unsave
-                </button>
-                <button class="btn-sm btn btn-secondary" onclick="navigator.clipboard.writeText('${vibe.id}'); this.textContent='✅ Copied!'; setTimeout(()=>this.textContent='Copy ID',1500)">Copy ID</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    } catch (e) {
-      show('savedVibesResp', '❌ Error: ' + e.message, 'error');
-    }
-  }
-
-  // ═══════════════════════════════ TOGGLE FLOW — POST ═══════════════════════════════
-
-  async function runPostToggleFlow() {
-    const postId = document.getElementById('flowPostId').value.trim();
-    if (!postId) { show('flowPostResp', '❌ Enter a Post ID', 'error'); return; }
-
-    const log = [];
-    const step = (msg, type='info') => { log.push((type==='success'?'✅ ':type==='error'?'❌ ':'⏳ ') + msg); show('flowPostResp', log.join('\n'), type==='error'?'error':'info'); };
-
-    step('Starting toggle flow for post: ' + postId);
-
-    // Step 1: Save
-    step('Step 1 — Saving post...');
-    try {
-      const r1 = await api('/api/posts/' + postId + '/save', { method: 'POST' });
-      if (!r1.success) throw new Error(r1.message || 'Save failed');
-      step('Step 1 — Save response: isSaved = ' + r1.isSaved, 'success');
-
-      // Step 2: Verify in saved list
-      step('Step 2 — Verifying post appears in saved list...');
-      const r2 = await api('/api/posts/saved');
-      const found = (r2.posts || []).some(p => p.id === postId);
-      if (!found && r1.isSaved) throw new Error('Post not found in saved list after saving!');
-      step('Step 2 — ' + (r1.isSaved ? 'Post found in saved list ✓' : 'Post was already saved, now unsaved'), 'success');
-
-      // Step 3: Toggle again (unsave if saved, save if unsaved)
-      step('Step 3 — Toggling again...');
-      const r3 = await api('/api/posts/' + postId + '/save', { method: 'POST' });
-      if (!r3.success) throw new Error(r3.message || 'Toggle failed');
-      step('Step 3 — Toggle response: isSaved = ' + r3.isSaved, 'success');
-
-      // Step 4: Verify final state
-      step('Step 4 — Verifying final state in saved list...');
-      const r4 = await api('/api/posts/saved');
-      const foundAfter = (r4.posts || []).some(p => p.id === postId);
-      const consistent = foundAfter === r3.isSaved;
-      step('Step 4 — Final state consistent: ' + consistent + ' | isSaved=' + r3.isSaved + ' | inList=' + foundAfter, consistent ? 'success' : 'error');
-
-      step('✅ Full toggle flow PASSED — API is working correctly!', 'success');
-      show('flowPostResp', log.join('\n'), 'success');
-    } catch (e) {
-      step('Flow FAILED: ' + e.message, 'error');
-      show('flowPostResp', log.join('\n'), 'error');
-    }
-  }
-
-  // ═══════════════════════════════ TOGGLE FLOW — VIBE ═══════════════════════════════
-
-  async function runVibeToggleFlow() {
-    const vibeId = document.getElementById('flowVibeId').value.trim();
-    if (!vibeId) { show('flowVibeResp', '❌ Enter a Vibe ID', 'error'); return; }
-
-    const log = [];
-    const step = (msg, type='info') => { log.push((type==='success'?'✅ ':type==='error'?'❌ ':'⏳ ') + msg); show('flowVibeResp', log.join('\n'), type==='error'?'error':'info'); };
-
-    step('Starting toggle flow for vibe: ' + vibeId);
-
-    // Step 1: Save
-    step('Step 1 — Saving vibe...');
-    try {
-      const r1 = await api('/api/vibes/' + vibeId + '/save', { method: 'POST' });
-      if (!r1.success) throw new Error(r1.message || 'Save failed');
-      step('Step 1 — Save response: isSaved = ' + r1.isSaved, 'success');
-
-      // Step 2: Verify in saved list
-      step('Step 2 — Verifying vibe appears in saved list...');
-      const r2 = await api('/api/vibes/saved');
-      const found = (r2.vibes || []).some(v => v.id === vibeId);
-      if (!found && r1.isSaved) throw new Error('Vibe not found in saved list after saving!');
-      step('Step 2 — ' + (r1.isSaved ? 'Vibe found in saved list ✓' : 'Vibe was already saved, now unsaved'), 'success');
-
-      // Step 3: Toggle again
-      step('Step 3 — Toggling again...');
-      const r3 = await api('/api/vibes/' + vibeId + '/save', { method: 'POST' });
-      if (!r3.success) throw new Error(r3.message || 'Toggle failed');
-      step('Step 3 — Toggle response: isSaved = ' + r3.isSaved, 'success');
-
-      // Step 4: Verify final state
-      step('Step 4 — Verifying final state in saved list...');
-      const r4 = await api('/api/vibes/saved');
-      const foundAfter = (r4.vibes || []).some(v => v.id === vibeId);
-      const consistent = foundAfter === r3.isSaved;
-      step('Step 4 — Final state consistent: ' + consistent + ' | isSaved=' + r3.isSaved + ' | inList=' + foundAfter, consistent ? 'success' : 'error');
-
-      step('✅ Full toggle flow PASSED — API is working correctly!', 'success');
-      show('flowVibeResp', log.join('\n'), 'success');
-    } catch (e) {
-      step('Flow FAILED: ' + e.message, 'error');
-      show('flowVibeResp', log.join('\n'), 'error');
-    }
-  }
-
-  // Enter key on login
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && document.getElementById('loginScreen').classList.contains('active')) doLogin();
   });
+
+  // ─── TAB SWITCHING ─────────────────────────────────────────
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name)?.classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ─── COMMUNITIES ───────────────────────────────────────────
+
+  async function listCommunities() {
+    const btn = event.currentTarget;
+    const done = loading(btn);
+    try {
+      const tab      = document.getElementById('listTab').value;
+      const search   = document.getElementById('listSearch').value;
+      const category = document.getElementById('listCategory').value;
+      const page     = document.getElementById('listPage').value;
+
+      let qs = `?page=${page}&limit=10`;
+      if (tab)      qs += `&tab=${tab}`;
+      if (search)   qs += `&search=${encodeURIComponent(search)}`;
+      if (category) qs += `&category=${encodeURIComponent(category)}`;
+
+      const data = await api('GET', '/api/community' + qs);
+      renderCommunities(data.data || [], 'communitiesList');
+      show('res-list', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-list', e.message, 'error'); }
+    done();
+  }
+
+  function renderCommunities(list, containerId) {
+    const el = document.getElementById(containerId);
+    if (!list.length) { el.innerHTML = '<p style="color:#666;font-size:13px">No communities found</p>'; return; }
+    el.innerHTML = list.map(c => `
+      <div class="community-card" onclick="copyToInputs('${c.id}','${c.name.replace(/'/g,"\\'")}')">
+        <h3>${c.name} <span class="badge badge-blue">${c.privacy}</span>
+          ${c.myMembership ? `<span class="badge badge-green">${c.myMembership.role}</span>` : ''}
+        </h3>
+        <p>${c.description || 'No description'}</p>
+        <div class="meta">
+          👥 ${c.memberCount || 0} members &nbsp;•&nbsp;
+          📝 ${c._count?.posts || 0} posts &nbsp;•&nbsp;
+          @${c.username} &nbsp;•&nbsp;
+          🆔 <code style="font-size:10px">${c.id}</code>
+        </div>
+      </div>`).join('');
+  }
+
+  async function getCommunity() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('getCommunityId').value.trim();
+      const data = await api('GET', `/api/community/${id}`);
+      show('res-getCommunity', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-getCommunity', e.message, 'error'); }
+    done();
+  }
+
+  async function getMyCommunities() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const data = await api('GET', '/api/community/mine');
+      renderCommunities(data.data || [], 'myCommunitiesList');
+      show('res-myCommunities', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-myCommunities', e.message, 'error'); }
+    done();
+  }
+
+  async function createCommunity() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const fd = new FormData();
+      fd.append('name', document.getElementById('cc-name').value);
+      fd.append('username', document.getElementById('cc-username').value.toLowerCase().replace(/\s+/g,'').replace(/^@/,''));
+      fd.append('description', document.getElementById('cc-desc').value);
+      fd.append('category', document.getElementById('cc-category').value);
+      fd.append('privacy', document.getElementById('cc-privacy').value);
+      fd.append('requirePostApproval', document.getElementById('cc-approval').value);
+      const cover = document.getElementById('cc-cover').files[0];
+      const pic   = document.getElementById('cc-profilePic').files[0];
+      if (cover) fd.append('coverImage', cover);
+      if (pic)   fd.append('profilePic', pic);
+      const data = await api('POST', '/api/community', fd, true);
+      if (data.success) copyToInputs(data.data.id, data.data.name);
+      show('res-createCommunity', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-createCommunity', e.message, 'error'); }
+    done();
+  }
+
+  async function updateCommunity() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('uc-id').value.trim();
+      const fd = new FormData();
+      const name = document.getElementById('uc-name').value;
+      const desc = document.getElementById('uc-desc').value;
+      const priv = document.getElementById('uc-privacy').value;
+      if (name) fd.append('name', name);
+      if (desc) fd.append('description', desc);
+      if (priv) fd.append('privacy', priv);
+      const cover = document.getElementById('uc-cover').files[0];
+      const pic   = document.getElementById('uc-profilePic').files[0];
+      if (cover) fd.append('coverImage', cover);
+      if (pic)   fd.append('profilePic', pic);
+      const data = await api('PATCH', `/api/community/${id}`, fd, true);
+      show('res-updateCommunity', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-updateCommunity', e.message, 'error'); }
+    done();
+  }
+
+  async function deleteCommunity() {
+    if (!confirm('Community permanently delete hogi. Sure?')) return;
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('deleteCommunityId').value.trim();
+      const data = await api('DELETE', `/api/community/${id}`);
+      show('res-deleteCommunity', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-deleteCommunity', e.message, 'error'); }
+    done();
+  }
+
+  // ─── MEMBERSHIP ────────────────────────────────────────────
+
+  async function joinCommunity() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('join-id').value.trim();
+      const data = await api('POST', `/api/community/${id}/join`);
+      show('res-join', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-join', e.message, 'error'); }
+    done();
+  }
+
+  async function leaveCommunity() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('leave-id').value.trim();
+      const data = await api('DELETE', `/api/community/${id}/leave`);
+      show('res-leave', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-leave', e.message, 'error'); }
+    done();
+  }
+
+  // ─── MEMBERS ───────────────────────────────────────────────
+
+  async function listMembers() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id     = document.getElementById('lm-id').value.trim();
+      const status = document.getElementById('lm-status').value;
+      const data   = await api('GET', `/api/community/${id}/members?status=${status}&limit=50`);
+      const el = document.getElementById('membersList');
+      if (data.data?.length) {
+        el.innerHTML = data.data.map(m => `
+          <div class="member-row">
+            <div class="member-info">
+              <h4>${m.user?.fullName || m.user?.username || 'Unknown'}
+                <span class="badge badge-blue">${m.role}</span>
+                <span class="badge ${m.status==='APPROVED'?'badge-green':m.status==='BANNED'?'badge-red':'badge-orange'}">${m.status}</span>
+              </h4>
+              <p>@${m.user?.username || '-'} &nbsp;•&nbsp; ID: <code style="font-size:10px">${m.userId}</code></p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="fillMemberId('${m.userId}')">Use ID</button>
+          </div>`).join('');
+      } else {
+        el.innerHTML = '<p style="color:#666;font-size:13px">No members found</p>';
+      }
+      show('res-listMembers', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-listMembers', e.message, 'error'); }
+    done();
+  }
+
+  function fillMemberId(userId) {
+    document.getElementById('mm-memberId').value = userId;
+  }
+
+  async function manageMember() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId     = document.getElementById('mm-communityId').value.trim();
+      const mId     = document.getElementById('mm-memberId').value.trim();
+      const action  = document.getElementById('mm-action').value;
+      const role    = document.getElementById('mm-role').value;
+      const body    = { action };
+      if (role) body.role = role;
+      const data = await api('PATCH', `/api/community/${cId}/members/${mId}`, body);
+      show('res-manageMember', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-manageMember', e.message, 'error'); }
+    done();
+  }
+
+  async function approveAll() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('aa-id').value.trim();
+      const data = await api('POST', `/api/community/${id}/members/approve-all`);
+      show('res-approveAll', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-approveAll', e.message, 'error'); }
+    done();
+  }
+
+  // ─── POSTS ─────────────────────────────────────────────────
+
+  async function listPosts() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id     = document.getElementById('lp-id').value.trim();
+      const status = document.getElementById('lp-status').value;
+      const page   = document.getElementById('lp-page').value;
+      let qs = `?page=${page}&limit=10`;
+      if (status) qs += `&status=${status}`;
+      const data = await api('GET', `/api/community/${id}/posts${qs}`);
+      const el = document.getElementById('postsList');
+      if (data.data?.length) {
+        el.innerHTML = data.data.map(p => `
+          <div class="post-card">
+            <div class="post-author">
+              ${p.user?.fullName || p.user?.username || 'Unknown'}
+              <span class="badge ${p.status==='APPROVED'?'badge-green':p.status==='PENDING'?'badge-orange':'badge-red'}">${p.status}</span>
+              ${p.isPinned ? '<span class="badge badge-blue">📌 PINNED</span>' : ''}
+            </div>
+            <div class="post-content">${p.content || '<em style="color:#555">No text</em>'}</div>
+            <div class="post-meta">
+              ❤️ ${p.likeCount||0} &nbsp; 💬 ${p.commentCount||0} &nbsp;
+              🖼️ ${p.mediaType||'TEXT'} &nbsp;
+              🆔 <code style="font-size:10px">${p.id}</code>
+            </div>
+            <div class="post-actions">
+              <button class="btn btn-secondary btn-sm" onclick="fillPostId('${p.id}')">Use ID</button>
+            </div>
+          </div>`).join('');
+      } else {
+        el.innerHTML = '<p style="color:#666;font-size:13px">No posts found</p>';
+      }
+      show('res-listPosts', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-listPosts', e.message, 'error'); }
+    done();
+  }
+
+  function fillPostId(postId) {
+    ['pa-postId','dp-postId','tl-postId','lc-postId','ac-postId',
+     'cl-postId','dc-postId','ep-postId'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = postId;
+    });
+  }
+
+  async function createPost() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('cp-id').value.trim();
+      const fd = new FormData();
+      const content = document.getElementById('cp-content').value;
+      if (content) fd.append('content', content);
+      const files = document.getElementById('cp-media').files;
+      for (const f of files) fd.append('media', f);
+      const data = await api('POST', `/api/community/${id}/posts`, fd, true);
+      show('res-createPost', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-createPost', e.message, 'error'); }
+    done();
+  }
+
+  async function editPost() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('ep-communityId').value.trim();
+      const pId = document.getElementById('ep-postId').value.trim();
+      const content = document.getElementById('ep-content').value;
+      const data = await api('PATCH', `/api/community/${cId}/posts/${pId}`, { content });
+      show('res-editPost', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-editPost', e.message, 'error'); }
+    done();
+  }
+
+  async function approvePost(action) {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('pa-communityId').value.trim();
+      const pId = document.getElementById('pa-postId').value.trim();
+      const data = await api('PATCH', `/api/community/${cId}/posts/${pId}/approve`, { action });
+      show('res-approvePost', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-approvePost', e.message, 'error'); }
+    done();
+  }
+
+  async function pinPost() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('pa-communityId').value.trim();
+      const pId = document.getElementById('pa-postId').value.trim();
+      const data = await api('PATCH', `/api/community/${cId}/posts/${pId}/pin`);
+      show('res-approvePost', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-approvePost', e.message, 'error'); }
+    done();
+  }
+
+  async function deletePost() {
+    if (!confirm('Post delete hogi. Sure?')) return;
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('dp-communityId').value.trim();
+      const pId = document.getElementById('dp-postId').value.trim();
+      const data = await api('DELETE', `/api/community/${cId}/posts/${pId}`);
+      show('res-deletePost', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-deletePost', e.message, 'error'); }
+    done();
+  }
+
+  // ─── LIKES ─────────────────────────────────────────────────
+
+  async function toggleLike() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId      = document.getElementById('tl-communityId').value.trim();
+      const pId      = document.getElementById('tl-postId').value.trim();
+      const reaction = document.getElementById('tl-reaction').value;
+      const data = await api('POST', `/api/community/${cId}/posts/${pId}/like`, { reaction });
+      show('res-toggleLike', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-toggleLike', e.message, 'error'); }
+    done();
+  }
+
+  // ─── COMMENTS ──────────────────────────────────────────────
+
+  async function listComments() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('lc-communityId').value.trim();
+      const pId = document.getElementById('lc-postId').value.trim();
+      const par = document.getElementById('lc-parentId').value.trim();
+      let qs = '?limit=50';
+      if (par) qs += `&parentId=${par}`;
+      const data = await api('GET', `/api/community/${cId}/posts/${pId}/comments${qs}`);
+      const el = document.getElementById('commentsList');
+      if (data.data?.length) {
+        el.innerHTML = data.data.map(c => `
+          <div class="comment-card ${c.parentId ? 'reply' : ''}">
+            <strong style="font-size:12px">${c.user?.fullName || c.user?.username || 'Unknown'}</strong>
+            ${c.parentId ? '<span class="badge badge-blue">reply</span>' : ''}
+            <span class="badge badge-orange" style="cursor:pointer" onclick="fillCommentId('${c.id}')">Use ID</span>
+            <p style="font-size:13px;color:#ddd;margin:6px 0">${c.content}</p>
+            <p style="font-size:11px;color:#555">❤️ ${c.likeCount||0} &nbsp; 🆔 <code>${c.id}</code></p>
+          </div>`).join('');
+      } else {
+        el.innerHTML = '<p style="color:#666;font-size:13px">No comments found</p>';
+      }
+      show('res-listComments', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-listComments', e.message, 'error'); }
+    done();
+  }
+
+  function fillCommentId(commentId) {
+    ['cl-commentId','dc-commentId'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = commentId;
+    });
+  }
+
+  async function addComment() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId      = document.getElementById('ac-communityId').value.trim();
+      const pId      = document.getElementById('ac-postId').value.trim();
+      const content  = document.getElementById('ac-content').value;
+      const parentId = document.getElementById('ac-parentId').value.trim();
+      const body = { content };
+      if (parentId) body.parentId = parentId;
+      const data = await api('POST', `/api/community/${cId}/posts/${pId}/comments`, body);
+      show('res-addComment', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-addComment', e.message, 'error'); }
+    done();
+  }
+
+  async function likeComment() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('cl-communityId').value.trim();
+      const pId = document.getElementById('cl-postId').value.trim();
+      const cmId = document.getElementById('cl-commentId').value.trim();
+      const data = await api('POST', `/api/community/${cId}/posts/${pId}/comments/${cmId}/like`);
+      show('res-likeComment', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-likeComment', e.message, 'error'); }
+    done();
+  }
+
+  async function deleteComment() {
+    if (!confirm('Comment delete hogi. Sure?')) return;
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId  = document.getElementById('dc-communityId').value.trim();
+      const pId  = document.getElementById('dc-postId').value.trim();
+      const cmId = document.getElementById('dc-commentId').value.trim();
+      const data = await api('DELETE', `/api/community/${cId}/posts/${pId}/comments/${cmId}`);
+      show('res-deleteComment', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-deleteComment', e.message, 'error'); }
+    done();
+  }
+
+  // ─── INVITES ───────────────────────────────────────────────
+
+  async function inviteUser() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId    = document.getElementById('iv-communityId').value.trim();
+      const userId = document.getElementById('iv-userId').value.trim();
+      const data = await api('POST', `/api/community/${cId}/invite`, { invitedUserId: userId });
+      show('res-invite', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-invite', e.message, 'error'); }
+    done();
+  }
+
+  async function myInvites() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const data = await api('GET', '/api/community/invites/mine');
+      const el = document.getElementById('invitesList');
+      if (data.data?.length) {
+        el.innerHTML = data.data.map(inv => `
+          <div class="community-card">
+            <h3>${inv.community?.name || 'Community'} <span class="badge badge-orange">${inv.status}</span></h3>
+            <p>Invited by: ${inv.invitedBy?.fullName || inv.invitedBy?.username || '-'}</p>
+            <div class="meta">Community ID: <code style="font-size:10px">${inv.communityId}</code>
+              <button class="btn btn-secondary btn-sm" style="margin-left:8px"
+                onclick="document.getElementById('ri-communityId').value='${inv.communityId}'">Use ID</button>
+            </div>
+          </div>`).join('');
+      } else {
+        el.innerHTML = '<p style="color:#666;font-size:13px">No pending invites</p>';
+      }
+      show('res-myInvites', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-myInvites', e.message, 'error'); }
+    done();
+  }
+
+  async function respondInvite() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId    = document.getElementById('ri-communityId').value.trim();
+      const action = document.getElementById('ri-action').value;
+      const data = await api('PATCH', `/api/community/${cId}/invite/respond`, { action });
+      show('res-respondInvite', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-respondInvite', e.message, 'error'); }
+    done();
+  }
+
+  // ─── EVENTS ────────────────────────────────────────────────
+
+  async function listEvents() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('le-id').value.trim();
+      const data = await api('GET', `/api/community/${id}/events`);
+      const el = document.getElementById('eventsList');
+      if (data.data?.length) {
+        el.innerHTML = data.data.map(ev => `
+          <div class="community-card">
+            <h3>${ev.title} <span class="badge badge-blue">${ev.type}</span></h3>
+            <p>${ev.description || 'No description'}</p>
+            <div class="meta">
+              📅 ${new Date(ev.scheduledAt).toLocaleString()} &nbsp;•&nbsp;
+              ${ev.link ? `🔗 <a href="${ev.link}" target="_blank" style="color:#007AFF">${ev.link}</a>` : 'No link'}
+              &nbsp;•&nbsp; 🆔 <code style="font-size:10px">${ev.id}</code>
+              <button class="btn btn-secondary btn-sm" style="margin-left:8px"
+                onclick="document.getElementById('de-eventId').value='${ev.id}'">Use ID</button>
+            </div>
+          </div>`).join('');
+      } else {
+        el.innerHTML = '<p style="color:#666;font-size:13px">No events found</p>';
+      }
+      show('res-listEvents', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-listEvents', e.message, 'error'); }
+    done();
+  }
+
+  async function createEvent() {
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const id = document.getElementById('ce-id').value.trim();
+      const body = {
+        title:       document.getElementById('ce-title').value,
+        description: document.getElementById('ce-desc').value,
+        type:        document.getElementById('ce-type').value,
+        scheduledAt: document.getElementById('ce-scheduledAt').value,
+        link:        document.getElementById('ce-link').value || undefined,
+      };
+      const data = await api('POST', `/api/community/${id}/events`, body);
+      show('res-createEvent', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-createEvent', e.message, 'error'); }
+    done();
+  }
+
+  async function deleteEvent() {
+    if (!confirm('Event delete hoga. Sure?')) return;
+    const btn = event.currentTarget; const done = loading(btn);
+    try {
+      const cId = document.getElementById('de-communityId').value.trim();
+      const eId = document.getElementById('de-eventId').value.trim();
+      const data = await api('DELETE', `/api/community/${cId}/events/${eId}`);
+      show('res-deleteEvent', data, data.success ? 'success' : 'error');
+    } catch(e) { show('res-deleteEvent', e.message, 'error'); }
+    done();
+  }
 </script>
 </body>
 </html>

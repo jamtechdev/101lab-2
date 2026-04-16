@@ -85,11 +85,11 @@ const LoginModal = ({ open, onClose, onSuccess, portalType = "buyer" }: LoginMod
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="login-email">Email</Label>
+            <Label htmlFor="login-email">Company Email</Label>
             <Input
               id="login-email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="company@yourcompany.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"

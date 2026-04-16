@@ -58,6 +58,8 @@ import UserRoleManagement from "./pages/Admin/UserRoleManagement.js";
 import AdminUsersManagement from "./pages/Admin/UserManagement";
 import AdminUserDetails from "./pages/Admin/AdminUserDetails";
 import AdminAutoApproval from "./pages/Admin/AdminAutoApproval";
+import AdminSellerUpgradeRequests from "./pages/Admin/AdminSellerUpgradeRequests";
+import AdminProductRequests from "./pages/Admin/AdminProductRequests";
 import AdminCommission from "./pages/Admin/AdminCommission.js";
 import AdminAuctionGroups from "./pages/Admin/AdminAuctionGroups";
 
@@ -319,6 +321,8 @@ const App = () => {
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 <Route path="/admin/auto-approval" element={<AdminAutoApproval />} />
+                <Route path="/admin/seller-upgrade-requests" element={<AdminSellerUpgradeRequests />} />
+                <Route path="/admin/product-requests" element={<AdminProductRequests />} />
                 <Route path="/admin/commission" element={<AdminCommission />} />
                 <Route path="/admin/auction-groups" element={<AdminAuctionGroups />} />
                 <Route path="/admin/settings/email" element={<EmailTypesPage />} />

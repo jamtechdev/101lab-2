@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, FileText, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CountrySelect } from '@/components/common/CountrySelect';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useSubmitOfferMutation } from '@/rtk/slices/bidApiSlice';
@@ -169,13 +170,11 @@ export default function MakeBiddingOfferModal({
             <Label htmlFor="country" className="text-sm font-medium text-neutral-900">
               Country
             </Label>
-            <Input
+            <CountrySelect
               id="country"
-              type="text"
               value={formData.country}
-              onChange={(e) => handleInputChange('country', e.target.value)}
-              placeholder="Enter country"
-              className="mt-2"
+              onChange={(v) => handleInputChange('country', v)}
+              className="mt-2 h-10"
             />
           </div>
 

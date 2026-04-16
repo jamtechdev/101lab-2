@@ -8,24 +8,13 @@ import {
   UserCheck,
   Calendar,
   DollarSign,
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Store,
   BarChart3,
-  Settings,
+  Store,
   Menu,
   Download,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
-  LogOut,
-  MessageCircle,
-  Mail,
-  User
 } from "lucide-react";
 import { format, subMonths } from "date-fns";
-import logo from "@/assets/greenbidz_logo.png";
 import { toast } from "react-hot-toast";
 import {
   LineChart,
@@ -41,9 +30,8 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
-import { toastError, toastSuccess } from "@/helper/toasterNotification";
+import { toastError } from "@/helper/toasterNotification";
 import { useTranslation } from "react-i18next";
-import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 
 import {
   useGetAdminDashboardStatsQuery,
@@ -70,7 +58,6 @@ interface ChartData {
 const Admin = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [logout, { isLoading: logoutLoading }] = useLogoutMutation();
 
   // const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("thisMonth");
@@ -182,44 +169,6 @@ const Admin = () => {
     transactionAmount: (dashboardStats?.data as any)?.transactionAmount ?? 0,
   };
 
-  const navItems = [
-    { icon: LayoutDashboard, label: t("admin.sidebar.dashboard"), path: "/admin" },
-    { icon: Package, label: t("admin.sidebar.listings"), path: "/admin/listings" },
-    { icon: ShoppingCart, label: t("admin.sidebar.buyers"), path: "/admin/buyers" },
-    { icon: Store, label: t("admin.sidebar.sellers"), path: "/admin/sellers" },
-    { icon: BarChart3, label: t("admin.sidebar.analytics"), path: "/admin/analytics" },
-    { icon: MessageCircle, label: t("admin.sidebar.chat"), path: "/admin/sellers/chat" },
-    { icon: Mail, label: t("admin.sidebar.emailsettings"), path: "/admin/settings/email" },
-            { icon: User, label: t("admin.sidebar.users"), path: "/admin/users" },
-    { icon: Settings, label: t("admin.sidebar.settings"), path: "/admin/settings" },
-
-  ];
-
-  const handleLogout = async () => {
-    try {
-      const confirm = window.confirm(t("common.confirmLogout") || "Are you sure you want to logout?");
-      if (!confirm) return;
-
-      await logout().unwrap();
-
-      document.cookie = "accessToken=; Max-Age=0; path=/; domain=.101recycle.greenbidz.com; secure; SameSite=None";
-      document.cookie = "refreshToken=; Max-Age=0; path=/; domain=.101recycle.greenbidz.com; secure; SameSite=None";
-
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userRole");
-
-
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-
-      toastSuccess(t("common.logoutSuccess") || "Logged out successfully");
-
-      window.location.href = "/auth?type=admin";
-    } catch (error: any) {
-      console.error("Logout failed:", error);
-      toastError(error?.data?.message || t("common.logoutFailed") || "Logout failed");
-    }
-  };
 
   // Skeleton while loading - preserves original design exactly
   if (loading) {
@@ -235,82 +184,18 @@ const Admin = () => {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-
-      <aside
-        className={cn(
-          "bg-gradient-sidebar border-r border-sidebar-border transition-all duration-300 flex-col hidden lg:flex",
-          sidebarCollapsed ? "w-16" : "w-64"
-        )}
-      >
-        {/* Logo & Toggle */}
-        <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="GreenBidz" className="h-8" />
-              <span className="text-sidebar-foreground font-bold">GreenBidz</span>
-            </div>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarCollapsed)}
-            className="text-sidebar-foreground hover:bg-sidebar-border"
-          >
-            {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <Button
-              key={item.path}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-sidebar-foreground hover:bg-sidebar-border px-2 ",
-                item.path === "/admin" && "bg-accent hover:bg-accent/90"
-              )}
-              onClick={() => navigate(item.path)}
-            >
-              <item.icon className={cn("h-5 w-5", !sidebarCollapsed && "mr-3")} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </Button>
-          ))}
-        </nav>
-
-        {/* Logout */}
-        <div className="p-4 border-t border-sidebar-border">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-foreground/10 px-2"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-5 h-5 mr-3 " />
-            {t("admin.common.logout")}
-          </Button>
-        </div>
-      </aside>
-
-
-
-      <div className="lg:hidden">
-        <AdminSidebar activePath="/admin" />
-      </div>
+      <AdminSidebar activePath="/admin" />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden  w-8xl">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
         {/* Header */}
-        <header className="bg-card border-b px-6 py-4 flex items-center justify-between  ">
+        <header className="bg-card border-b px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
               className="lg:hidden"
-
-
               onClick={() => setSidebarOpen(true)}
-
             >
               <Menu className="h-5 w-5" />
             </Button>

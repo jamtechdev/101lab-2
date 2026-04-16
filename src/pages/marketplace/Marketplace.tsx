@@ -16,6 +16,7 @@ import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
 import SEOMeta from "@/components/common/SEOMeta";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
+import ProductRequestForm from "@/components/common/ProductRequestForm";
 
 // ✨ Smoothness - skeleton loaders
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
@@ -73,7 +74,16 @@ const Marketplace = () => {
 
   const handleCountryChange = (country: string) => {
     const p = new URLSearchParams(searchParams);
-    if (country) p.set("country", country); else p.delete("country");
+    if (country) {
+      const existing = p.get("country")?.split(",").filter(Boolean) || [];
+      const updated = existing.includes(country)
+        ? existing.filter(c => c !== country)   // deselect
+        : [...existing, country];               // select
+      if (updated.length > 0) p.set("country", updated.join(","));
+      else p.delete("country");
+    } else {
+      p.delete("country");
+    }
     p.delete("page");
     setSearchParams(p);
   };
@@ -485,17 +495,35 @@ const Marketplace = () => {
                   </div>
                 )}
 
-                {/* No results */}
+                {/* No results — empty state + modal request button */}
                 {listings.length === 0 && (
                   <Card className="border-0 shadow-medium">
-                    <div className="text-center py-16 space-y-4">
-                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-                        <Store className="w-10 h-10 text-muted-foreground" />
+                    <div className="py-14 px-6 text-center space-y-5">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                        <Store className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <h3 className="text-xl font-semibold text-foreground">No listings found</h3>
-                      <p className="text-muted-foreground">
-                        {searchQuery || selectedCategory ? "Try adjusting your search or filter criteria" : "There are currently no batches available"}
-                      </p>
+                      <div className="space-y-1.5">
+                        <h3 className="text-lg font-semibold text-foreground">
+                          {i18n.language === "zh" || i18n.language === "zh-TW"
+                            ? "未找到商品"
+                            : "No listings found"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {searchQuery || selectedCategory
+                            ? (i18n.language === "zh" || i18n.language === "zh-TW"
+                                ? "請嘗試調整搜尋條件"
+                                : "Try adjusting your search or filter criteria")
+                            : (i18n.language === "zh" || i18n.language === "zh-TW"
+                                ? "目前沒有可用的批次"
+                                : "There are currently no batches available")}
+                        </p>
+                      </div>
+
+                      {/* Request button — opens modal */}
+                      <ProductRequestForm
+                        searchQuery={searchQuery}
+                        categories={labCategories?.map((c) => ({ name: c.name, slug: c.slug })) || []}
+                      />
                     </div>
                   </Card>
                 )}
