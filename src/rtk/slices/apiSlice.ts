@@ -219,7 +219,7 @@ export const apiSlice = createApi({
     }),
     resendVerificationCode: builder.mutation<{ success: boolean; message: string }, { email: string }>({
       query: (body) => ({
-        url: "/user/resend-verification-code",
+        url: `/user/resend-verification-code?type=${SITE_TYPE_PROFILE}`,
         method: "POST",
         data: body,
       }),
@@ -282,7 +282,7 @@ export const apiSlice = createApi({
     // -------------------- OTP / Forgot Password --------------------
     sendOtp: builder.mutation<SendOtpResponse, SendOtpRequest>({
       query: (body) => ({
-        url: "/user/forgot-password/send-otp",
+        url: `/user/forgot-password/send-otp?type=${SITE_TYPE_PROFILE}`,
         method: "POST",
         data: body,
       }),

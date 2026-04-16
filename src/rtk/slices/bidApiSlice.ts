@@ -457,7 +457,7 @@ export const bidApiSlice = createApi({
 
     placeBid: builder.mutation<PlaceBidResponse, FormData>({
       query: (formData) => ({
-        url: `/buyer/bid/place`,
+        url: `/buyer/bid/place?type=${SITE_TYPE}`,
         method: "POST",
         data: formData,
       }),

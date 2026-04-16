@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/greenbidz_logo.png";
+import logo from "@/assets/lablogo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
@@ -15,7 +15,9 @@ import SellLeadModal from "@/components/common/SellLeadModal";
 import { SITE_NAME } from "@/config/branding";
 import { normalizeStoredLanguage } from "@/utils/languageUtils";
 
-const MONDAY_FORM_URL = "https://forms.monday.com/"; // Replace with actual Monday form URL
+
+
+const MONDAY_FORM_URL = "https://forms.monday.com/"; 
 
 
 
@@ -224,14 +226,10 @@ const Header = () => {
             >
               <img
                 src={logo}
-                alt="GreenBidz"
-                className="h-7 sm:h-8 w-auto"
+                alt={SITE_NAME}
+                className="w-[8rem]  h-auto object-contain"
               />
-              <div className="hidden sm:block leading-tight">
-                <span className="text-sm font-bold text-foreground">{SITE_NAME}</span>
-                {/* <span className="text-sm font-bold text-foreground">101Lab</span> */}
-                <span className="block text-[10px] text-muted-foreground -mt-0.5">by Greenbidz</span>
-              </div>
+   
             </div>
 
             {/* Search */}
