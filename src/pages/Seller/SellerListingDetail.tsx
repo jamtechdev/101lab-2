@@ -1495,7 +1495,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 <DialogHeader>
                   <DialogTitle>
                     {placeBidStep === "review"
-                      ? "Confirm your bid"
+                      ? bidDialogMode === "buy_now"
+                        ? (t("buyer.confirmBuyNow") || "Confirm your purchase")
+                        : (t("buyer.confirmBid") || "Confirm your bid")
                       : bidDialogMode === "buy_now"
                         ? (t("buyer.buyNowTitle") || "Buy Now")
                         : t("buyer.placeBidTitle")}
@@ -1639,7 +1641,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     </div>
 
                     <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5 text-center">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Your Bid</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                        {bidDialogMode === "buy_now" ? (t("buyer.yourPrice") || "Your Price") : (t("buyer.yourBid") || "Your Bid")}
+                      </p>
                       <p className="text-3xl font-bold text-foreground">
                         {bidDetail?.currency || "TWD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
@@ -1659,7 +1663,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       )}
                     </div>
 
-                    <p className="text-sm text-center text-muted-foreground">Are you sure you want to place this bid?</p>
+                    <p className="text-sm text-center text-muted-foreground">
+                      {bidDialogMode === "buy_now"
+                        ? (t("buyer.confirmBuyNowDesc") || "Are you sure you want to buy this?")
+                        : (t("buyer.confirmBidDesc") || "Are you sure you want to place this bid?")}
+                    </p>
 
                     <div className="flex gap-3">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setPlaceBidStep("form")}>
@@ -1671,7 +1679,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         disabled={isPlacingBid}
                         onClick={handlePlaceBid}
                       >
-                        {isPlacingBid ? t("buyer.submitting") : "Yes, place bid"}
+                        {isPlacingBid
+                          ? t("buyer.submitting")
+                          : bidDialogMode === "buy_now"
+                            ? (t("buyer.yesBuyNow") || "Yes, buy now")
+                            : (t("buyer.yesPlaceBid") || "Yes, place bid")}
                       </Button>
                     </div>
                   </div>
