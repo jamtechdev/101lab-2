@@ -154,10 +154,9 @@ export const GradientProgressBar: React.FC<{
       <div className={`w-full bg-gray-200 rounded-full overflow-hidden`} style={{ height: `${height}px` }}>
         <motion.div
           className="h-full bg-gradient-to-r from-green-400 via-blue-500 to-purple-500"
-          animate={animated ? { opacity: [0.7, 1, 0.7] } : {}}
+          animate={animated ? { width: `${progress}%`, opacity: [0.7, 1, 0.7] } : { width: `${progress}%` }}
           transition={animated ? { duration: 2, repeat: Infinity } : {}}
           initial={{ width: '0%' }}
-          animate={{ width: `${progress}%` }}
         />
       </div>
 
