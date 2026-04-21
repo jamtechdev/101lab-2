@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -19,11 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2 } from "lucide-react";
+import { Loader2, X, UploadCloud } from "lucide-react";
 import {
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
   useUpdateAdminBiddingMutation,
+  useAddAdminProductImagesMutation,
+  useDeleteAdminProductImageMutation,
+  type BatchDetailsProductImage,
 } from "@/rtk/slices/adminApiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
@@ -38,6 +41,8 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const { data, isLoading } = useGetBatchDetailsQuery(batchId!, { skip: !batchId || !open });
   const [updateProduct, { isLoading: savingProduct }] = useUpdateAdminProductMutation();
   const [updateBidding, { isLoading: savingBidding }] = useUpdateAdminBiddingMutation();
+  const [addImages, { isLoading: uploadingImages }] = useAddAdminProductImagesMutation();
+  const [deleteImage, { isLoading: deletingImage }] = useDeleteAdminProductImageMutation();
 
   // ── Product fields ──────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
@@ -57,6 +62,13 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [bidCurrency, setBidCurrency] = useState("USD");
   const [bidStatus, setBidStatus] = useState("active");
 
+  // ── Media state ─────────────────────────────────────────────────────────
+  const [existingMedia, setExistingMedia] = useState<BatchDetailsProductImage[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Pre-fill from fetched data
   useEffect(() => {
     if (!data) return;
@@ -64,8 +76,8 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     if (p) {
       setTitle(p.title || "");
       setDescription(p.description?.replace(/<[^>]*>/g, "") || "");
+      setExistingMedia(p.images || []);
     }
-    // Bidding
     const b = data.data?.bidding;
     if (b) {
       setBidType(b.type || "make_offer");
@@ -77,7 +89,58 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     }
   }, [data]);
 
+  // Clean up pending previews on close
+  useEffect(() => {
+    if (!open) {
+      pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
+      setPendingFiles([]);
+      setPendingPreviews([]);
+    }
+  }, [open]);
+
   const productId = data?.data?.products?.[0]?.product_id;
+
+  const addFiles = (files: FileList | File[]) => {
+    const arr = Array.from(files).filter((f) =>
+      f.type.startsWith("image/") || f.type.startsWith("video/")
+    );
+    if (!arr.length) return;
+    const newPreviews = arr.map((f) => URL.createObjectURL(f));
+    setPendingFiles((prev) => [...prev, ...arr]);
+    setPendingPreviews((prev) => [...prev, ...newPreviews]);
+  };
+
+  const removePending = (index: number) => {
+    URL.revokeObjectURL(pendingPreviews[index]);
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+    setPendingPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExisting = async (img: BatchDetailsProductImage) => {
+    if (!productId) return;
+    try {
+      await deleteImage({ productId, attachmentId: img.id }).unwrap();
+      setExistingMedia((prev) => prev.filter((m) => m.id !== img.id));
+    } catch (err: any) {
+      toastError(err?.data?.message || "Failed to delete media");
+    }
+  };
+
+  const handleUploadPending = async () => {
+    if (!productId || !pendingFiles.length) return;
+    const formData = new FormData();
+    pendingFiles.forEach((f) => formData.append("media", f));
+    try {
+      const res = await addImages({ productId, formData }).unwrap();
+      setExistingMedia((prev) => [...prev, ...res.data]);
+      pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
+      setPendingFiles([]);
+      setPendingPreviews([]);
+      toastSuccess("Media uploaded");
+    } catch (err: any) {
+      toastError(err?.data?.message || "Failed to upload media");
+    }
+  };
 
   const handleSaveProduct = async () => {
     if (!productId) return;
@@ -143,6 +206,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
               <TabsTrigger value="product" className="flex-1">
                 {t("admin.edit.tabProduct", "Product")}
               </TabsTrigger>
+              <TabsTrigger value="media" className="flex-1">
+                {t("admin.edit.tabMedia", "Photos & Videos")}
+              </TabsTrigger>
               <TabsTrigger value="bidding" className="flex-1">
                 {t("admin.edit.tabBidding", "Bidding")}
               </TabsTrigger>
@@ -150,25 +216,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
             {/* ── Product tab ─────────────────────────────────────────── */}
             <TabsContent value="product" className="space-y-4 mt-4">
-              {/* Existing photos (read-only preview) */}
-              {data?.data?.products?.[0]?.images?.length ? (
-                <div>
-                  <Label className="text-xs text-muted-foreground mb-2 block">
-                    {t("admin.edit.currentPhotos", "Current Photos")}
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {data.data.products[0].images.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img.url}
-                        alt=""
-                        className="w-20 h-20 object-cover rounded border"
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
               <div className="space-y-1">
                 <Label>{t("admin.edit.fieldTitle", "Title")}</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -184,42 +231,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* <div className="space-y-1">
-                  <Label>{t("admin.edit.fieldPriceFormat", "Price Format")}</Label>
-                  <Select value={priceFormat} onValueChange={setPriceFormat}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="offer">Make Offer</SelectItem>
-                      <SelectItem value="buyNow">Buy Now</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
-
-                {/* {priceFormat === "buyNow" && (
-                  <div className="space-y-1">
-                    <Label>{t("admin.edit.fieldPrice", "Price")}</Label>
-                    <Input
-                      type="number"
-                      value={pricePerUnit}
-                      onChange={(e) => setPricePerUnit(e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                )} */}
-
-                {/* <div className="space-y-1">
-                  <Label>{t("admin.edit.fieldCurrency", "Currency")}</Label>
-                  <Select value={priceCurrency} onValueChange={setPriceCurrency}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="TWD">TWD</SelectItem>
-                      <SelectItem value="JPY">JPY</SelectItem>
-                      <SelectItem value="THB">THB</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
-
                 <div className="space-y-1">
                   <Label>{t("admin.edit.fieldQuantity", "Quantity")}</Label>
                   <Input
@@ -264,6 +275,119 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 <Button onClick={handleSaveProduct} disabled={savingProduct}>
                   {savingProduct && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("admin.edit.saveProduct", "Save Product")}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            {/* ── Media tab ────────────────────────────────────────────── */}
+            <TabsContent value="media" className="space-y-4 mt-4">
+              {/* Existing media grid */}
+              {existingMedia.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">
+                    {t("admin.edit.currentMedia", "Current Media")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {existingMedia.map((img) => (
+                      <div key={img.id} className="relative group w-24 h-24">
+                        {img.type?.startsWith("video/") ? (
+                          <video
+                            src={img.url}
+                            className="w-full h-full object-cover rounded border"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={img.url}
+                            alt=""
+                            className="w-full h-full object-cover rounded border"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExisting(img)}
+                          disabled={deletingImage}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pending uploads preview */}
+              {pendingPreviews.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground mb-2 block">
+                    {t("admin.edit.pendingMedia", "Ready to Upload")}
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {pendingPreviews.map((src, i) => (
+                      <div key={i} className="relative group w-24 h-24">
+                        {pendingFiles[i]?.type?.startsWith("video/") ? (
+                          <video
+                            src={src}
+                            className="w-full h-full object-cover rounded border border-dashed border-primary"
+                            muted
+                          />
+                        ) : (
+                          <img
+                            src={src}
+                            alt=""
+                            className="w-full h-full object-cover rounded border border-dashed border-primary"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePending(i)}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Drop zone */}
+              <div
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30 hover:border-primary/50"
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  addFiles(e.dataTransfer.files);
+                }}
+              >
+                <UploadCloud className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {t("admin.edit.dropzone", "Drag & drop photos/videos here, or click to select")}
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => e.target.files && addFiles(e.target.files)}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  onClick={handleUploadPending}
+                  disabled={uploadingImages || pendingFiles.length === 0}
+                >
+                  {uploadingImages && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {t("admin.edit.uploadMedia", "Upload")}
+                  {pendingFiles.length > 0 ? ` (${pendingFiles.length})` : ""}
                 </Button>
               </DialogFooter>
             </TabsContent>

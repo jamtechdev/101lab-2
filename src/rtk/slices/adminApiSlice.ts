@@ -254,6 +254,7 @@ export interface BatchDetailsSeller {
 }
 
 export interface BatchDetailsProductImage {
+  id: number;
   url: string;
   type: string;
 }
@@ -669,6 +670,31 @@ export const adminApi = createApi({
         url: `/admin/bidding/${batchId}`,
         method: "PATCH",
         data: body,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- ADD PRODUCT IMAGES (admin) ---------------- */
+    addAdminProductImages: builder.mutation<
+      { success: boolean; data: BatchDetailsProductImage[] },
+      { productId: number; formData: FormData }
+    >({
+      query: ({ productId, formData }) => ({
+        url: `/admin/product/${productId}/images`,
+        method: "POST",
+        data: formData,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- DELETE PRODUCT IMAGE (admin) ---------------- */
+    deleteAdminProductImage: builder.mutation<
+      { success: boolean; message: string },
+      { productId: number; attachmentId: number }
+    >({
+      query: ({ productId, attachmentId }) => ({
+        url: `/admin/product/${productId}/images/${attachmentId}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["Batches"],
     }),
@@ -1091,6 +1117,8 @@ export const {
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
   useUpdateAdminBiddingMutation,
+  useAddAdminProductImagesMutation,
+  useDeleteAdminProductImageMutation,
 
   useGetEmailTypesQuery,
   useCreateEmailTypeMutation,
