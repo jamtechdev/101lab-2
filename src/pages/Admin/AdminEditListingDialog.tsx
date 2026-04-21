@@ -61,6 +61,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [bidTargetPrice, setBidTargetPrice] = useState("");
   const [bidCurrency, setBidCurrency] = useState("USD");
   const [bidStatus, setBidStatus] = useState("active");
+  const [isAuction, setIsAuction] = useState(false);
 
   // ── Media state ─────────────────────────────────────────────────────────
   const [existingMedia, setExistingMedia] = useState<BatchDetailsProductImage[]>([]);
@@ -86,6 +87,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setBidTargetPrice(b.target_price ?? "");
       setBidCurrency(b.currency || "USD");
       setBidStatus(b.status || "active");
+      setIsAuction(b.isAuction ?? false);
     }
   }, [data]);
 
@@ -174,6 +176,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
         end_date: bidEndDate,
         currency: bidCurrency,
         status: bidStatus,
+        isAuction,
       };
       if (bidType === "fixed_price" && bidTargetPrice)
         body.target_price = parseFloat(bidTargetPrice);
@@ -394,6 +397,26 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
             {/* ── Bidding tab ──────────────────────────────────────────── */}
             <TabsContent value="bidding" className="space-y-4 mt-4">
+              <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30">
+                <input
+                  type="checkbox"
+                  id="isAuction"
+                  checked={isAuction}
+                  onChange={(e) => setIsAuction(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <div>
+                  <Label htmlFor="isAuction" className="cursor-pointer font-medium">
+                    {t("admin.edit.isAuction", "Auction")}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {isAuction
+                      ? t("admin.edit.isAuctionOn", "Buyers will see Place Bid button")
+                      : t("admin.edit.isAuctionOff", "Buyers will see Buy Now / Make Offer button")}
+                  </p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label>{t("admin.edit.bidType", "Type")}</Label>

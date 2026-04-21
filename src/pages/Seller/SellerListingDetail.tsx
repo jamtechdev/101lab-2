@@ -916,53 +916,57 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                 </div>
                               )}
 
-                              {/* <Button
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
-                                onClick={() => {
-                                  if (!localStorage.getItem("userId")) {
-                                    openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
-                                    return;
-                                  }
-                                  if (!canPlaceBid) {
-                                    toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
-                                    return;
-                                  }
-                                  openDialogFor(products[0], "bidding", "place_bid");
-                                }}
-                              >
-                                {t("buyer.placeBid")}
-                              </Button> */}
-
-                              {bidDetail?.type === "make_offer" && (
+                              {bidDetail?.isAuction ? (
                                 <Button
-                                  variant="outline"
-                                  className="w-full font-bold text-base py-5 rounded"
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
                                   onClick={() => {
                                     if (!localStorage.getItem("userId")) {
-                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
                                       return;
                                     }
-                                    openDialogFor(products[0], "bidding", "make_offer");
+                                    if (!canPlaceBid) {
+                                      toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
+                                      return;
+                                    }
+                                    openDialogFor(products[0], "bidding", "place_bid");
                                   }}
                                 >
-                                  {t("buyer.makeOffer") || "Make Offer"}
+                                  {t("buyer.placeBid")}
                                 </Button>
-                              )}
+                              ) : (
+                                <>
+                                  {bidDetail?.type === "make_offer" && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full font-bold text-base py-5 rounded"
+                                      onClick={() => {
+                                        if (!localStorage.getItem("userId")) {
+                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                          return;
+                                        }
+                                        openDialogFor(products[0], "bidding", "make_offer");
+                                      }}
+                                    >
+                                      {t("buyer.makeOffer") || "Make Offer"}
+                                    </Button>
+                                  )}
 
-                              {bidDetail?.type === "fixed_price" && (
-                                <Button
-                                  variant="outline"
-                                  className="w-full font-bold text-base py-5 rounded"
-                                  onClick={() => {
-                                    if (!localStorage.getItem("userId")) {
-                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
-                                      return;
-                                    }
-                                    openDialogFor(products[0], "bidding", "buy_now");
-                                  }}
-                                >
-                                  {t("buyer.buyNow") || "Buy Now"}
-                                </Button>
+                                  {bidDetail?.type === "fixed_price" && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full font-bold text-base py-5 rounded"
+                                      onClick={() => {
+                                        if (!localStorage.getItem("userId")) {
+                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
+                                          return;
+                                        }
+                                        openDialogFor(products[0], "bidding", "buy_now");
+                                      }}
+                                    >
+                                      {t("buyer.buyNow") || "Buy Now"}
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )}

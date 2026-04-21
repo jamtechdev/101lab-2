@@ -96,6 +96,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
   const [isTaxInclusive, setIsTaxInclusive] = useState<boolean>(true);
   const [allowWholePrice, setAllowWholePrice] = useState<boolean>(true);
   const [allowWeightPrice, setAllowWeightPrice] = useState<boolean>(false);
+  const [isAuction, setIsAuction] = useState<boolean>(false);
 
   // Bidding time pickers
   const [biddingStartHour, setBiddingStartHour] = useState("9");
@@ -159,6 +160,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
     setAllowWholePrice(details.allowWholePrice ?? true);
     setAllowWeightPrice(details.allowWeightPrice ?? false);
     setIsTaxInclusive(details.taxInclusive ?? true);
+    setIsAuction(details.isAuction ?? false);
   }, [batchData]);
 
   // Prefill inspection from data
@@ -334,6 +336,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
         allowWholePrice: allowWholePrice !== undefined ? allowWholePrice : true,
         allowWeightPrice: allowWeightPrice !== undefined ? allowWeightPrice : false,
         taxInclusive: isTaxInclusive,
+        isAuction,
       };
       const createBidResponse: any = await createBid(payload as StartBidRequest).unwrap();
       toast.success("Bid created successfully!");
@@ -441,6 +444,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
         allowWholePrice: allowWholePrice !== undefined ? allowWholePrice : true,
         allowWeightPrice: allowWeightPrice !== undefined ? allowWeightPrice : false,
         taxInclusive: isTaxInclusive,
+        isAuction,
       };
       await updateBid(payload as StartBidRequest).unwrap();
       toast.success("Bid updated successfully!");
@@ -669,6 +673,26 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
               >
                 {showPriceToBidders ? t("biddingStep.shown") : t("biddingStep.hidden")}
               </Button>
+            </div>
+
+            <div className="flex items-center gap-3 p-4 border border-border rounded-lg bg-muted/30">
+              <input
+                type="checkbox"
+                id="isAuction"
+                checked={isAuction}
+                onChange={(e) => setIsAuction(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <div>
+                <Label htmlFor="isAuction" className="cursor-pointer font-medium">
+                  {t("biddingStep.auctionMode") || "Auction"}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {isAuction
+                    ? (t("biddingStep.auctionOnDesc") || "Buyers will see Place Bid button")
+                    : (t("biddingStep.auctionOffDesc") || "Buyers will see Buy Now / Make Offer button")}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

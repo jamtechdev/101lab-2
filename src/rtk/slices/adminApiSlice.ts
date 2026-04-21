@@ -331,6 +331,7 @@ export interface BatchDetailsBidding {
   currency: string;
   buyer_bids: BuyerBid[];
   total_biddings: number;
+  isAuction?: boolean;
 }
 
 export interface WinnerBuyer {
