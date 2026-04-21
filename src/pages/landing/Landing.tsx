@@ -1321,7 +1321,7 @@ const Landing = () => {
       <section className="py-5 bg-card border-y border-border">
         <div className="container mx-auto px-4">
           <p className="text-xs text-muted-foreground uppercase tracking-widest text-center mb-4 font-medium">
-            {t("landing1.trustedBrands")}
+            {t("landing.trustedBrands")}
           </p>
           <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap">
             {trustedBrands.map((brand) => (
