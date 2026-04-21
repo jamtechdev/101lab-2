@@ -184,7 +184,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                   <Label>{t("admin.edit.fieldPriceFormat", "Price Format")}</Label>
                   <Select value={priceFormat} onValueChange={setPriceFormat}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -193,9 +193,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                       <SelectItem value="buyNow">Buy Now</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
-                {priceFormat === "buyNow" && (
+                {/* {priceFormat === "buyNow" && (
                   <div className="space-y-1">
                     <Label>{t("admin.edit.fieldPrice", "Price")}</Label>
                     <Input
@@ -205,9 +205,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                       placeholder="0"
                     />
                   </div>
-                )}
+                )} */}
 
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                   <Label>{t("admin.edit.fieldCurrency", "Currency")}</Label>
                   <Select value={priceCurrency} onValueChange={setPriceCurrency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -218,7 +218,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                       <SelectItem value="THB">THB</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div className="space-y-1">
                   <Label>{t("admin.edit.fieldQuantity", "Quantity")}</Label>
