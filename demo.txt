@@ -20,6 +20,13 @@ You avoided react-native-ble-peripheral bug
 
 👉 This is very important:
 
+
+145.79.213.7
+u492245504
+Globalhotels@1234
+
+
+
 Many devs get stuck here ❌
 
 You solved it using BlePeripheralModule.java ✅

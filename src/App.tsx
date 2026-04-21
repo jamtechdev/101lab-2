@@ -118,6 +118,7 @@ import AdminBuyers from "./pages/Admin/AdminBuyers.js";
 import BuyerDetails from "./pages/Admin/AdminBuyerDetails.js";
 import AutoApprovalPage from "./pages/dashboard/AutoApprovalPage";
 import Marketplace from "./pages/marketplace/Marketplace";
+import WantedPage from "./pages/wanted/WantedPage";
 import TestRendeer from "./Test/TestRendeer.jsx";
 import SellerBatchDetails from "./pages/dashboard/SellerBatchDetails";
 import SellerLandingPage from "./pages/sellerLanding/SellerLandingPage.js";
@@ -191,6 +192,7 @@ const App = () => {
               <Route path="/seo-analytics" element={<SEOAnalytics />} />
 
               {/* PUBLIC MARKETPLACE */}
+              <Route path="/wanted" element={<WantedPage />} />
               <Route path="/buyer-marketplace" element={<Marketplace />} />
               <Route path="/buyer-marketplace/:id" element={<ListingDetail />} />
               <Route path="/buyer-marketplace/details/:name" element={<BrowserListingDetail />} />

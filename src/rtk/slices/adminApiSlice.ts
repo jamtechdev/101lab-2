@@ -1027,6 +1027,19 @@ export const adminApi = createApi({
       providesTags: ["ProductRequests"],
     }),
 
+    getPublicWantedRequests: builder.query<
+      { success: boolean; data: { id: number; category: string; title: string; description: string; is_verified: boolean; createdAt: string }[]; total: number; page: number; totalPages: number },
+      { search?: string; category?: string; page?: number; limit?: number }
+    >({
+      query: ({ search, category, page = 1, limit = 12 } = {}) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (search) params.append("search", search);
+        if (category && category !== "all") params.append("category", category);
+        return { url: `/product-request/public?${params.toString()}`, method: "GET" };
+      },
+      providesTags: ["ProductRequests"],
+    }),
+
     updateProductRequestStatus: builder.mutation<
       { success: boolean; message: string; data: any },
       { id: number; status?: string; admin_notes?: string }
@@ -1102,4 +1115,5 @@ export const {
   useSubmitProductRequestMutation,
   useGetAdminProductRequestsQuery,
   useUpdateProductRequestStatusMutation,
+  useGetPublicWantedRequestsQuery,
 } = adminApi;
