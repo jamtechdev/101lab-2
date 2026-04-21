@@ -1302,7 +1302,13 @@
     "inclusiveTax": "Inclusive Tax",
     "exclusiveTax": "Exclusive Tax",
     "inclusive": "Inclusive",
-    "exclusive": "Exclusive"
+    "exclusive": "Exclusive",
+    "auctionMode": "オークション",
+    "enableAuction": "オークションを有効にする（入札）",
+    "auctionOnDesc": "購入者には「入札する」ボタンが表示されます",
+    "auctionOffDesc": "購入者には「今すぐ購入 / オファー」ボタンが表示されます",
+    "startDate": "開始日 *",
+    "endDate": "終了日 *"
   },
   "payment": {
     "title": "Payment Confirmation",

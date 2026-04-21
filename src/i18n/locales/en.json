@@ -1283,7 +1283,13 @@
     "inclusiveTax": "Inclusive Tax",
     "exclusiveTax": "Exclusive Tax",
     "inclusive": "Inclusive",
-    "exclusive": "Exclusive"
+    "exclusive": "Exclusive",
+    "auctionMode": "Auction",
+    "enableAuction": "Enable Auction (Place Bid)",
+    "auctionOnDesc": "Buyers will see Place Bid button",
+    "auctionOffDesc": "Buyers will see Buy Now / Make Offer button",
+    "startDate": "Start Date *",
+    "endDate": "End Date *"
   },
   "payment": {
     "title": "Payment Confirmation",

@@ -568,7 +568,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>{t("biddingStep.biddingStartDate")}</Label>
+                <Label>{isAuction ? t("biddingStep.biddingStartDate") : t("biddingStep.startDate")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !biddingStartDate && "text-muted-foreground")}>
@@ -590,7 +590,7 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>{t("biddingStep.biddingEndDate")}</Label>
+                <Label>{isAuction ? t("biddingStep.biddingEndDate") : t("biddingStep.endDate")}</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !biddingEndDate && "text-muted-foreground")}>
