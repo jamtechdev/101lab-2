@@ -26,18 +26,6 @@ import {
   useUpdateAdminBiddingMutation,
 } from "@/rtk/slices/adminApiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
-import Swal from "sweetalert2";
-
-const confirmUpdate = () =>
-  Swal.fire({
-    title: "Are you sure?",
-    text: "Do you want to save these changes?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#1a3c2a",
-    cancelButtonColor: "#6b7280",
-    confirmButtonText: "Yes, update it!",
-  }).then((r) => r.isConfirmed);
 
 interface Props {
   batchId: number | null;
@@ -93,7 +81,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   const handleSaveProduct = async () => {
     if (!productId) return;
-    if (!(await confirmUpdate())) return;
     try {
       const body: Record<string, unknown> = {
         title,
@@ -117,7 +104,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   const handleSaveBidding = async () => {
     if (!batchId) return;
-    if (!(await confirmUpdate())) return;
     try {
       const body: Record<string, unknown> = {
         type: bidType,
