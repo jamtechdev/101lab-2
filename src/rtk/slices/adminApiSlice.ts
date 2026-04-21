@@ -647,6 +647,32 @@ export const adminApi = createApi({
       invalidatesTags: ["Batches"],
     }),
 
+    /* ---------------- UPDATE PRODUCT (admin) ---------------- */
+    updateAdminProduct: builder.mutation<
+      { success: boolean; message: string },
+      { productId: number; body: Record<string, unknown> }
+    >({
+      query: ({ productId, body }) => ({
+        url: `/admin/product/${productId}`,
+        method: "PATCH",
+        data: body,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- UPDATE BIDDING (admin) ---------------- */
+    updateAdminBidding: builder.mutation<
+      { success: boolean; message: string },
+      { batchId: number; body: Record<string, unknown> }
+    >({
+      query: ({ batchId, body }) => ({
+        url: `/admin/bidding/${batchId}`,
+        method: "PATCH",
+        data: body,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
     /* ---------------- GET BATCH DETAILS ---------------- */
     getBatchDetails: builder.query<BatchDetailsResponse, number>({
       query: (batchId) => ({
@@ -1063,6 +1089,8 @@ export const {
   useDeleteBatchMutation,
   useApproveBatchMutation,
   useGetBatchDetailsQuery,
+  useUpdateAdminProductMutation,
+  useUpdateAdminBiddingMutation,
 
   useGetEmailTypesQuery,
   useCreateEmailTypeMutation,

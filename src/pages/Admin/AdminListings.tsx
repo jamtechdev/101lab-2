@@ -35,7 +35,9 @@ import {
   CheckCircle,
   Percent,
   MapPin,
+  Pencil,
 } from "lucide-react";
+import AdminEditListingDialog from "./AdminEditListingDialog";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { Menu } from "lucide-react";
@@ -220,6 +222,7 @@ const AdminListings = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [editBatchId, setEditBatchId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -772,6 +775,15 @@ const AdminListings = () => {
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    onClick={() => setEditBatchId(item.batch_id)}
+                                    className="gap-2"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                    {t('admin.common.edit', 'Edit')}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={() => handleDelete(item.batch_id, item.batch_number)}
                                     disabled={isDeleting}
                                     className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
@@ -958,6 +970,13 @@ const AdminListings = () => {
           {!searchQuery && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
         </div>
       </div>
+
+      {/* ---------------- EDIT DIALOG ---------------- */}
+      <AdminEditListingDialog
+        batchId={editBatchId}
+        open={editBatchId !== null}
+        onClose={() => setEditBatchId(null)}
+      />
     </div>
   );
 };
