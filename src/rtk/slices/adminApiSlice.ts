@@ -265,6 +265,7 @@ export interface BatchDetailsProduct {
   description: string;
   images: BatchDetailsProductImage[];
   category: string;
+  category_ids: number[];
 }
 
 export interface InspectionScheduleSlot {

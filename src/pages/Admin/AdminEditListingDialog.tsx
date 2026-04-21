@@ -28,6 +28,7 @@ import {
   useDeleteAdminProductImageMutation,
   type BatchDetailsProductImage,
 } from "@/rtk/slices/adminApiSlice";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
 interface Props {
@@ -44,15 +45,17 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [addImages, { isLoading: uploadingImages }] = useAddAdminProductImagesMutation();
   const [deleteImage, { isLoading: deletingImage }] = useDeleteAdminProductImageMutation();
 
+  const { data: categories } = useLanguageAwareCategories();
+
   // ── Product fields ──────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priceFormat, setPriceFormat] = useState("offer");
-  const [pricePerUnit, setPricePerUnit] = useState("");
-  const [priceCurrency, setPriceCurrency] = useState("USD");
   const [condition, setCondition] = useState("");
   const [operationStatus, setOperationStatus] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [parentCategorySlug, setParentCategorySlug] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [categoryName, setCategoryName] = useState("");
 
   // ── Bidding fields ──────────────────────────────────────────────────────
   const [bidType, setBidType] = useState("make_offer");
@@ -72,12 +75,32 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   // Pre-fill from fetched data
   useEffect(() => {
-    if (!data) return;
+    if (!data || !categories) return;
     const p = data.data?.products?.[0];
     if (p) {
       setTitle(p.title || "");
       setDescription(p.description?.replace(/<[^>]*>/g, "") || "");
       setExistingMedia(p.images || []);
+
+      // Resolve current category into parent slug + subcategory id
+      const existingId = p.category_ids?.[0];
+      if (existingId) {
+        for (const parent of categories) {
+          const sub = parent.subcategories?.find((s) => s.id === existingId);
+          if (sub) {
+            setParentCategorySlug(parent.slug);
+            setCategoryId(String(sub.id));
+            setCategoryName(sub.name);
+            break;
+          }
+          if (parent.id === existingId) {
+            setParentCategorySlug(parent.slug);
+            setCategoryId(String(parent.id));
+            setCategoryName(parent.name);
+            break;
+          }
+        }
+      }
     }
     const b = data.data?.bidding;
     if (b) {
@@ -89,7 +112,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setBidStatus(b.status || "active");
       setIsAuction(b.isAuction ?? false);
     }
-  }, [data]);
+  }, [data, categories]);
 
   // Clean up pending previews on close
   useEffect(() => {
@@ -147,17 +170,10 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const handleSaveProduct = async () => {
     if (!productId) return;
     try {
-      const body: Record<string, unknown> = {
-        title,
-        description,
-        price_format: priceFormat,
-        price_currency: priceCurrency,
-        price_now_enabled: priceFormat === "buyNow",
-        quantity,
-      };
-      if (priceFormat === "buyNow" && pricePerUnit) body.price_per_unit = parseFloat(pricePerUnit);
+      const body: Record<string, unknown> = { title, description, quantity };
       if (condition) body.condition = condition;
       if (operationStatus) body.operation_status = operationStatus;
+      if (categoryId) { body.category_id = parseInt(categoryId); body.category_name = categoryName; }
 
       await updateProduct({ productId, body }).unwrap();
       toastSuccess(t("admin.edit.productSaved", "Product updated"));
@@ -272,6 +288,52 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label>{t("admin.edit.fieldCategory", "Category")}</Label>
+                <Select
+                  value={parentCategorySlug}
+                  onValueChange={(val) => {
+                    setParentCategorySlug(val);
+                    setCategoryId("");
+                    setCategoryName("");
+                  }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {(categories ?? []).map((cat) => (
+                      <SelectItem key={cat.slug} value={cat.slug}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {(() => {
+                  const parent = (categories ?? []).find((c) => c.slug === parentCategorySlug);
+                  if (!parent?.subcategories?.length) return null;
+                  return (
+                    <Select
+                      value={categoryId}
+                      onValueChange={(val) => {
+                        const sub = parent.subcategories.find((s) => String(s.id) === val);
+                        setCategoryId(val);
+                        setCategoryName(sub?.name ?? "");
+                      }}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger>
+                      <SelectContent>
+                        {parent.subcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={String(sub.id)}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
 
               <DialogFooter>
