@@ -1542,8 +1542,10 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           type="number"
                           step="0.01"
                           value={bidAmount}
-                          onChange={(e) => setBidAmount(e.target.value)}
+                          onChange={(e) => { if (bidDialogMode !== "buy_now") setBidAmount(e.target.value); }}
                           placeholder={t("biddingStep.enterTotalPrice") || "Enter amount"}
+                          readOnly={bidDialogMode === "buy_now"}
+                          className={bidDialogMode === "buy_now" ? "bg-muted cursor-not-allowed" : ""}
                         />
                       </div>
 
