@@ -73,34 +73,14 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-fill from fetched data
+  // Pre-fill product + bidding fields from fetched data
   useEffect(() => {
-    if (!data || !categories) return;
+    if (!data) return;
     const p = data.data?.products?.[0];
     if (p) {
       setTitle(p.title || "");
       setDescription(p.description?.replace(/<[^>]*>/g, "") || "");
       setExistingMedia(p.images || []);
-
-      // Resolve current category into parent slug + subcategory id
-      const existingId = p.category_ids?.[0];
-      if (existingId) {
-        for (const parent of categories) {
-          const sub = parent.subcategories?.find((s) => s.id === existingId);
-          if (sub) {
-            setParentCategorySlug(parent.slug);
-            setCategoryId(String(sub.id));
-            setCategoryName(sub.name);
-            break;
-          }
-          if (parent.id === existingId) {
-            setParentCategorySlug(parent.slug);
-            setCategoryId(String(parent.id));
-            setCategoryName(parent.name);
-            break;
-          }
-        }
-      }
     }
     const b = data.data?.bidding;
     if (b) {
@@ -111,6 +91,28 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setBidCurrency(b.currency || "USD");
       setBidStatus(b.status || "active");
       setIsAuction(b.isAuction ?? false);
+    }
+  }, [data]);
+
+  // Pre-fill category — runs when either data or categories tree loads
+  useEffect(() => {
+    if (!data || !categories.length) return;
+    const existingId = data.data?.products?.[0]?.category_ids?.[0];
+    if (!existingId) return;
+    for (const parent of categories) {
+      const sub = parent.subcategories?.find((s) => s.id === existingId);
+      if (sub) {
+        setParentCategorySlug(parent.slug);
+        setCategoryId(String(sub.id));
+        setCategoryName(sub.name);
+        return;
+      }
+      if (parent.id === existingId) {
+        setParentCategorySlug(parent.slug);
+        setCategoryId(String(parent.id));
+        setCategoryName(parent.name);
+        return;
+      }
     }
   }, [data, categories]);
 
