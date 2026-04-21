@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart, Share2, MessageSquare, MapPin, Package, ArrowLeft, Calendar, User, Building2, AlertCircle, CheckCircle2, Clock, ShoppingCart, Percent } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import MakeOfferModal from './MakeOfferModal';
 import ProductESGCard from '../esg/ProductESGCard';
 import ChatSidebarWrapper from '@/components/common/ChatSidebarWrapper';
 import BuyerOfferSection from './BuyerOfferSection';
+import { pushViewListingEvent } from '@/utils/gtm';
 
 
 export default function BrowserListingDetail() {
@@ -42,6 +43,26 @@ export default function BrowserListingDetail() {
     type: SITE_TYPE,
     buyerId: Number(localStorage.getItem("userId"))
   });
+
+  // Fire GA4 view_listing once batch + product data loads
+  useEffect(() => {
+    try {
+      if (!productData?.success) return;
+      const p = productData.data;
+      const b = p?.batch;
+      if (!b || !p) return;
+      pushViewListingEvent({
+        batch_id:       b.batch_id ?? b.id ?? p.product_id,
+        batch_number:   b.batch_number,
+        batch_title:    p.title,
+        batch_category: p?.categories?.[0]?.term_slug ?? p?.categories?.[0]?.term,
+        batch_status:   b.status,
+        item_count:     Array.isArray(b.products) ? b.products.length : 1,
+        seller_id:      b.seller_id ?? p?.sellerData?.ID,
+      });
+    } catch {}
+  }, [productData?.success]);
+
   const parsePhpArray = (meta: string | undefined): string[] => {
     if (!meta) return [];
 

@@ -1,10 +1,11 @@
-﻿import { useState, useMemo } from "react";
+﻿import { useState, useMemo, useEffect, useRef } from "react";
 import { DollarSign, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useGetUserOffersQuery } from "@/rtk/slices/bidApiSlice";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import ChatSidebarWrapper from "@/components/common/ChatSidebarWrapper";
+import { pushPurchaseEvent } from "@/utils/gtm";
 
 const TABS = [
   { key: "pending", label: "Unaccepted" },
@@ -33,6 +34,46 @@ export default function BuyerOffers() {
   const filteredOffers = useMemo(() => {
     return allOffers.filter((offer) => offer.status === status);
   }, [allOffers, status]);
+
+  const firedOfferIdsRef = useRef<Set<string | number>>(new Set());
+
+  useEffect(() => {
+    try {
+      const acceptedOffers = allOffers.filter((o: any) => o.status === "accepted");
+      acceptedOffers.forEach((offer: any) => {
+        if (!offer?.offer_id) return;
+        if (firedOfferIdsRef.current.has(offer.offer_id)) return;
+        firedOfferIdsRef.current.add(offer.offer_id);
+
+        try {
+          // Prefer the server-generated UUID `transaction_id` so the buyer's
+          // `purchase` event can be reconciled with the seller's `listing_sold`
+          // event. Fall back to the client-synthesized `offer-<id>` string only
+          // while the backend field hasn't shipped yet.
+          const transactionId =
+            offer?.transaction_id ?? `offer-${offer.offer_id}`;
+          pushPurchaseEvent({
+            transaction_id: String(transactionId),
+            transaction_type: "offer_accepted",
+            offer_rounds: offer.round || offer.offer_round || 1,
+            value: offer.amount,
+            currency: offer.currency || "INR",
+            items: [{
+              item_id: offer.batch_id,
+              item_name: offer.batch?.products?.[0]?.title || "",
+              item_category: offer.batch?.products?.[0]?.categories?.[0]?.term || "",
+              price: offer.amount,
+              quantity: 1,
+            }],
+          });
+        } catch (gtmInnerErr) {
+          console.warn("[GTM] purchase event (offer_accepted) failed:", gtmInnerErr);
+        }
+      });
+    } catch (gtmErr) {
+      console.warn("[GTM] purchase effect (offer_accepted) failed:", gtmErr);
+    }
+  }, [allOffers]);
 
   const handleMessage = (offer: any) => {
     setBatchId(offer.batch_id);

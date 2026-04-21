@@ -26,6 +26,7 @@ import { subscribeSellerEvents } from "@/socket/sellerEvents"
 import BuyerDetailsModal from "../buyer/BuyerDetailsModal";
 import { useSocketConnected } from "@/services/socket";
 import ChatSidebarWrapper from "@/components/common/ChatSidebarWrapper";
+import { pushListingCreatedEvent } from "@/utils/gtm";
 
 // Validation schema
 const biddingSchema = z.object({
@@ -238,7 +239,23 @@ const BiddingStep = ({ batchId, onNext, onBack, step, data }) => {
       };
 
       // Call API
-      await createBid(payload).unwrap();
+      const createBidResponse: any = await createBid(payload).unwrap();
+
+      // GA4 tracking — listing_created (canonical moment: deal_type now known)
+      try {
+        const dealType: "bidding" | "make_offer" =
+          payload.type === "make_offer" ? "make_offer" : "bidding";
+        pushListingCreatedEvent({
+          listing_id:             batchId,
+          listing_title:          "",
+          listing_category:       "",
+          asking_price:           Number(payload.target_price) || 0,
+          deal_type:              dealType,
+          is_first_listing:       createBidResponse?.data?.is_first_listing,
+          sellers_listing_number: createBidResponse?.data?.sellers_listing_number,
+          currency:               payload.currency,
+        });
+      } catch { /* tracking errors must never affect UX */ }
 
       //  Force UI update
       setBiddingStarted(true);

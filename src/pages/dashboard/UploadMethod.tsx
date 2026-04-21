@@ -22,6 +22,7 @@ import { useAddProductMutation, useBatchCreateMutation, useUpdateBatchVisibility
 import axios from "axios";
 import { useGetBatchByIdQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
+import { pushListingCreatedEvent } from "@/utils/gtm";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { batch } from "react-redux";
 import {
@@ -816,6 +817,30 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           if (onBatchCreated && newBatchId) {
             onBatchCreated(newBatchId);
           }
+
+          // GA4 tracking — listing_created (fires once per batch after batchCreate success)
+          try {
+            const firstItem: any = items?.[0];
+            if (newBatchId && firstItem) {
+              const priceFormat = firstItem.priceFormat;
+              const dealType: "bidding" | "make_offer" =
+                priceFormat === "offer" ? "make_offer" : "bidding";
+              const imagesCount = Array.isArray(firstItem.media)
+                ? firstItem.media.filter((m: any) => m?.type !== "video").length
+                : undefined;
+              pushListingCreatedEvent({
+                listing_id:             newBatchId,
+                listing_title:          firstItem.title ?? "",
+                listing_category:       firstItem.category_name || firstItem.category || "",
+                asking_price:           Number(firstItem.pricePerUnit) || 0,
+                deal_type:              dealType,
+                is_first_listing:       batchResult?.data?.is_first_listing,
+                sellers_listing_number: batchResult?.data?.sellers_listing_number,
+                images_uploaded:        imagesCount,
+                currency:               firstItem.priceCurrency,
+              });
+            }
+          } catch { /* tracking errors must never affect UX */ }
           // Do not call onNext here — user stays on step 1 and sees "Thank you for listing" message
         }
       } else if (onNext && batchId) {

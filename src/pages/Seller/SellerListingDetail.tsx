@@ -50,6 +50,7 @@ import { useUpdateBuyerBidMutation } from "@/rtk/slices/buyerApiSlice";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { formatDate } from "@/utils/formatDate";
 import i18n from "@/i18n/config";
+import { pushViewListingEvent } from "@/utils/gtm";
 
 
 // Country name → ISO 3166-1 alpha-2 code → flag emoji
@@ -215,6 +216,23 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   } = useGetBatchByIdQuery(Number(id));
 
   const currentBatchId = Number(id);
+
+  // Fire GA4 view_listing once batch data loads
+  useEffect(() => {
+    try {
+      const b = (data as any)?.data?.batch;
+      if (!b) return;
+      pushViewListingEvent({
+        batch_id:       b.batch_id ?? currentBatchId,
+        batch_number:   b.batch_number,
+        batch_category: (data as any)?.data?.products?.[0]?.categories?.[0]?.term_slug,
+        batch_status:   b.status,
+        item_count:     (data as any)?.data?.products?.length ?? 0,
+        seller_id:      b.seller_id,
+      });
+    } catch {}
+  }, [(data as any)?.data?.batch?.batch_id ?? currentBatchId]);
+
   const categorySlug = (data as any)?.data?.products?.[0]?.categories?.[0]?.term_slug || "";
 
   const { data: similarData } = useGetBatchesQuery(

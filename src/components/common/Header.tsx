@@ -14,6 +14,7 @@ import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
 import { SITE_NAME } from "@/config/branding";
 import { normalizeStoredLanguage } from "@/utils/languageUtils";
+import { pushLogoutEvent, pushSearchEvent } from "@/utils/gtm";
 
         
  
@@ -143,6 +144,7 @@ const Header = () => {
       );
       if (!confirmLogout) return;
 
+      try { pushLogoutEvent(); } catch {}
       await logout().unwrap();
 
       document.cookie = "accessToken=; Max-Age=0; path=/; domain=.101recycle.greenbidz.com; secure; SameSite=None";
@@ -163,8 +165,11 @@ const Header = () => {
   };
 
   const handleSearch = () => {
-    if (searchVal.trim()) {
-      navigate(`/marketplace?search=${encodeURIComponent(searchVal.trim())}`);
+    const term = searchVal.trim();
+    if (term) {
+      // results_count=0 placeholder — actual count reported by destination page (debounced search)
+      try { pushSearchEvent(term, 0); } catch {}
+      navigate(`/marketplace?search=${encodeURIComponent(term)}`);
       setOpenMenu(false);
     }
   };
@@ -510,6 +515,7 @@ const Header = () => {
                     if (e.key === "Enter") {
                       const val = (e.target as HTMLInputElement).value.trim();
                       if (val) {
+                        try { pushSearchEvent(val, 0); } catch {}
                         navigate(`/marketplace?search=${encodeURIComponent(val)}`);
                         (e.target as HTMLInputElement).value = "";
                         setOpenMenu(false);

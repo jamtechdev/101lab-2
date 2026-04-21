@@ -1,9 +1,10 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { useGetOwnerOffersQuery, useUpdateOfferStatusMutation } from "@/rtk/slices/bidApiSlice";
 import { Button } from "@/components/ui/button";
 import ChatSidebarWrapper from "@/components/common/ChatSidebarWrapper"; // import chat wrapper
+import { pushOfferReceivedEvent } from "@/utils/gtm";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -23,6 +24,44 @@ const SellerOffer = () => {
   const [chatBuyerId, setChatBuyerId] = useState<number | null>(null);
 
   const offers = Array.isArray(offerData?.data) ? offerData.data : [];
+
+  // GA4 tracking — offer_received (fires once per pending offer; helper dedupes by offer_id)
+  useEffect(() => {
+    if (!Array.isArray(offers) || offers.length === 0) return;
+    try {
+      for (const offer of offers) {
+        if (offer?.status && offer.status !== "pending") continue;
+        const product: any = offer?.batch?.products?.[0];
+        const metaVal = (key: string) =>
+          product?.meta?.find((m: any) => m.meta_key === key)?.meta_value;
+        // Prefer new backend field `offer.asking_price`; fall back to meta lookup
+        // (price_per_unit → replacement_cost_per_unit → 0) for backwards compatibility.
+        const fallbackAskingPriceRaw =
+          metaVal("price_per_unit") ??
+          metaVal("replacement_cost_per_unit") ??
+          0;
+        const askingPrice =
+          offer?.asking_price !== undefined && offer?.asking_price !== null
+            ? Number(offer.asking_price) || 0
+            : Number(fallbackAskingPriceRaw) || 0;
+        // Prefer new backend field `offer.offer_round`; fall back to 1.
+        const offerRound =
+          offer?.offer_round !== undefined && offer?.offer_round !== null
+            ? Number(offer.offer_round) || 1
+            : 1;
+        // Prefer new backend field `offer.currency`; helper defaults to INR if undefined.
+        const currency = offer?.currency ?? undefined;
+        pushOfferReceivedEvent({
+          listing_id:   offer?.batch?.batch_id ?? "",
+          offer_id:     offer?.offer_id ?? "",
+          offer_amount: Number(offer?.offer_price) || 0,
+          asking_price: askingPrice,
+          offer_round:  offerRound,
+          currency,
+        });
+      }
+    } catch { /* tracking errors must never affect UX */ }
+  }, [offerData]);
 
   const handleStatusUpdate = async (offer_id: number, status: "accepted" | "rejected") => {
     const isConfirmed = window.confirm(`Are you sure you want to ${status} this offer?`);

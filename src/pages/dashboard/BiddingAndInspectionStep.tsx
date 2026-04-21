@@ -21,6 +21,7 @@ import { useCreateInspectionMutation, useUpdateInspectionMutation } from "@/rtk/
 import { useSkipFullInspectionForCompanyMutation } from "@/rtk/slices/batchApiSlice";
 import { useGetBatchByIdQuery } from "@/rtk/slices/batchApiSlice";
 import { Loader2 } from "lucide-react";
+import { pushListingCreatedEvent } from "@/utils/gtm";
 
 const biddingSchema = z.object({
   price: z.string().trim()
@@ -334,8 +335,37 @@ const BiddingAndInspectionStep = ({ batchId, onMergedNext, onBack, data }: Biddi
         allowWeightPrice: allowWeightPrice !== undefined ? allowWeightPrice : false,
         taxInclusive: isTaxInclusive,
       };
-      await createBid(payload as StartBidRequest).unwrap();
+      const createBidResponse: any = await createBid(payload as StartBidRequest).unwrap();
       toast.success("Bid created successfully!");
+
+      // GA4 tracking — listing_created (canonical moment: deal_type now known)
+      try {
+        const batch: any = (batchData?.data as any)?.batch;
+        const products: any[] = (batchData?.data as any)?.products;
+        const firstProduct: any = Array.isArray(products) ? products[0] : undefined;
+        const dealType: "bidding" | "make_offer" =
+          payload.type === "make_offer" ? "make_offer" : "bidding";
+        pushListingCreatedEvent({
+          listing_id:             batchId,
+          listing_title:          batch?.title ?? firstProduct?.title ?? "",
+          listing_category:
+            firstProduct?.categories?.[0]?.term_slug
+            ?? firstProduct?.categories?.[0]?.term
+            ?? firstProduct?.category_name
+            ?? "",
+          listing_subcategory:    firstProduct?.categories?.[1]?.term_slug
+                                  ?? firstProduct?.categories?.[1]?.term
+                                  ?? undefined,
+          asking_price:           Number(payload.target_price) || 0,
+          deal_type:              dealType,
+          is_first_listing:       createBidResponse?.data?.is_first_listing,
+          sellers_listing_number: createBidResponse?.data?.sellers_listing_number,
+          images_uploaded:        Array.isArray(firstProduct?.media)
+                                    ? firstProduct.media.length
+                                    : undefined,
+          currency:               payload.currency,
+        });
+      } catch { /* tracking errors must never affect UX */ }
 
       if (inspectionEnabled) {
         const schedule = inspectionDates.map((date) => ({

@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLoginMutation } from "@/rtk/slices/apiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
-import { getSocket } from "@/services/socket"; 
+import { getSocket } from "@/services/socket";
+import { pushLoginEvent } from "@/utils/gtm";
 import { Loader2, LogIn } from "lucide-react";
 
 interface LoginModalProps {
@@ -28,6 +29,7 @@ const LoginModal = ({ open, onClose, onSuccess, portalType = "buyer" }: LoginMod
     try {
       const result = await login({ email, password }).unwrap();
       if (result?.success) {
+        try { pushLoginEvent(result, "email"); } catch {}
         const userId = result.data?.data?.user?.id;
         const role = result.data?.data?.role;
         const userName = result.data?.data?.user?.username;

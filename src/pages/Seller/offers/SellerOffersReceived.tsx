@@ -1,5 +1,6 @@
-﻿import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { pushOfferReceivedEvent } from "@/utils/gtm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +139,35 @@ const SellerOffersReceived: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>("unaccepted");
   const [expandedOffers, setExpandedOffers] = useState<Set<number>>(new Set());
+
+  // Wired against current data source (mock or API); helper dedupes per offer_id via sessionStorage.
+  useEffect(() => {
+    try {
+      const allOffers = [
+        ...staticOffersReceivedData.unaccepted,
+        ...staticOffersReceivedData.accepted,
+        ...staticOffersReceivedData.pause,
+        ...staticOffersReceivedData.complete,
+        ...staticOffersReceivedData.did_not_get,
+      ];
+      allOffers.forEach((offer: any) => {
+        try {
+          pushOfferReceivedEvent({
+            listing_id: offer.batch_id || offer.id,
+            offer_id: offer.offer_id || String(offer.id),
+            offer_amount: Number(String(offer.offered_price).replace(/[^0-9.]/g, '')) || 0,
+            asking_price: 0,
+            offer_round: offer.round || offer.offer_round || 1,
+            currency: 'INR',
+          });
+        } catch {
+          // swallow per-offer errors so one bad row doesn't block others
+        }
+      });
+    } catch {
+      // ignore — tracking must never break UI
+    }
+  }, []);
 
   const statusConfig: Record<string, any> = {
     unaccepted: {

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSubmitOfferMutation } from '@/rtk/slices/bidApiSlice';
 import { useNavigate } from 'react-router-dom';
+import { pushMakeOfferEvent } from '@/utils/gtm';
 
 export default function MakeOfferModal({
   isOpen,
@@ -50,6 +51,16 @@ export default function MakeOfferModal({
         lang,
       };
       await SubmitOfferRequest(payload);
+
+      try {
+        pushMakeOfferEvent({
+          batch_id:       batch.batch_id,
+          offer_amount:   Number(offerPrice),
+          offer_quantity: 1,
+          currency,
+        });
+      } catch { /* tracking errors must never affect UX */ }
+
       setIsSuccess(true);
     } catch (error) {
       console.error('Offer submission failed:', error);

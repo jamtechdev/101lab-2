@@ -17,6 +17,7 @@ import { format, parseISO } from "date-fns";
 import { useGetWinnerForBatchQuery, useGetPaymentsByBatchQuery, useAddPaymentForWinnerMutation, useUpdatePaymentMutation } from "@/rtk/slices/bidApiSlice";
 import { formatDate } from "@/utils/formatDate";
 import i18n from "@/i18n/config";
+import { pushPurchaseEvent } from "@/utils/gtm";
 
 type FormatOptions = {
   perKg?: boolean;
@@ -186,8 +187,33 @@ const PaymentStep = ({ batchId, onNext, onBack }) => {
         status: "paid",
       };
 
-      await addPaymentForWinner(payload).unwrap();
+      const paymentResponse: any = await addPaymentForWinner(payload).unwrap();
       toast.success("Payment confirmed successfully!");
+
+      try {
+        const transaction_id =
+          paymentResponse?.data?.transaction_id ||
+          paymentResponse?.data?.id ||
+          payment?.transaction_number ||
+          `bid-${winner.buyer_bid_id}`;
+
+        pushPurchaseEvent({
+          transaction_id: String(transaction_id),
+          transaction_type: "bid_won",
+          offer_rounds: null,
+          value: winner.amount,
+          currency: winner.currency || "INR",
+          items: [{
+            item_id: batchId || winner.buyer_bid_id,
+            item_name: "",
+            item_category: "",
+            price: winner.amount,
+            quantity: 1,
+          }],
+        });
+      } catch (gtmErr) {
+        console.warn("[GTM] purchase event (bid_won) failed:", gtmErr);
+      }
 
       // Navigate to next step after successful API call
       if (onNext) {

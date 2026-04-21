@@ -9,6 +9,7 @@ import { useSubmitOfferMutation } from '@/rtk/slices/bidApiSlice';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { SITE_TYPE } from '@/config/site';
+import { pushPlaceBidEvent } from '@/utils/gtm';
 
 interface MakeBiddingOfferModalProps {
   isOpen: boolean;
@@ -89,6 +90,16 @@ export default function MakeBiddingOfferModal({
       }
 
       const result = await submitOffer(formDataToSend).unwrap();
+
+      try {
+        pushPlaceBidEvent({
+          batch_id:    batch.batch_id,
+          batch_number: batch.batch_number,
+          bid_amount:  Number(formData.amount),
+          currency:    "TWD",
+          bid_type:    "whole_item",
+        });
+      } catch { /* tracking errors must never affect UX */ }
 
       toast.success(result.message);
       onClose();

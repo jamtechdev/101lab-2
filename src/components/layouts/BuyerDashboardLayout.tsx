@@ -23,6 +23,7 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import BuyerNotificationBell from "@/services/BuyerNotifcationBell";
 import RoleSwitcher from "@/components/common/RoleSwitcher";
 import { useTranslation } from "react-i18next";
+import { pushLogoutEvent } from "@/utils/gtm";
 
 const SectionHeader = ({ title }: { title: string }) => (
   <div className="px-3 pt-4 pb-1">
@@ -74,6 +75,7 @@ const BuyerDashboardLayout = () => {
       );
       if (!confirm) return;
 
+      try { pushLogoutEvent(); } catch {}
       await logout().unwrap();
 
       document.cookie =

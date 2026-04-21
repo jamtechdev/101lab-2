@@ -70,6 +70,7 @@ const categoryIconMap: Record<string, React.ElementType> = {
 import SellLeadModal from "@/components/common/SellLeadModal";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
+import { pushAddToWishlistEvent } from "@/utils/gtm";
 import i18n from "@/i18n/config";
 import { useGetCategoriesQuery } from "@/rtk/slices/apiSlice";
 import { useGetAuctionGroupsHomeQuery } from "@/rtk/slices/auctionGroupApiSlice";
@@ -104,7 +105,19 @@ const insightKeys = [
 ];
 
 // ─── Wishlist Heart Button ────────────────────────────────────────────────────
-const WishlistHeartButton = ({ batchId }: { batchId: string | number }) => {
+const WishlistHeartButton = ({
+  batchId,
+  trackingTitle,
+  trackingCategory,
+  trackingPrice,
+  trackingCurrency,
+}: {
+  batchId: string | number;
+  trackingTitle?: string;
+  trackingCategory?: string;
+  trackingPrice?: number;
+  trackingCurrency?: string;
+}) => {
   const userId = localStorage.getItem("userId");
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -134,6 +147,17 @@ const WishlistHeartButton = ({ batchId }: { batchId: string | number }) => {
       const action = res.data?.data?.action;
       if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
       else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+      if (action === "added") {
+        try {
+          pushAddToWishlistEvent({
+            listing_id:       batchId,
+            listing_title:    trackingTitle ?? "",
+            listing_category: trackingCategory ?? "",
+            price:            trackingPrice,
+            currency:         trackingCurrency,
+          });
+        } catch { /* tracking errors must never affect UX */ }
+      }
     } catch {
       setInWishlist(prev);
       toastError("Failed to update wishlist");

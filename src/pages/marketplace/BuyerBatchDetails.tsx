@@ -44,6 +44,7 @@ import BuyerDashboard from "../dashboard/BuyerDashboard";
 import BuyerHeader from "../buyer/BuyerHeader";
 import { extractValuesFromPhpSerialized } from "@/utils/parsePhpSerializedUrl";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
+import { pushLogoutEvent, pushViewListingEvent } from "@/utils/gtm";
 
 export default function BuyerBatchDetails() {
     const { batchId } = useParams<{ batchId: string }>();
@@ -81,6 +82,23 @@ export default function BuyerBatchDetails() {
         return unsub;
     }, []);
 
+    // Fire GA4 view_listing once buyer + product data loads
+    useEffect(() => {
+        try {
+            if (!buyerData?.success || !productData?.success) return;
+            const b = buyerData.data.batch;
+            pushViewListingEvent({
+                batch_id:       b.batch_id ?? Number(batchId),
+                batch_number:   b.batch_number,
+                batch_title:    b.title,
+                batch_category: b.category,
+                batch_status:   b.status,
+                item_count:     productData.data.products?.length ?? 0,
+                seller_id:      b.seller_id,
+            });
+        } catch {}
+    }, [buyerData?.success, productData?.success]);
+
     const handleLogout = async () => {
         try {
             const confirmLogout = window.confirm(
@@ -88,6 +106,7 @@ export default function BuyerBatchDetails() {
             );
             if (!confirmLogout) return;
 
+            try { pushLogoutEvent(); } catch {}
             await logout().unwrap();
 
             document.cookie =

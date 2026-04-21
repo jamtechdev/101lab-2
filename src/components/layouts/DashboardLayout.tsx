@@ -37,6 +37,7 @@ import CompanySelector from "../common/CompanySelector";
 import NotificationBell from '../../services/NotificationBell.jsx'
 import CompanyOrganization from "../common/CompanyOrganization";
 import RoleSwitcher from "../common/RoleSwitcher";
+import { pushLogoutEvent } from "@/utils/gtm";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -125,6 +126,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
       const confirm = window.confirm("Are you sure you want to logout?");
       if (!confirm) return;
 
+      try { pushLogoutEvent(); } catch {}
       await logout().unwrap();
 
       document.cookie = "accessToken=; Max-Age=0; path=/;";

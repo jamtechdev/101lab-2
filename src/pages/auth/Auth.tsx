@@ -38,6 +38,7 @@ import {
 } from "../../helper/toasterNotification";
 import { showSuccess } from "../../helper/sweetAlertNotification";
 import { getSocket } from "@/services/socket";
+import { pushLoginEvent, pushSignupEvent, pushRoleSelectedEvent, pushFormInteractEvent } from "@/utils/gtm";
 
 type UserType = "buyer" | "seller" | "admin";
 type AuthMode = "signup" | "signin";
@@ -158,6 +159,8 @@ const Auth = () => {
     try {
       const result = await completeSignup({ email: pendingEmail, ...profileData }).unwrap();
       if (result?.success) {
+        try { pushRoleSelectedEvent(userType); } catch {}
+        try { pushSignupEvent(userType); } catch {}
         toastSuccess("Account created successfully!");
         await showSuccess("Welcome!", "Your account has been created. Please wait for admin approval before signing in.");
         setShowProfileForm(false);
@@ -186,6 +189,7 @@ const Auth = () => {
     try {
       const result = await login({ email, password }).unwrap();
       if (result?.success) {
+        try { pushLoginEvent(result, "email"); } catch {}
         toastSuccess("Welcome back!");
         const userId = result.data?.data?.user?.id;
         const role = result.data?.data?.role;
@@ -341,6 +345,7 @@ const Auth = () => {
                       placeholder="info@greenbidz.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => { try { pushFormInteractEvent('login', 'email'); } catch {} }}
                       required
                       className="h-12 pl-10 bg-muted/30 border-border focus:border-primary"
                     />
@@ -615,7 +620,7 @@ const Auth = () => {
                       <Label htmlFor="s-email" className="text-sm font-medium">Company Email</Label>
                       <div className="relative">
                         <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input id="s-email" type="email" placeholder="company@yourcompany.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
+                        <Input id="s-email" type="email" placeholder="company@yourcompany.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch {} }} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
                       </div>
                     </div>
                     <div className="space-y-1.5">

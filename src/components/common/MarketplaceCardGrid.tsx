@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
+import { pushAddToWishlistEvent } from "@/utils/gtm";
 
 // ── Country ISO lookup ────────────────────────────────────────────────────────
 const COUNTRY_TO_ISO: Record<string, string> = {
@@ -190,7 +191,19 @@ const getBidStatus = (item: any) => {
 };
 
 // ── Wishlist Heart Button ─────────────────────────────────────────────────────
-const WishlistButton = ({ productId }: { productId: number }) => {
+const WishlistButton = ({
+  productId,
+  trackingTitle,
+  trackingCategory,
+  trackingPrice,
+  trackingCurrency,
+}: {
+  productId: number;
+  trackingTitle?: string;
+  trackingCategory?: string;
+  trackingPrice?: number;
+  trackingCurrency?: string;
+}) => {
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
   const [inWishlist, setInWishlist] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -231,6 +244,17 @@ const WishlistButton = ({ productId }: { productId: number }) => {
         const action = res.data?.data?.action;
         if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
         else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+        if (action === "added") {
+          try {
+            pushAddToWishlistEvent({
+              listing_id:       productId,
+              listing_title:    trackingTitle ?? "",
+              listing_category: trackingCategory ?? "",
+              price:            trackingPrice,
+              currency:         trackingCurrency,
+            });
+          } catch { /* tracking errors must never affect UX */ }
+        }
         window.dispatchEvent(new Event("wishlist-changed"));
       } catch {
         setInWishlist(prev);

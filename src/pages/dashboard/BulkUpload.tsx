@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { pushListingCreatedEvent } from "@/utils/gtm";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface BulkRow {
@@ -603,6 +604,27 @@ export default function BulkUpload() {
           }).unwrap();
           rowBatchId = batchResult?.data?.batch_id ?? undefined;
           if (rowBatchId) totalBatches++;
+
+          // GA4 tracking — listing_created (once per row after batchCreate success)
+          try {
+            if (rowBatchId) {
+              // priceFormat values in bulk: "buyNow" → bidding, "offer" → make_offer
+              const dealType: "bidding" | "make_offer" =
+                row.priceFormat === "offer" ? "make_offer" : "bidding";
+              const imagesCount =
+                (row.imageUrls?.length || 0) +
+                ((imageMap.get(row.rowNum) || []).length);
+              pushListingCreatedEvent({
+                listing_id:             rowBatchId,
+                listing_title:          row.title ?? "",
+                listing_category:       row.categoryName ?? "",
+                asking_price:           Number(row.pricePerUnit) || 0,
+                deal_type:              dealType,
+                images_uploaded:        imagesCount || undefined,
+                currency:               row.priceCurrency,
+              });
+            }
+          } catch { /* tracking errors must never affect UX */ }
         } catch {
           /* batch failed — product still created */
         }

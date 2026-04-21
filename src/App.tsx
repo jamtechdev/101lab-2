@@ -70,6 +70,8 @@ import GuestRoute from "./context/GuestRoute";
 import SellerPermissionRoute from "./context/SellerPermissionRoute";
 
 import SellerNotificationListener from "./components/common/SellerNotificationListener";
+import RouteTracker from "./components/common/RouteTracker";
+import { pushSiteEntryEvent } from "@/utils/gtm";
 
 import { initBuyerSocket } from "./socket/initBuyerSocket";
 import { initSellerSocket } from "./socket/initSellerSocket";
@@ -141,6 +143,25 @@ const App = () => {
   }, []);
 
   useEffect(() => {
+    try {
+      const path = window.location.pathname;
+      let page_type: "landing" | "home" | "listing" | "search";
+      if (path === "/") {
+        page_type = "home";
+      } else if (path.includes("/marketplace") || path.includes("/listings")) {
+        page_type = "listing";
+      } else if (path.includes("/search")) {
+        page_type = "search";
+      } else {
+        page_type = "landing";
+      }
+      pushSiteEntryEvent({ page_type });
+    } catch {
+      // tracking must never break app init
+    }
+  }, []);
+
+  useEffect(() => {
     const role = localStorage.getItem("userRole");
 
     if (role === "seller") {
@@ -173,6 +194,7 @@ const App = () => {
           <SellerNotificationListener sellerId={userId} isSeller={true} />
 
           <BrowserRouter>
+            <RouteTracker />
             <ScrollToTopButton showAfter={300} />
             <LoginModalProvider>
             <Routes>
