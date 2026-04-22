@@ -136,22 +136,6 @@ const BuyerMarketplace = () => {
     refetch
   } = useGetBatchesQuery(queryParams);
 
-  // Force refetch when search query changes
-  useEffect(() => {
-    if (debouncedSearch || selectedCategory || selectedCountry || selectedCondition || selectedBidFilter) {
-      refetch();
-    }
-  }, [debouncedSearch, selectedCategory, selectedCountry, selectedCondition, selectedBidFilter, refetch]);
-
-  // Ensure data is fetched when page loads with URL search parameters OR when they change
-  useEffect(() => {
-    const hasSearchParams = searchParams.get("search") || searchParams.get("category") ||
-                            searchParams.get("country") || searchParams.get("condition") ||
-                            searchParams.get("bidFilter");
-    if (hasSearchParams) {
-      refetch();
-    }
-  }, [searchParams, refetch]);
 
   // Get pagination info from API response
   const pagination = batchData?.pagination;

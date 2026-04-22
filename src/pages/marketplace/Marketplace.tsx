@@ -207,15 +207,6 @@ const Marketplace = () => {
     auctionGroup: selectedGroup && selectedGroup !== '' ? selectedGroup : undefined,
   });
 
-  // Ensure data is fetched when page loads with URL search parameters OR when they change
-  useEffect(() => {
-    const hasSearchParams = searchParams.get("search") || searchParams.get("category") ||
-                            searchParams.get("country") || searchParams.get("condition") ||
-                            searchParams.get("bidFilter") || searchParams.get("group");
-    if (hasSearchParams) {
-      refetch();
-    }
-  }, [searchParams, refetch]);
 
   const pagination = batchData?.pagination;
   const totalItems = pagination?.totalItems ?? 0;
