@@ -916,53 +916,57 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                 </div>
                               )}
 
-                              {/* <Button
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
-                                onClick={() => {
-                                  if (!localStorage.getItem("userId")) {
-                                    openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
-                                    return;
-                                  }
-                                  if (!canPlaceBid) {
-                                    toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
-                                    return;
-                                  }
-                                  openDialogFor(products[0], "bidding", "place_bid");
-                                }}
-                              >
-                                {t("buyer.placeBid")}
-                              </Button> */}
-
-                              {bidDetail?.type === "make_offer" && (
+                              {bidDetail?.isAuction ? (
                                 <Button
-                                  variant="outline"
-                                  className="w-full font-bold text-base py-5 rounded"
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
                                   onClick={() => {
                                     if (!localStorage.getItem("userId")) {
-                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
                                       return;
                                     }
-                                    openDialogFor(products[0], "bidding", "make_offer");
+                                    if (!canPlaceBid) {
+                                      toast.error(t("toastError.maxBidLimit", { count: MAX_BIDS_ALLOWED }));
+                                      return;
+                                    }
+                                    openDialogFor(products[0], "bidding", "place_bid");
                                   }}
                                 >
-                                  {t("buyer.makeOffer") || "Make Offer"}
+                                  {t("buyer.placeBid")}
                                 </Button>
-                              )}
+                              ) : (
+                                <>
+                                  {bidDetail?.type === "make_offer" && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full font-bold text-base py-5 rounded"
+                                      onClick={() => {
+                                        if (!localStorage.getItem("userId")) {
+                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                          return;
+                                        }
+                                        openDialogFor(products[0], "bidding", "make_offer");
+                                      }}
+                                    >
+                                      {t("buyer.makeOffer") || "Make Offer"}
+                                    </Button>
+                                  )}
 
-                              {bidDetail?.type === "fixed_price" && (
-                                <Button
-                                  variant="outline"
-                                  className="w-full font-bold text-base py-5 rounded"
-                                  onClick={() => {
-                                    if (!localStorage.getItem("userId")) {
-                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
-                                      return;
-                                    }
-                                    openDialogFor(products[0], "bidding", "buy_now");
-                                  }}
-                                >
-                                  {t("buyer.buyNow") || "Buy Now"}
-                                </Button>
+                                  {bidDetail?.type === "fixed_price" && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full font-bold text-base py-5 rounded"
+                                      onClick={() => {
+                                        if (!localStorage.getItem("userId")) {
+                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
+                                          return;
+                                        }
+                                        openDialogFor(products[0], "bidding", "buy_now");
+                                      }}
+                                    >
+                                      {t("buyer.buyNow") || "Buy Now"}
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           )}
@@ -1495,7 +1499,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 <DialogHeader>
                   <DialogTitle>
                     {placeBidStep === "review"
-                      ? "Confirm your bid"
+                      ? bidDialogMode === "buy_now"
+                        ? (t("buyer.confirmBuyNow") || "Confirm your purchase")
+                        : (t("buyer.confirmBid") || "Confirm your bid")
                       : bidDialogMode === "buy_now"
                         ? (t("buyer.buyNowTitle") || "Buy Now")
                         : t("buyer.placeBidTitle")}
@@ -1542,8 +1548,10 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           type="number"
                           step="0.01"
                           value={bidAmount}
-                          onChange={(e) => setBidAmount(e.target.value)}
+                          onChange={(e) => { if (bidDialogMode !== "buy_now") setBidAmount(e.target.value); }}
                           placeholder={t("biddingStep.enterTotalPrice") || "Enter amount"}
+                          readOnly={bidDialogMode === "buy_now"}
+                          className={bidDialogMode === "buy_now" ? "bg-muted cursor-not-allowed" : ""}
                         />
                       </div>
 
@@ -1637,7 +1645,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     </div>
 
                     <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5 text-center">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Your Bid</p>
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                        {bidDialogMode === "buy_now" ? (t("buyer.yourPrice") || "Your Price") : (t("buyer.yourBid") || "Your Bid")}
+                      </p>
                       <p className="text-3xl font-bold text-foreground">
                         {bidDetail?.currency || "TWD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
@@ -1657,7 +1667,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       )}
                     </div>
 
-                    <p className="text-sm text-center text-muted-foreground">Are you sure you want to place this bid?</p>
+                    <p className="text-sm text-center text-muted-foreground">
+                      {bidDialogMode === "buy_now"
+                        ? (t("buyer.confirmBuyNowDesc") || "Are you sure you want to buy this?")
+                        : (t("buyer.confirmBidDesc") || "Are you sure you want to place this bid?")}
+                    </p>
 
                     <div className="flex gap-3">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setPlaceBidStep("form")}>
@@ -1669,7 +1683,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         disabled={isPlacingBid}
                         onClick={handlePlaceBid}
                       >
-                        {isPlacingBid ? t("buyer.submitting") : "Yes, place bid"}
+                        {isPlacingBid
+                          ? t("buyer.submitting")
+                          : bidDialogMode === "buy_now"
+                            ? (t("buyer.yesBuyNow") || "Yes, buy now")
+                            : (t("buyer.yesPlaceBid") || "Yes, place bid")}
                       </Button>
                     </div>
                   </div>

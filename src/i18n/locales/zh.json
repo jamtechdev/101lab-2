@@ -1274,7 +1274,13 @@
     "inclusive": "含稅",
     "exclusive": "未稅",
     "saveContinueLater": "儲存並稍後繼續",
-    "acceptSelectedBid": "接受選定的出價"
+    "acceptSelectedBid": "接受選定的出價",
+    "auctionMode": "拍賣",
+    "enableAuction": "啟用拍賣（出價）",
+    "auctionOnDesc": "買家將看到「出價」按鈕",
+    "auctionOffDesc": "買家將看到「立即購買 / 報價」按鈕",
+    "startDate": "開始日期 *",
+    "endDate": "結束日期 *"
   },
   "payment": {
     "title": "付款確認",

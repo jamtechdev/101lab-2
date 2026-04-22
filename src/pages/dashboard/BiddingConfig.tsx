@@ -126,6 +126,7 @@ const BiddingConfig = ({ batchId, onNext, onBack, step, data }) => {
     // Add these inside your BiddingStep component state initialization:
     const [allowWholePrice, setAllowWholePrice] = useState<boolean>(true); // default true
     const [allowWeightPrice, setAllowWeightPrice] = useState<boolean>(false); // default false
+    const [isAuction, setIsAuction] = useState<boolean>(false);
 
     // Optional: weight items if "Price by Weight" is enabled
     const WEIGHT_ITEMS = [
@@ -213,7 +214,8 @@ const BiddingConfig = ({ batchId, onNext, onBack, step, data }) => {
                 isHidden: !showPriceToBidders, // When showPriceToBidders is true (shown), isHidden is false,
                 allowWholePrice: allowWholePrice !== undefined ? allowWholePrice : true,
                 allowWeightPrice: allowWeightPrice !== undefined ? allowWeightPrice : false,
-                taxInclusive: isTaxInclusive
+                taxInclusive: isTaxInclusive,
+                isAuction: isAuction
             };
 
             // Call API
@@ -308,8 +310,8 @@ const BiddingConfig = ({ batchId, onNext, onBack, step, data }) => {
 
         setAllowWholePrice(details.allowWholePrice ?? true);
         setAllowWeightPrice(details.allowWeightPrice ?? false);
-
         setIsTaxInclusive(details.taxInclusive ?? true);
+        setIsAuction(details.isAuction ?? false);
 
     }, [batchData]);
 
@@ -667,6 +669,27 @@ const BiddingConfig = ({ batchId, onNext, onBack, step, data }) => {
                                     <span className="text-xs opacity-80 mt-1">{t('biddingStep.fixedPriceDesc')}</span>
                                 </Button>
                             </div>
+                        </div>
+
+                        {/* Auction Toggle */}
+                        <div className="space-y-2 border rounded-lg p-4">
+                            <Label>{t('biddingStep.auctionMode') || 'Auction'}</Label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAuction}
+                                        onChange={(e) => setIsAuction(e.target.checked)}
+                                        disabled={biddingStarted}
+                                    />
+                                    {t('biddingStep.enableAuction') || 'Enable Auction (Place Bid)'}
+                                </label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {isAuction
+                                    ? (t('biddingStep.auctionOnDesc') || 'Buyers will see Place Bid button')
+                                    : (t('biddingStep.auctionOffDesc') || 'Buyers will see Buy Now / Make Offer button')}
+                            </p>
                         </div>
 
                         <div className="space-y-2 border rounded-lg p-4">

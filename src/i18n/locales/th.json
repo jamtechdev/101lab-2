@@ -1326,7 +1326,13 @@
     "inclusiveTax": "Inclusive Tax",
     "exclusiveTax": "Exclusive Tax",
     "inclusive": "Inclusive",
-    "exclusive": "Exclusive"
+    "exclusive": "Exclusive",
+    "auctionMode": "การประมูล",
+    "enableAuction": "เปิดใช้การประมูล (เสนอราคา)",
+    "auctionOnDesc": "ผู้ซื้อจะเห็นปุ่ม \"เสนอราคา\"",
+    "auctionOffDesc": "ผู้ซื้อจะเห็นปุ่ม \"ซื้อเลย / เสนอราคา\"",
+    "startDate": "วันที่เริ่มต้น *",
+    "endDate": "วันที่สิ้นสุด *"
   },
   "payment": {
     "title": "Payment Confirmation",

@@ -254,6 +254,7 @@ export interface BatchDetailsSeller {
 }
 
 export interface BatchDetailsProductImage {
+  id: number;
   url: string;
   type: string;
 }
@@ -264,6 +265,7 @@ export interface BatchDetailsProduct {
   description: string;
   images: BatchDetailsProductImage[];
   category: string;
+  category_ids: number[];
 }
 
 export interface InspectionScheduleSlot {
@@ -330,6 +332,7 @@ export interface BatchDetailsBidding {
   currency: string;
   buyer_bids: BuyerBid[];
   total_biddings: number;
+  isAuction?: boolean;
 }
 
 export interface WinnerBuyer {
@@ -643,6 +646,57 @@ export const adminApi = createApi({
       query: (batchId) => ({
         url: `/admin/batches/${batchId}/approve`,
         method: "PATCH",
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- UPDATE PRODUCT (admin) ---------------- */
+    updateAdminProduct: builder.mutation<
+      { success: boolean; message: string },
+      { productId: number; body: Record<string, unknown> }
+    >({
+      query: ({ productId, body }) => ({
+        url: `/admin/product/${productId}`,
+        method: "PATCH",
+        data: body,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- UPDATE BIDDING (admin) ---------------- */
+    updateAdminBidding: builder.mutation<
+      { success: boolean; message: string },
+      { batchId: number; body: Record<string, unknown> }
+    >({
+      query: ({ batchId, body }) => ({
+        url: `/admin/bidding/${batchId}`,
+        method: "PATCH",
+        data: body,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- ADD PRODUCT IMAGES (admin) ---------------- */
+    addAdminProductImages: builder.mutation<
+      { success: boolean; data: BatchDetailsProductImage[] },
+      { productId: number; formData: FormData }
+    >({
+      query: ({ productId, formData }) => ({
+        url: `/admin/product/${productId}/images`,
+        method: "POST",
+        data: formData,
+      }),
+      invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- DELETE PRODUCT IMAGE (admin) ---------------- */
+    deleteAdminProductImage: builder.mutation<
+      { success: boolean; message: string },
+      { productId: number; attachmentId: number }
+    >({
+      query: ({ productId, attachmentId }) => ({
+        url: `/admin/product/${productId}/images/${attachmentId}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["Batches"],
     }),
@@ -1063,6 +1117,10 @@ export const {
   useDeleteBatchMutation,
   useApproveBatchMutation,
   useGetBatchDetailsQuery,
+  useUpdateAdminProductMutation,
+  useUpdateAdminBiddingMutation,
+  useAddAdminProductImagesMutation,
+  useDeleteAdminProductImageMutation,
 
   useGetEmailTypesQuery,
   useCreateEmailTypeMutation,
