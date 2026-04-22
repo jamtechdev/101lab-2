@@ -8,7 +8,7 @@ import { getSEO } from "@/config/seoConfig";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
 import { SITE_CATEGORIES, HOME_CATEGORY_COUNT, HOME_PRODUCT_ROWS_COUNT, sortByConfig } from "@/config/categories";
-import { useLanguageAwareCategories, useLanguageAwareCategorySummary } from "@/hooks/useLanguageAwareCategories";
+import { useLanguageAwareCategories, useLanguageAwareCategorySummary, LAB_CATEGORY_FALLBACKS } from "@/hooks/useLanguageAwareCategories";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
 import { useTranslation } from "react-i18next";
 import {
@@ -864,7 +864,7 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
 const CategoryProductRow = ({ category }: { category: { slug: string; name: string } }) => {
   const { t, i18n } = useTranslation();
   const { getTranslatedCategory } = useCategoryCache();
-  const currentLang = (i18n.language as 'en' | 'zh') || 'en';
+  const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeft, setShowLeft] = useState(false);
@@ -899,7 +899,9 @@ const CategoryProductRow = ({ category }: { category: { slug: string; name: stri
     <div className="py-6 border-b border-border last:border-0">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold text-foreground">
-          {currentLang === 'zh' ? getTranslatedCategory(category.name, 'zh') : category.name}
+          {currentLang === 'zh'
+            ? getTranslatedCategory(category.name, 'zh')
+            : LAB_CATEGORY_FALLBACKS[currentLang]?.[category.name] ?? category.name}
         </h3>
         <Link
           to={`/buyer-marketplace?category=${category.slug}`}
@@ -1479,18 +1481,18 @@ const Landing = () => {
       {/* ── Find Deals In (country pills) ─────────────────────────── */}
       <section className="bg-muted/40 border-b border-border">
         <div className="container mx-auto px-4 py-8 text-center">
-          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Expand Your Search</p>
-          <h2 className="text-lg font-bold text-foreground mb-5">Find deals in:</h2>
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">{t("landing.expandYourSearch")}</p>
+          <h2 className="text-lg font-bold text-foreground mb-5">{t("landing.findDealsIn")}</h2>
           <div className="flex flex-wrap justify-center gap-2.5">
             {[
-              { code: "cn", name: "China" },
-              { code: "id", name: "Indonesia" },
-              { code: "in", name: "India" },
-              { code: "my", name: "Malaysia" },
-              { code: "tw", name: "Taiwan" },
-              { code: "th", name: "Thailand" },
-              { code: "jp", name: "Japan" },
-              { code: "vn", name: "Vietnam" },
+              { code: "cn", name: "China",     labelKey: "countryChina" },
+              { code: "id", name: "Indonesia", labelKey: "countryIndonesia" },
+              { code: "in", name: "India",     labelKey: "countryIndia" },
+              { code: "my", name: "Malaysia",  labelKey: "countryMalaysia" },
+              { code: "tw", name: "Taiwan",    labelKey: "countryTaiwan" },
+              { code: "th", name: "Thailand",  labelKey: "countryThailand" },
+              { code: "jp", name: "Japan",     labelKey: "countryJapan" },
+              { code: "vn", name: "Vietnam",   labelKey: "countryVietnam" },
             ].map((country) => (
               <Link
                 key={country.name}
@@ -1498,7 +1500,7 @@ const Landing = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded bg-card text-sm text-foreground hover:border-primary hover:shadow-sm transition-all"
               >
                 <img src={`https://flagcdn.com/20x15/${country.code}.png`} alt={country.name} className="w-5 h-[15px] object-cover rounded-[2px]" />
-                {country.name}
+                {t(`landing.${country.labelKey}`)}
               </Link>
             ))}
           </div>

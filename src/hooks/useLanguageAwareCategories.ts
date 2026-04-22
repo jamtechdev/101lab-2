@@ -7,7 +7,7 @@ import { toBackendContentLang, toUiCategoryLang } from '@/utils/languageUtils';
 
 export type { LabCategory };
 
-const LAB_CATEGORY_FALLBACKS: Record<string, Record<string, string>> = {
+export const LAB_CATEGORY_FALLBACKS: Record<string, Record<string, string>> = {
   ja: {
     'Lab Infrastructure & Essentials': '実験室インフラと必須機器',
     'Life Sciences & Biotech': 'ライフサイエンスとバイオテクノロジー',
