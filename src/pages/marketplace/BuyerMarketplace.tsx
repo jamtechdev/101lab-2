@@ -119,6 +119,7 @@ const BuyerMarketplace = () => {
     lang: currentLang,
     type: SITE_TYPE,
     auctionGroup: selectedGroup && selectedGroup !== '' ? selectedGroup : undefined,
+    sort: "newest",
   };
 
   // Debug: Log the query parameters being sent
