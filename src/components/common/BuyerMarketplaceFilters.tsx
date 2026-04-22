@@ -9,14 +9,14 @@ import { useTranslation } from "react-i18next";
 const INITIAL_VISIBLE_COUNT = 6;
 
 const COUNTRIES = [
-  { id: "china", name: "China" },
-  { id: "indonesia", name: "Indonesia" },
-  { id: "india", name: "India" },
-  { id: "malaysia", name: "Malaysia" },
-  { id: "taiwan", name: "Taiwan" },
-  { id: "thailand", name: "Thailand" },
-  { id: "japan", name: "Japan" },
-  { id: "vietnam", name: "Vietnam" },
+  { id: "china", nameKey: "browseListings.countryChina" },
+  { id: "indonesia", nameKey: "browseListings.countryIndonesia" },
+  { id: "india", nameKey: "browseListings.countryIndia" },
+  { id: "malaysia", nameKey: "browseListings.countryMalaysia" },
+  { id: "taiwan", nameKey: "browseListings.countryTaiwan" },
+  { id: "thailand", nameKey: "browseListings.countryThailand" },
+  { id: "japan", nameKey: "browseListings.countryJapan" },
+  { id: "vietnam", nameKey: "browseListings.countryVietnam" },
 ];
 
 const CONDITIONS = [
@@ -207,7 +207,7 @@ const FilterPanel = ({
               return (
                 <label key={country.id} className={`flex items-center gap-2.5 cursor-pointer group py-1.5 px-2 rounded-md transition-colors ${isSelected ? "bg-primary/8" : "hover:bg-muted/60"}`}>
                   <Checkbox checked={isSelected} onCheckedChange={() => onCountryChange(country.id)} className="h-3.5 w-3.5 rounded-sm" />
-                  <span className={`text-xs transition-colors flex-1 ${isSelected ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{country.name}</span>
+                  <span className={`text-xs transition-colors flex-1 ${isSelected ? "text-primary font-medium" : "text-foreground group-hover:text-primary"}`}>{t(country.nameKey)}</span>
                 </label>
               );
             })}
