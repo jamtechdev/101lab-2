@@ -72,7 +72,6 @@ import SellerPermissionRoute from "./context/SellerPermissionRoute";
 import SellerNotificationListener from "./components/common/SellerNotificationListener";
 import RouteTracker from "./components/common/RouteTracker";
 import { pushSiteEntryEvent } from "@/utils/gtm";
-import i18n from "./i18n/config";
 
 import { initBuyerSocket } from "./socket/initBuyerSocket";
 import { initSellerSocket } from "./socket/initSellerSocket";
@@ -141,16 +140,6 @@ const App = () => {
   useEffect(() => {
     // ✨ Enable smooth scrolling globally
     enableSmoothScroll();
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const lang = params.get("lang");
-    const supported = ["en", "zh", "ja", "th"];
-    if (lang && supported.includes(lang)) {
-      localStorage.setItem("language", lang);
-      i18n.changeLanguage(lang);
-    }
   }, []);
 
   useEffect(() => {

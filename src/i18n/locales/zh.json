@@ -2905,6 +2905,105 @@
   "filterBySeller": "按用戶篩選",
   "productsFrom": "來自",
   "networkProducts": "網路產品"
+},
+"directSalesPage": {
+  "meta": {
+    "title": "威力賣家計畫 - 直銷 | GreenBidz",
+    "description": "成為GreenBidz威力賣家。向100多個國家銷售工業設備和機械。零上架費、全球曝光和專屬支援。",
+    "keywords": "威力賣家, 工業設備銷售, 機械市場, B2B銷售, 經銷商計畫",
+    "ogDescription": "成為GreenBidz威力賣家。以零上架費向全球認證買家銷售。",
+    "twitterTitle": "威力賣家計畫 | GreenBidz",
+    "twitterDescription": "成為威力賣家。全球銷售工業設備，零費用。",
+    "breadcrumbLabel": "威力賣家計畫"
+  },
+  "hero": {
+    "imageAlt": "101Lab直銷",
+    "title": "申請成為威力賣家",
+    "desc": "填寫表格，我們的團隊將聯繫您，協助您開始在平台上運營。"
+  },
+  "form": {
+    "title": "申請成為威力賣家",
+    "companyName": "公司名稱",
+    "companyNamePlaceholder": "公司名稱",
+    "fullName": "全名",
+    "fullNamePlaceholder": "名字和姓氏",
+    "phone": "國家代碼和電話",
+    "phonePlaceholder": "電話號碼",
+    "companyEmail": "公司電子郵件",
+    "companyEmailPlaceholder": "company@example.com",
+    "message": "訊息",
+    "messagePlaceholder": "描述您的詢問或您想銷售的商品...",
+    "attachment": "附件",
+    "optional": "選填",
+    "changeFile": "點擊更改文件",
+    "uploadFile": "點擊上傳文件",
+    "allowedFiles": "PDF、Word、Excel、JPG、PNG、GIF",
+    "sending": "傳送中...",
+    "applyNow": "立即申請",
+    "success": "謝謝 - 我們已收到您的申請。我們的團隊將儘快與您聯繫。",
+    "errors": {
+      "allFieldsRequired": "所有欄位均為必填。",
+      "submitFailed": "無法提交。請重試。"
+    }
+  },
+  "partnerCards": {
+    "globalExposure": {
+      "title": "全球曝光",
+      "desc": "透過我們的活躍市場，立即將您的設備展示給來自100多個國家的認證買家。"
+    },
+    "auctionTools": {
+      "title": "進階拍賣工具",
+      "desc": "使用我們專有的競標引擎進行限時拍賣或「立即購買」的商品，完全掌控。"
+    },
+    "marketing": {
+      "title": "零行銷開銷",
+      "desc": "我們負責SEO、全球電子郵件行銷和潛在客戶開發，讓您專注於尋找庫存。"
+    },
+    "support": {
+      "title": "專屬支援",
+      "desc": "威力賣家可獲得優先客戶經理的支援，協助優化商品清單和物流。"
+    }
+  },
+  "steps": {
+    "onboard": {
+      "title": "入駐",
+      "desc": "申請威力賣家帳戶。通過驗證後，您可以使用我們的批量上傳工具和儀表板。"
+    },
+    "list": {
+      "title": "上架",
+      "desc": "發布您的機械，附上詳細規格、照片和您偏好的定價策略 - 單件或批量。"
+    },
+    "close": {
+      "title": "成交",
+      "desc": "通過我們的安全門戶管理詢問，並使用我們的自動化發票系統完成銷售。"
+    }
+  },
+  "whyPartner": {
+    "eyebrow": "為何與我們合作？",
+    "title": "我們提供技術 - 您提供庫存"
+  },
+  "howItWorks": {
+    "eyebrow": "運作方式",
+    "title": "三步驟開始銷售"
+  },
+  "powerSellers": {
+    "title": "專為威力賣家設計",
+    "desc": "無論您是獨立經紀人、地區經銷商還是企業資產管理人 - 我們的平台專為輕鬆處理大量庫存而打造。",
+    "quote": "\"我們與101Lab的合作使我們的周轉率提高了40%。這是接觸國際買家最簡單的方式，省去國際業務的麻煩。\"",
+    "quoteAuthor": "- 現有經銷商合作夥伴"
+  },
+  "stats": {
+    "daysValue": "< 30天",
+    "daysLabel": "平均上市天數",
+    "countriesValue": "100+",
+    "countriesLabel": "擁有活躍買家的國家",
+    "feesValue": "0%",
+    "feesLabel": "前期上架費"
+  },
+  "categories": {
+    "eyebrow": "產品類別",
+    "title": "探索我們的完整庫存",
+    "noSubcategories": "無子類別"
+  }
 }
-
 }
