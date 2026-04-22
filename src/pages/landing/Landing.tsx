@@ -378,7 +378,7 @@ const AuctionMosaicCard = ({
 
         {/* View now button */}
         <button className="w-full mt-3 py-2 border border-primary text-primary text-sm font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
-          View now
+          {t("landing.viewNow")}
         </button>
       </div>
     </div>
@@ -471,7 +471,7 @@ const HighlightCard = ({
           )}
         </div>
         <button className="w-full mt-3 py-2 border border-primary text-primary text-sm font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
-          View now
+          {t("landing.viewNow")}
         </button>
       </div>
     </div>
@@ -751,7 +751,7 @@ const BrowseByCategorySection = () => {
   return (
     <section className="py-10 bg-secondary/30 border-b border-border">
       <div className="container mx-auto px-4 text-center">
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">TOP PICKS</p>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{t("landing.topPicks")}</p>
         <h2 className="text-lg font-bold text-foreground mb-6">{t("landing.browseByCat") || "Popular Categories"}</h2>
 
         <div className="flex flex-wrap justify-center gap-3">
@@ -774,7 +774,7 @@ const BrowseByCategorySection = () => {
               to="/buyer-marketplace"
               className="px-5 py-2.5 border border-primary/30 rounded-md text-sm font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-all"
             >
-              More industrial categories
+              {t("landing.moreIndustrialCategories")}
             </Link>
           )}
         </div>
@@ -853,7 +853,7 @@ const CategoryProductCard = ({ batch, onClick }: { batch: any; onClick: () => vo
           ) : null}
         </div>
         <button className="w-full mt-2.5 py-1.5 border border-primary text-primary text-xs font-medium rounded-md hover:bg-primary hover:text-primary-foreground transition-colors">
-          View now
+          {t("landing.viewNow")}
         </button>
       </div>
     </div>
@@ -1421,8 +1421,8 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-10">
           {/* Header */}
           <div className="text-center mb-8">
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">Expand Your Reach</p>
-            <h2 className="text-xl font-bold text-foreground">Sell Your Industrial Assets with 101Machines</h2>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">{t("landing.expandYourReach")}</p>
+            <h2 className="text-xl font-bold text-foreground">{t("landing.sellIndustrialAssetsTitle")}</h2>
           </div>
 
           {/* Two cards */}
@@ -1431,16 +1431,16 @@ const Landing = () => {
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-3">
                 <TrendingUp className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground">Sell with GreenBidz</h3>
+                <h3 className="font-bold text-base text-foreground">{t("landing.sellCardTitle")}</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                Turn your used machinery, tools, and surplus inventory into capital. From individual items to entire production plants, 101machines ensures you get maximum value through expert auctions and strategic marketing.
+                {t("landing.sellCardDesc")}
               </p>
               <Button
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded"
                 onClick={() => setSellModalOpen(true)}
               >
-                Sell with GreenBidz <ArrowRight className="h-4 w-4 ml-2" />
+                {t("landing.sellCardCta")} <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
 
@@ -1448,16 +1448,16 @@ const Landing = () => {
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-3">
                 <ShieldCheck className="h-5 w-5 text-primary" />
-                <h3 className="font-bold text-base text-foreground">Direct Sales</h3>
+                <h3 className="font-bold text-base text-foreground">{t("landing.directSalesCardTitle")}</h3>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                Premium machines at fixed prices. Explore our direct sales for high-quality equipment, available immediately for your business.
+                {t("landing.directSalesCardDesc")}
               </p>
               <Link
                 to="/buyer-marketplace?type=direct"
                 className="flex items-center justify-center w-full py-2 border border-primary text-primary text-sm font-semibold rounded hover:bg-primary hover:text-primary-foreground transition-colors"
               >
-                Direct Sale <ArrowRight className="h-4 w-4 ml-2" />
+                {t("landing.directSaleCta")} <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </div>
           </div>
