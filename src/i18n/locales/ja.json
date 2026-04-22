@@ -2729,5 +2729,105 @@
     "filterBySeller": "Filter by Seller",
     "productsFrom": "Products from",
     "networkProducts": "Network Products"
+  },
+  "directSalesPage": {
+    "meta": {
+      "title": "パワーセラープログラム - ダイレクトセールス | GreenBidz",
+      "description": "GreenBidzでパワーセラーになりましょう。産業機器や機械を100カ国以上へ販売。出品手数料無料、グローバルな露出、専任サポート付き。",
+      "keywords": "パワーセラー, 産業機器販売, 機械マーケットプレイス, B2B販売, リセラープログラム",
+      "ogDescription": "GreenBidzでパワーセラーになりましょう。出品手数料無料で世界中の認証済みバイヤーへ販売可能。",
+      "twitterTitle": "パワーセラープログラム | GreenBidz",
+      "twitterDescription": "パワーセラーになりましょう。産業機器を世界へ販売、手数料無料。",
+      "breadcrumbLabel": "パワーセラープログラム"
+    },
+    "hero": {
+      "imageAlt": "101Labでのダイレクトセールス",
+      "title": "パワーセラーに応募する",
+      "desc": "フォームに入力してください。担当チームがご連絡し、プラットフォーム開始をサポートします。"
+    },
+    "form": {
+      "title": "パワーセラーに応募",
+      "companyName": "会社名",
+      "companyNamePlaceholder": "会社名",
+      "fullName": "氏名",
+      "fullNamePlaceholder": "名と姓",
+      "phone": "国番号 & 電話番号",
+      "phonePlaceholder": "電話番号",
+      "companyEmail": "会社のメールアドレス",
+      "companyEmailPlaceholder": "company@example.com",
+      "message": "メッセージ",
+      "messagePlaceholder": "お問い合わせ内容や販売したい商品についてご記入ください...",
+      "attachment": "添付ファイル",
+      "optional": "任意",
+      "changeFile": "クリックしてファイルを変更",
+      "uploadFile": "クリックしてファイルをアップロード",
+      "allowedFiles": "PDF, Word, Excel, JPG, PNG, GIF",
+      "sending": "送信中...",
+      "applyNow": "今すぐ応募",
+      "success": "ありがとうございます。応募を受け付けました。担当チームより近日中にご連絡いたします。",
+      "errors": {
+        "allFieldsRequired": "すべての項目を入力してください。",
+        "submitFailed": "送信できませんでした。もう一度お試しください。"
+      }
+    },
+    "partnerCards": {
+      "globalExposure": {
+        "title": "グローバルな露出",
+        "desc": "アクティブなマーケットプレイスを通じて、100カ国以上の認証済みバイヤーに即座に機器を紹介できます。"
+      },
+      "auctionTools": {
+        "title": "高度なオークションツール",
+        "desc": "独自の入札エンジンを使用し、時間制オークションや「即決価格」出品を自由に管理できます。"
+      },
+      "marketing": {
+        "title": "マーケティングコストゼロ",
+        "desc": "SEO、グローバルなメールマーケティング、リード獲得はすべて当社が対応。お客様は在庫調達に集中できます。"
+      },
+      "support": {
+        "title": "専任サポート",
+        "desc": "パワーセラーには、出品最適化や物流を支援する専任アカウントマネージャーが付きます。"
+      }
+    },
+    "steps": {
+      "onboard": {
+        "title": "オンボーディング",
+        "desc": "パワーセラーアカウントに応募。認証後、バルクアップロードツールとダッシュボードにアクセスできます。"
+      },
+      "list": {
+        "title": "出品",
+        "desc": "詳細仕様、写真、価格戦略（単品または一括）を設定して機械を出品します。"
+      },
+      "close": {
+        "title": "成約",
+        "desc": "安全なポータルで問い合わせを管理し、自動請求システムで取引を完了します。"
+      }
+    },
+    "whyPartner": {
+      "eyebrow": "なぜ当社と提携するのか？",
+      "title": "私たちはテクノロジーを提供し、あなたは在庫を提供する"
+    },
+    "howItWorks": {
+      "eyebrow": "仕組み",
+      "title": "販売開始までの3ステップ"
+    },
+    "powerSellers": {
+      "title": "パワーセラーのために設計",
+      "desc": "個人ブローカー、地域ディーラー、企業の資産管理者まで、高ボリューム在庫を簡単に扱えるよう設計されています。",
+      "quote": "「101Machinesとの提携により、回転率が40％向上しました。国際的な煩雑さなしに海外バイヤーへリーチできる最も簡単な方法です。」",
+      "quoteAuthor": "- 現在のリセラーパートナー"
+    },
+    "stats": {
+      "daysValue": "30日未満",
+      "daysLabel": "平均販売期間",
+      "countriesValue": "100以上",
+      "countriesLabel": "アクティブなバイヤーのいる国",
+      "feesValue": "0%",
+      "feesLabel": "初期出品手数料"
+    },
+    "categories": {
+      "eyebrow": "商品カテゴリー",
+      "title": "すべての在庫を確認",
+      "noSubcategories": "サブカテゴリーはありません"
+    }
   }
 }
