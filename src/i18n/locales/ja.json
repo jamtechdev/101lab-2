@@ -1550,7 +1550,15 @@
     "conditionLikeNew": "Like New",
     "conditionGood": "Good",
     "conditionFair": "Fair",
-    "conditionForParts": "For Parts"
+    "conditionForParts": "For Parts",
+    "countryChina": "中国",
+    "countryIndonesia": "インドネシア",
+    "countryIndia": "インド",
+    "countryMalaysia": "マレーシア",
+    "countryTaiwan": "台湾",
+    "countryThailand": "タイ",
+    "countryJapan": "日本",
+    "countryVietnam": "ベトナム"
   },
   "browserListingDetail": {
     "back": "戻る",

@@ -1640,7 +1640,15 @@
     "conditionGood": "Good",
     "conditionFair": "Fair",
     "conditionRefurbished": "Refurbished",
-    "conditionForParts": "For Parts"
+    "conditionForParts": "For Parts",
+    "countryChina": "China",
+    "countryIndonesia": "Indonesia",
+    "countryIndia": "India",
+    "countryMalaysia": "Malaysia",
+    "countryTaiwan": "Taiwan",
+    "countryThailand": "Thailand",
+    "countryJapan": "Japan",
+    "countryVietnam": "Vietnam"
   },
   "browserListingDetail": {
     "back": "Back",

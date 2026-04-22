@@ -1630,7 +1630,15 @@
     "conditionGood": "良好",
     "conditionFair": "普通",
     "conditionRefurbished": "翻新",
-    "conditionForParts": "零件用"
+    "conditionForParts": "零件用",
+    "countryChina": "中國",
+    "countryIndonesia": "印尼",
+    "countryIndia": "印度",
+    "countryMalaysia": "馬來西亞",
+    "countryTaiwan": "台灣",
+    "countryThailand": "泰國",
+    "countryJapan": "日本",
+    "countryVietnam": "越南"
   },
   "browserListingDetail": {
     "back": "返回",
