@@ -108,6 +108,7 @@
     "sourceEquipment": "Source Used Equipment",
     "sourceEquipmentDesc": "Find quality used equipment for your operations",
     "getStarted": "Get Started",
+    "topPicks": "Top Picks",
     "bookDemo": "Book Demo",
     "features": {
       "title": "Enterprise Features",
@@ -2947,5 +2948,105 @@
     "filterBySeller": "Filter by Seller",
     "productsFrom": "Products from",
     "networkProducts": "Network Products"
+  },
+  "directSalesPage": {
+    "meta": {
+      "title": "Power Seller Program - Direct Sales | GreenBidz",
+      "description": "Become a Power Seller on GreenBidz. Sell industrial equipment and machinery to 100+ countries. Zero listing fees, global exposure, and dedicated support.",
+      "keywords": "power seller, industrial equipment sales, machinery marketplace, B2B selling, reseller program",
+      "ogDescription": "Become a Power Seller on GreenBidz. Sell to verified buyers worldwide with zero listing fees.",
+      "twitterTitle": "Power Seller Program | GreenBidz",
+      "twitterDescription": "Become a Power Seller. Sell industrial equipment globally, zero fees.",
+      "breadcrumbLabel": "Power Seller Program"
+    },
+    "hero": {
+      "imageAlt": "Direct Sales at 101Lab",
+      "title": "Apply to be a Power Seller",
+      "desc": "Fill out the form and our team will reach out to get you started on the platform."
+    },
+    "form": {
+      "title": "Apply to be Power Seller",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Company name",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "First and last name",
+      "phone": "Country Code & Phone",
+      "phonePlaceholder": "Phone number",
+      "companyEmail": "Company Email",
+      "companyEmailPlaceholder": "company@example.com",
+      "message": "Message",
+      "messagePlaceholder": "Describe your inquiry or what you want to sell...",
+      "attachment": "Attachment",
+      "optional": "Optional",
+      "changeFile": "Click to change file",
+      "uploadFile": "Click to upload a file",
+      "allowedFiles": "PDF, Word, Excel, JPG, PNG, GIF",
+      "sending": "Sending...",
+      "applyNow": "Apply Now",
+      "success": "Thanks - we received your application. Our team will reach out soon.",
+      "errors": {
+        "allFieldsRequired": "All fields are required.",
+        "submitFailed": "Could not submit. Please try again."
+      }
+    },
+    "partnerCards": {
+      "globalExposure": {
+        "title": "Global Exposure",
+        "desc": "Instantly put your equipment in front of verified buyers from over 100 countries through our active marketplace."
+      },
+      "auctionTools": {
+        "title": "Advanced Auction Tools",
+        "desc": "Use our proprietary bidding engine to run timed auctions or 'Buy It Now' listings with full control."
+      },
+      "marketing": {
+        "title": "Zero Marketing Overhead",
+        "desc": "We handle the SEO, global email marketing, and lead generation so you can focus on sourcing inventory."
+      },
+      "support": {
+        "title": "Dedicated Support",
+        "desc": "Power Sellers get access to a priority account manager to help optimise listings and logistics."
+      }
+    },
+    "steps": {
+      "onboard": {
+        "title": "Onboard",
+        "desc": "Apply for a Power Seller account. Once verified, you gain access to our bulk-upload tools and dashboard."
+      },
+      "list": {
+        "title": "List",
+        "desc": "Post your machinery with detailed specs, photos, and your preferred pricing strategy - single or bulk."
+      },
+      "close": {
+        "title": "Close",
+        "desc": "Manage inquiries through our secure portal and finalise sales using our automated invoicing system."
+      }
+    },
+    "whyPartner": {
+      "eyebrow": "Why Partner with Us?",
+      "title": "We provide the technology - you provide the inventory"
+    },
+    "howItWorks": {
+      "eyebrow": "How It Works",
+      "title": "Three steps to start selling"
+    },
+    "powerSellers": {
+      "title": "Designed for Power Sellers",
+      "desc": "Whether you are an independent broker, a regional dealer, or a corporate asset manager - our platform is built to handle high-volume inventory with ease.",
+      "quote": "\"Our partnership with 101Machines has increased our turnover rate by 40%. It's the easiest way to reach international buyers without the international headache.\"",
+      "quoteAuthor": "- Current Reseller Partner"
+    },
+    "stats": {
+      "daysValue": "< 30 Days",
+      "daysLabel": "Average Days on Market",
+      "countriesValue": "100+",
+      "countriesLabel": "Countries with Active Buyers",
+      "feesValue": "0%",
+      "feesLabel": "Upfront Listing Fees"
+    },
+    "categories": {
+      "eyebrow": "Product Categories",
+      "title": "Explore our complete inventory",
+      "noSubcategories": "No subcategories"
+    }
   }
 }

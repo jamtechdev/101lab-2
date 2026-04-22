@@ -6,6 +6,7 @@ import Footer from "@/components/common/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
 import {
   Globe2, Gavel, Megaphone, HeadphonesIcon, Send,
   Upload, ListChecks, Handshake, Quote, ChevronRight,
@@ -72,6 +73,7 @@ const emptyForm = {
 const SELLER_COUNTRIES = ["China", "Indonesia", "India", "Malaysia", "Taiwan", "Thailand", "Japan", "Vietnam"];
 
 const DirectSalesPage = () => {
+  const { t } = useTranslation();
   const [form, setForm] = useState(emptyForm);
   const [submitting, setSubmitting] = useState(false);
   const { data: categories = [] } = useLanguageAwareCategories();
@@ -89,7 +91,7 @@ const DirectSalesPage = () => {
     e.preventDefault();
 
     if (!form.companyName.trim() || !form.fullName.trim() || !form.companyEmail.trim() || !form.phone.trim() || !form.message.trim()) {
-      toast.error("All fields are required.");
+      toast.error(t("directSalesPage.form.errors.allFieldsRequired"));
       return;
     }
 
@@ -117,14 +119,14 @@ const DirectSalesPage = () => {
       const result = await response.json() as { ok?: boolean; error?: string; itemId?: string };
 
       if (result?.ok) {
-        toast.success("Thanks — we received your application. Our team will reach out soon.");
+        toast.success(t("directSalesPage.form.success"));
         setForm(emptyForm);
         return;
       }
 
-      toast.error(result?.error || "Could not submit. Please try again.");
+      toast.error(result?.error || t("directSalesPage.form.errors.submitFailed"));
     } catch (err: any) {
-      toast.error(err?.message || "Could not submit. Please try again.");
+      toast.error(err?.message || t("directSalesPage.form.errors.submitFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -133,55 +135,55 @@ const DirectSalesPage = () => {
   const partners = [
     {
       icon: Globe2,
-      title: "Global Exposure",
-      desc: "Instantly put your equipment in front of verified buyers from over 100 countries through our active marketplace.",
+      title: t("directSalesPage.partnerCards.globalExposure.title"),
+      desc: t("directSalesPage.partnerCards.globalExposure.desc"),
     },
     {
       icon: Gavel,
-      title: "Advanced Auction Tools",
-      desc: "Use our proprietary bidding engine to run timed auctions or 'Buy It Now' listings with full control.",
+      title: t("directSalesPage.partnerCards.auctionTools.title"),
+      desc: t("directSalesPage.partnerCards.auctionTools.desc"),
     },
     {
       icon: Megaphone,
-      title: "Zero Marketing Overhead",
-      desc: "We handle the SEO, global email marketing, and lead generation so you can focus on sourcing inventory.",
+      title: t("directSalesPage.partnerCards.marketing.title"),
+      desc: t("directSalesPage.partnerCards.marketing.desc"),
     },
     {
       icon: HeadphonesIcon,
-      title: "Dedicated Support",
-      desc: "Power Sellers get access to a priority account manager to help optimise listings and logistics.",
+      title: t("directSalesPage.partnerCards.support.title"),
+      desc: t("directSalesPage.partnerCards.support.desc"),
     },
   ];
 
   const steps = [
     {
       icon: Upload,
-      title: "Onboard",
-      desc: "Apply for a Power Seller account. Once verified, you gain access to our bulk-upload tools and dashboard.",
+      title: t("directSalesPage.steps.onboard.title"),
+      desc: t("directSalesPage.steps.onboard.desc"),
     },
     {
       icon: ListChecks,
-      title: "List",
-      desc: "Post your machinery with detailed specs, photos, and your preferred pricing strategy — single or bulk.",
+      title: t("directSalesPage.steps.list.title"),
+      desc: t("directSalesPage.steps.list.desc"),
     },
     {
       icon: Handshake,
-      title: "Close",
-      desc: "Manage inquiries through our secure portal and finalise sales using our automated invoicing system.",
+      title: t("directSalesPage.steps.close.title"),
+      desc: t("directSalesPage.steps.close.desc"),
     },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Helmet>
-        <title>Power Seller Program - Direct Sales | GreenBidz</title>
-        <meta name="description" content="Become a Power Seller on GreenBidz. Sell industrial equipment and machinery to 100+ countries. Zero listing fees, global exposure, and dedicated support." />
+        <title>{t("directSalesPage.meta.title")}</title>
+        <meta name="description" content={t("directSalesPage.meta.description")} />
         <meta name="keywords" content="power seller, industrial equipment sales, machinery marketplace, B2B selling, reseller program" />
-        <meta property="og:title" content="Power Seller Program - Direct Sales | GreenBidz" />
-        <meta property="og:description" content="Become a Power Seller on GreenBidz. Sell to verified buyers worldwide with zero listing fees." />
+        <meta property="og:title" content={t("directSalesPage.meta.title")} />
+        <meta property="og:description" content={t("directSalesPage.meta.ogDescription")} />
         <meta property="og:type" content="website" />
-        <meta name="twitter:title" content="Power Seller Program | GreenBidz" />
-        <meta name="twitter:description" content="Become a Power Seller. Sell industrial equipment globally, zero fees." />
+        <meta name="twitter:title" content={t("directSalesPage.meta.twitterTitle")} />
+        <meta name="twitter:description" content={t("directSalesPage.meta.twitterDescription")} />
         <link rel="canonical" href="https://101recycle.greenbidz.com/direct-sales" />
         <script type="application/ld+json">
           {JSON.stringify({
@@ -197,7 +199,7 @@ const DirectSalesPage = () => {
               {
                 "@type": "ListItem",
                 "position": 2,
-                "name": "Power Seller Program",
+                "name": t("directSalesPage.meta.breadcrumbLabel"),
                 "item": "https://101recycle.greenbidz.com/direct-sales"
               }
             ]
@@ -215,16 +217,16 @@ const DirectSalesPage = () => {
             <div className="relative rounded-lg overflow-hidden h-[300px] sm:h-[400px] lg:h-full lg:min-h-[560px]">
               <img
                 src={heroImg}
-                alt="Direct Sales at 101Lab"
+                alt={t("directSalesPage.hero.imageAlt")}
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/30 to-transparent" />
               <div className="absolute bottom-6 left-6 right-6">
                 <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
-                  Apply to be a Power Seller
+                  {t("directSalesPage.hero.title")}
                 </h2>
                 <p className="text-sm text-white/80 leading-relaxed">
-                  Fill out the form and our team will reach out to get you started on the platform.
+                  {t("directSalesPage.hero.desc")}
                 </p>
               </div>
             </div>
@@ -232,7 +234,7 @@ const DirectSalesPage = () => {
             {/* Right — Form */}
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
-                Apply to be Power Seller
+                {t("directSalesPage.form.title")}
               </h1>
 
               <form onSubmit={handleSubmit} className="space-y-5">                             
@@ -240,23 +242,23 @@ const DirectSalesPage = () => {
                 {/* Company Name */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Company Name <span className="text-destructive">*</span>
+                    {t("directSalesPage.form.companyName")} <span className="text-destructive">*</span>
                   </label>
-                  <Input name="companyName" placeholder="Company name" value={form.companyName} onChange={handleChange} required className="border-border" />
+                  <Input name="companyName" placeholder={t("directSalesPage.form.companyNamePlaceholder")} value={form.companyName} onChange={handleChange} required className="border-border" />
                 </div>
 
                 {/* Full Name */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Full Name <span className="text-destructive">*</span>
+                    {t("directSalesPage.form.fullName")} <span className="text-destructive">*</span>
                   </label>
-                  <Input name="fullName" placeholder="First and last name" value={form.fullName} onChange={handleChange} required className="border-border" />
+                  <Input name="fullName" placeholder={t("directSalesPage.form.fullNamePlaceholder")} value={form.fullName} onChange={handleChange} required className="border-border" />
                 </div>
 
                 {/* Phone with Country Code */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Country Code & Phone <span className="text-destructive">*</span>
+                    {t("directSalesPage.form.phone")} <span className="text-destructive">*</span>
                   </label>
                   <div className="flex gap-2">
                     <select
@@ -269,26 +271,26 @@ const DirectSalesPage = () => {
                         <option key={c.code} value={c.code}>{c.label}</option>
                       ))}
                     </select>
-                    <Input name="phone" type="tel" placeholder="Phone number" value={form.phone} onChange={handleChange} required className="border-border flex-1" />
+                    <Input name="phone" type="tel" placeholder={t("directSalesPage.form.phonePlaceholder")} value={form.phone} onChange={handleChange} required className="border-border flex-1" />
                   </div>
                 </div>
 
                 {/* Company Email */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Company Email <span className="text-destructive">*</span>
+                    {t("directSalesPage.form.companyEmail")} <span className="text-destructive">*</span>
                   </label>
-                  <Input name="companyEmail" type="email" placeholder="company@example.com" value={form.companyEmail} onChange={handleChange} required className="border-border" />
+                  <Input name="companyEmail" type="email" placeholder={t("directSalesPage.form.companyEmailPlaceholder")} value={form.companyEmail} onChange={handleChange} required className="border-border" />
                 </div>
 
                 {/* Message */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Message <span className="text-destructive">*</span>
+                    {t("directSalesPage.form.message")} <span className="text-destructive">*</span>
                   </label>
                   <Textarea
                     name="message"
-                    placeholder="Describe your inquiry or what you want to sell…"
+                    placeholder={t("directSalesPage.form.messagePlaceholder")}
                     value={form.message}
                     onChange={handleChange}
                     required
@@ -300,7 +302,7 @@ const DirectSalesPage = () => {
                 {/* Attachment */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">
-                    Attachment <span className="text-muted-foreground font-normal">(Optional)</span>
+                    {t("directSalesPage.form.attachment")} <span className="text-muted-foreground font-normal">({t("directSalesPage.form.optional")})</span>
                   </label>
                   <label
                     htmlFor="attachment-input"
@@ -315,12 +317,12 @@ const DirectSalesPage = () => {
                     {form.attachment ? (
                       <div className="text-center">
                         <p className="text-sm font-medium text-primary break-all">{form.attachment.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Click to change file</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("directSalesPage.form.changeFile")}</p>
                       </div>
                     ) : (
                       <div className="text-center">
-                        <p className="text-sm font-medium text-foreground">Click to upload a file</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">PDF, Word, Excel, JPG, PNG, GIF</p>
+                        <p className="text-sm font-medium text-foreground">{t("directSalesPage.form.uploadFile")}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("directSalesPage.form.allowedFiles")}</p>
                       </div>
                     )}
                     <Input
@@ -335,7 +337,7 @@ const DirectSalesPage = () => {
 
                 <Button type="submit" className="w-full sm:w-auto px-8" disabled={submitting}>
                   <Send className="h-4 w-4 mr-2" />
-                  {submitting ? "Sending…" : "Apply Now"}
+                  {submitting ? t("directSalesPage.form.sending") : t("directSalesPage.form.applyNow")}
                 </Button>
               </form>
             </div>
@@ -349,10 +351,10 @@ const DirectSalesPage = () => {
         <div className="container mx-auto px-4 py-12 md:py-20">
           <div className="text-center mb-10">
             <p className="uppercase text-xs tracking-[0.2em] font-semibold text-primary mb-2">
-              Why Partner with Us?
+              {t("directSalesPage.whyPartner.eyebrow")}
             </p>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-              We provide the technology — you provide the inventory
+              {t("directSalesPage.whyPartner.title")}
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -368,10 +370,10 @@ const DirectSalesPage = () => {
         <div className="container mx-auto px-4 py-12 md:py-20">
           <div className="text-center mb-10">
             <p className="uppercase text-xs tracking-[0.2em] font-semibold text-primary mb-2">
-              How It Works
+              {t("directSalesPage.howItWorks.eyebrow")}
             </p>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-              Three steps to start selling
+              {t("directSalesPage.howItWorks.title")}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -386,20 +388,18 @@ const DirectSalesPage = () => {
       <section className="bg-primary">
         <div className="container mx-auto px-4 py-12 md:py-16 text-center">
           <h2 className="text-xl sm:text-2xl font-bold text-primary-foreground mb-4">
-            Designed for Power Sellers
+            {t("directSalesPage.powerSellers.title")}
           </h2>
           <p className="text-primary-foreground/80 max-w-2xl mx-auto leading-relaxed mb-8">
-            Whether you are an independent broker, a regional dealer, or a corporate asset
-            manager — our platform is built to handle high-volume inventory with ease.
+            {t("directSalesPage.powerSellers.desc")}
           </p>
           <div className="max-w-2xl mx-auto bg-primary-foreground/10 border border-primary-foreground/20 rounded-lg p-6 md:p-8">
             <Quote className="h-8 w-8 text-primary-foreground/50 mx-auto mb-4" />
             <p className="text-primary-foreground italic leading-relaxed mb-4">
-              "Our partnership with 101Machines has increased our turnover rate by 40%. It's the
-              easiest way to reach international buyers without the international headache."
+              {t("directSalesPage.powerSellers.quote")}
             </p>
             <p className="text-primary-foreground/70 text-sm font-semibold">
-              — Current Reseller Partner
+              {t("directSalesPage.powerSellers.quoteAuthor")}
             </p>
           </div>
         </div>
@@ -410,9 +410,9 @@ const DirectSalesPage = () => {
         <div className="container mx-auto px-4 py-10 md:py-14">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {[
-              { value: "< 30 Days", label: "Average Days on Market" },
-              { value: "100+", label: "Countries with Active Buyers" },
-              { value: "0%", label: "Upfront Listing Fees" },
+              { value: t("directSalesPage.stats.daysValue"), label: t("directSalesPage.stats.daysLabel") },
+              { value: t("directSalesPage.stats.countriesValue"), label: t("directSalesPage.stats.countriesLabel") },
+              { value: t("directSalesPage.stats.feesValue"), label: t("directSalesPage.stats.feesLabel") },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl md:text-3xl font-bold text-primary">{s.value}</p>
@@ -429,10 +429,10 @@ const DirectSalesPage = () => {
           <div className="container mx-auto px-4 py-12 md:py-20">
             <div className="text-center mb-12">
               <p className="uppercase text-xs tracking-[0.2em] font-semibold text-primary mb-2">
-                Product Categories
+                {t("directSalesPage.categories.eyebrow")}
               </p>
               <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
-                Explore our complete inventory
+                {t("directSalesPage.categories.title")}
               </h2>
             </div>
 
@@ -464,7 +464,7 @@ const DirectSalesPage = () => {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-sm text-muted-foreground italic">No subcategories</p>
+                    <p className="text-sm text-muted-foreground italic">{t("directSalesPage.categories.noSubcategories")}</p>
                   )}
                 </div>
               ))}
