@@ -3059,5 +3059,15 @@
       "title": "Explore our complete inventory",
       "noSubcategories": "No subcategories"
     }
+  },
+  "myLots": {
+    "title": "My Favourites",
+    "signInTitle": "Sign in to view your favourites",
+    "signInDesc": "Keep track of listings you love.",
+    "signIn": "Sign in",
+    "emptyTitle": "No saved listings",
+    "emptyDesc": "Click the heart icon on any listing to save it here.",
+    "browse": "Browse listings",
+    "loadError": "Failed to load favourites"
   }
 }

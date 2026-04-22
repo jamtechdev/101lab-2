@@ -3005,5 +3005,15 @@
     "title": "探索我們的完整庫存",
     "noSubcategories": "無子類別"
   }
+},
+"myLots": {
+  "title": "我的收藏",
+  "signInTitle": "登入以查看您的收藏",
+  "signInDesc": "追蹤您喜愛的拍賣。",
+  "signIn": "登入",
+  "emptyTitle": "沒有已儲存的拍賣",
+  "emptyDesc": "點擊任何拍賣上的愛心圖示以儲存至此。",
+  "browse": "瀏覽拍賣",
+  "loadError": "載入收藏失敗"
 }
 }

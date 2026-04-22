@@ -6,9 +6,11 @@ import Header from "@/components/common/Header";
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastError } from "@/helper/toasterNotification";
+import { useTranslation } from "react-i18next";
 
 const MyLots = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ const MyLots = () => {
     setLoading(true);
     axiosInstance.get(`/wishlist/${userId}`)
       .then((res) => setItems(res.data?.data?.wishlist || []))
-      .catch(() => toastError("Failed to load favourites"))
+      .catch(() => toastError(t("myLots.loadError")))
       .finally(() => setLoading(false));
   };
 
@@ -68,11 +70,11 @@ const MyLots = () => {
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
             <Heart className="w-8 h-8 text-muted-foreground/50" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground">Sign in to view your favourites</h2>
-          <p className="text-sm text-muted-foreground">Keep track of listings you love.</p>
+          <h2 className="text-lg font-semibold text-foreground">{t("myLots.signInTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("myLots.signInDesc")}</p>
           <button onClick={() => navigate("/auth")}
             className="mt-2 px-6 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-            Sign in
+            {t("myLots.signIn")}
           </button>
         </div>
       </div>
@@ -84,7 +86,7 @@ const MyLots = () => {
       <Header />
 
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-xl font-bold text-foreground mb-6">My Favourites</h1>
+        <h1 className="text-xl font-bold text-foreground mb-6">{t("myLots.title")}</h1>
 
         {loading && (
           <div className="flex justify-center py-20">
@@ -97,11 +99,11 @@ const MyLots = () => {
             <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
               <Heart className="w-7 h-7 text-muted-foreground/40" />
             </div>
-            <p className="font-semibold text-foreground">No saved listings</p>
-            <p className="text-sm text-muted-foreground">Click the heart icon on any listing to save it here.</p>
+            <p className="font-semibold text-foreground">{t("myLots.emptyTitle")}</p>
+            <p className="text-sm text-muted-foreground">{t("myLots.emptyDesc")}</p>
             <button onClick={() => navigate("/buyer-marketplace")}
               className="mt-3 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              Browse listings
+              {t("myLots.browse")}
             </button>
           </div>
         )}

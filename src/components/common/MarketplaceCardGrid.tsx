@@ -302,7 +302,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 // ── Marketplace Card ──────────────────────────────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
   const { getTranslatedCategory } = useCategoryCache();
    
@@ -437,7 +437,7 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
             <span />
           )}
           <span className="text-[11px] font-semibold text-primary-foreground bg-primary px-3 py-1 rounded uppercase tracking-wide">
-            View
+            {t("products.view")}
           </span>
         </div>
       </div>
