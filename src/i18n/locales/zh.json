@@ -1703,7 +1703,8 @@
     "email": "電子郵件",
     "phone": "電話",
     "country": "國家",
-    "address": "地址"
+    "address": "地址",
+    "cancel": "取消"
   },
   "footer": {
     "copyright": "© 2025 {company}。版權所有。"

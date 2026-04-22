@@ -1511,7 +1511,8 @@
     "email": "อีเมล",
     "phone": "โทรศัพท์",
     "country": "ประเทศ",
-    "address": "Address"
+    "address": "Address",
+     "cancel": "ยกเลิก"
   },
   "listingDetail": {
     "backToDashboard": "Back to Dashboard",

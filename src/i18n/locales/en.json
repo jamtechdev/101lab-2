@@ -1713,7 +1713,8 @@
     "email": "Email",
     "phone": "Phone",
     "country": "Country",
-    "address": "Address"
+    "address": "Address",
+    "cancel": "Cancel"
   },
   "footer": {
     "copyright": "© 2025 {company}. All rights reserved."

@@ -1477,7 +1477,8 @@
     "email": "メール",
     "phone": "電話",
     "country": "国",
-    "address": "Address"
+    "address": "Address",
+     "cancel": "Cancel"
   },
   "listingDetail": {
     "backToDashboard": "Back to Dashboard",
