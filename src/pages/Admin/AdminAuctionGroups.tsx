@@ -34,6 +34,7 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import {
   useGetAdminAuctionGroupsQuery,
   useApproveAuctionGroupMutation,
+  useSetAuctionGroupFeaturedMutation,
   AdminAuctionGroupItem,
 } from "@/rtk/slices/adminApiSlice";
 
@@ -108,6 +109,7 @@ const AdminAuctionGroups = () => {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
+  const [featuringId, setFeaturingId] = useState<number | null>(null);
 
   const { data, isLoading, isFetching, isError, refetch } = useGetAdminAuctionGroupsQuery({
     approval_status: approvalFilter,
@@ -115,6 +117,7 @@ const AdminAuctionGroups = () => {
   });
 
   const [approveAuctionGroup] = useApproveAuctionGroupMutation();
+  const [setAuctionGroupFeatured] = useSetAuctionGroupFeaturedMutation();
 
   const groups: AdminAuctionGroupItem[] = data?.data ?? [];
 
@@ -160,6 +163,20 @@ const AdminAuctionGroups = () => {
       toastError(err?.data?.message || "Failed to approve auction group");
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleToggleFeatured = async (group: AdminAuctionGroupItem) => {
+    const next = group.featured_type === "none" ? "featured" : "none";
+    setFeaturingId(group.group_id);
+    try {
+      await setAuctionGroupFeatured({ groupId: group.group_id, featured_type: next }).unwrap();
+      toastSuccess(next === "featured" ? "Group marked as featured" : "Group removed from featured");
+      refetch();
+    } catch (err: any) {
+      toastError(err?.data?.message || "Failed to update featured status");
+    } finally {
+      setFeaturingId(null);
     }
   };
 
@@ -419,6 +436,26 @@ const AdminAuctionGroups = () => {
                                     <CheckCircle className="h-4 w-4" />
                                   )}
                                   Approve
+                                </Button>
+                              )}
+                              {platformType === "LabGreenbidz" && (
+                                <Button
+                                  size="sm"
+                                  variant={group.featured_type !== "none" ? "default" : "outline"}
+                                  className={
+                                    group.featured_type !== "none"
+                                      ? "gap-2 bg-violet-600 hover:bg-violet-700 text-white border-0"
+                                      : "gap-2 border-violet-400 text-violet-600 hover:bg-violet-50 hover:border-violet-600 dark:hover:bg-violet-950"
+                                  }
+                                  onClick={() => handleToggleFeatured(group)}
+                                  disabled={featuringId === group.group_id}
+                                >
+                                  {featuringId === group.group_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Star className={`h-4 w-4 ${group.featured_type !== "none" ? "fill-white" : ""}`} />
+                                  )}
+                                  {group.featured_type !== "none" ? "Remove from Featured" : "Mark as Featured"}
                                 </Button>
                               )}
                               <Button

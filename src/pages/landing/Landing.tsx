@@ -993,7 +993,7 @@ const CategoryProductRows = () => {
 };
 
 // ─── Auction Group Card — same mosaic style as CategoryCard ──────────────────
-const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
+const AuctionGroupCard = ({ group, featured = false }: { group: AuctionGroupHomeItem; featured?: boolean }) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
@@ -1088,6 +1088,15 @@ const AuctionGroupCard = ({ group }: { group: AuctionGroupHomeItem }) => {
             </div>
           ))}
         </div>
+
+        {/* Featured badge — top left */}
+        {featured && (
+          <div className="absolute top-2 left-2 z-10">
+            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-sm shadow-md tracking-wide uppercase">
+              <Star className="h-3 w-3 fill-white" /> {t("landing.topPick")}
+            </span>
+          </div>
+        )}
 
         {/* Bid status badge — bottom left */}
         {(group.earliestBidEndDate || group.earliestBidStartDate) && (
@@ -1221,6 +1230,83 @@ const HighlightedAuctionGroupSection = () => {
   );
 };
 
+// ─── Popular Auctions Section — featured auction groups ──────────────────────
+const PopularAuctionGroupSection = () => {
+  const { t } = useTranslation();
+  const { data, isLoading } = useGetAuctionGroupsHomeQuery({ site_id: SITE_TYPE });
+  const groups = (data?.data ?? []).filter(
+    (g) => g.batchCount > 0 && (g.featured_type === "featured" || g.featured_type === "both")
+  );
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeft(el.scrollLeft > 10);
+    setShowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && groups.length > 0) setTimeout(checkScroll, 200);
+  }, [groups, isLoading, checkScroll]);
+
+  const scroll = (dir: "left" | "right") =>
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -480 : 480, behavior: "smooth" });
+
+  if (isLoading || groups.length === 0) return null;
+
+  return (
+    <section className="py-6 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+            {t("landing.popularAuctions")}
+          </h2>
+          <a
+            href="/buyer-marketplace"
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+          >
+            {t("landing.viewAll")} <ChevronRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+
+        <div className="relative">
+          {showLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div
+            ref={scrollRef}
+            onScroll={checkScroll}
+            className="flex gap-4 overflow-x-auto pb-1"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {groups.map((group) => (
+              <AuctionGroupCard key={group.group_id} group={group} featured />
+            ))}
+          </div>
+          {showRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-9 h-9 rounded-full bg-foreground text-card shadow-lg flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 // ─── Auction Group Section — horizontal scroll, same layout as CategorySection ─
 const AuctionGroupSection = () => {
   const { t } = useTranslation();
@@ -1332,6 +1418,9 @@ const Landing = () => {
       {/* ── Auctions Closing Soon — Auction Groups ───────────────── */}
       {/* <AuctionGroupSection /> */}
 
+
+      {/* ── Popular Auctions — Featured Auction Groups ───────────── */}
+      <PopularAuctionGroupSection />
 
       {/* ── New Auctions — Auction Groups ────────────────────────── */}
       <AuctionGroupSection />

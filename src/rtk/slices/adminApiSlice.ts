@@ -1056,6 +1056,18 @@ export const adminApi = createApi({
       invalidatesTags: ["AdminAuctionGroups"],
     }),
 
+    setAuctionGroupFeatured: builder.mutation<
+      { success: boolean; message: string; data: AdminAuctionGroupItem },
+      { groupId: number; featured_type: "none" | "featured" | "highlighted" | "both" }
+    >({
+      query: ({ groupId, featured_type }) => ({
+        url: `/admin/auction-groups/${groupId}/featured`,
+        method: "PATCH",
+        data: { featured_type },
+      }),
+      invalidatesTags: ["AdminAuctionGroups"],
+    }),
+
     /* ---------------- PRODUCT REQUESTS ---------------- */
     submitProductRequest: builder.mutation<
       { success: boolean; message: string; data: any },
@@ -1168,6 +1180,7 @@ export const {
   /* ---------- ADMIN AUCTION GROUPS ---------- */
   useGetAdminAuctionGroupsQuery,
   useApproveAuctionGroupMutation,
+  useSetAuctionGroupFeaturedMutation,
 
   /* ---------- PRODUCT REQUESTS ---------- */
   useSubmitProductRequestMutation,
