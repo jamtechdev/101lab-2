@@ -13,7 +13,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
-import { useLoginMutation, useSignupWithLinkMutation } from "@/rtk/slices/apiSlice";
+import { useLoginMutation, useSignupWithLinkMutation, useResendVerificationLinkMutation } from "@/rtk/slices/apiSlice";
 import { CountrySelect } from "@/components/common/CountrySelect";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError, toastWarning } from "../../helper/toasterNotification";
@@ -53,8 +53,13 @@ const Auth = () => {
   const [pendingEmail, setPendingEmail] = useState("");
   const [isResending, setIsResending] = useState(false);
 
+  // unverifiedModal: null = hidden | { email, type } = shown
+  const [unverifiedModal, setUnverifiedModal] = useState<{ email: string; type: "not_verified" | "pending" } | null>(null);
+  const [isResendingLink, setIsResendingLink] = useState(false);
+
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [signupWithLink, { isLoading: isSignupLoading }] = useSignupWithLinkMutation();
+  const [resendVerificationLink] = useResendVerificationLinkMutation();
   const { data: labCategories = [] } = useLanguageAwareCategories();
   const [returnedFromVerify, setReturnedFromVerify] = useState(false);
 
@@ -159,7 +164,16 @@ const Auth = () => {
         else if (role === "admin") window.location.href = "/admin";
         else window.location.href = "/forbidden";
       } else { toastError(result?.message || "Login failed."); }
-    } catch (err: any) { toastError(err?.data?.message || "Login failed."); }
+    } catch (err: any) {
+      const code = err?.data?.code;
+      if (code === "EMAIL_NOT_VERIFIED" || code === "LINK_EXPIRED") {
+        setUnverifiedModal({ email, type: "not_verified" });
+      } else if (err?.status === 403 || code === "ACCOUNT_PENDING") {
+        setUnverifiedModal({ email, type: "pending" });
+      } else {
+        toastError(err?.data?.message || "Login failed.");
+      }
+    }
   };
 
   const FEATURES = [
@@ -617,6 +631,112 @@ const Auth = () => {
         </div>
         </div>
       </div>
+
+      {/* ── Unverified / Pending account overlay modal ── */}
+      {unverifiedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fade-in">
+          <div className="relative w-full max-w-md bg-background rounded-2xl shadow-2xl border border-border p-8 flex flex-col items-center text-center">
+            {/* Close */}
+            <button
+              type="button"
+              onClick={() => setUnverifiedModal(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icon */}
+            <div className={cn(
+              "w-16 h-16 rounded-full flex items-center justify-center mb-5",
+              unverifiedModal.type === "not_verified" ? "bg-amber-100" : "bg-primary/10"
+            )}>
+              {unverifiedModal.type === "not_verified"
+                ? <Mail className="w-8 h-8 text-amber-500" />
+                : <AlertCircle className="w-8 h-8 text-primary" />
+              }
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              {unverifiedModal.type === "not_verified"
+                ? "Email Not Verified"
+                : "Account Pending Approval"
+              }
+            </h3>
+
+            {/* Body */}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-2">
+              {unverifiedModal.type === "not_verified"
+                ? "Your account hasn't been verified yet. We sent a verification link to:"
+                : "Your email is verified but your account is currently under review by our team."
+              }
+            </p>
+            <p className="text-sm font-semibold text-foreground mb-6">{unverifiedModal.email}</p>
+
+            {unverifiedModal.type === "not_verified" ? (
+              <>
+                <p className="text-xs text-muted-foreground mb-5">
+                  Click the link in your inbox to complete registration. Didn't receive it? Resend below.
+                </p>
+                <Button
+                  type="button"
+                  className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
+                  disabled={isResendingLink}
+                  onClick={async () => {
+                    setIsResendingLink(true);
+                    try {
+                      await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
+                      toastSuccess("Verification email resent. Please check your inbox.");
+                    } catch (err: any) {
+                      toastError(err?.data?.message || "Failed to resend. Please register again.");
+                    } finally {
+                      setIsResendingLink(false);
+                    }
+                  }}
+                >
+                  {isResendingLink
+                    ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
+                    : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
+                  }
+                </Button>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setUnverifiedModal(null)}
+                >
+                  Back to sign in
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Our team typically reviews new accounts within <strong>1–2 business days</strong>.
+                    You'll receive an email notification once your account is approved.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
+                  onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}
+                >
+                  Browse Marketplace While You Wait
+                </Button>
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground underline"
+                  onClick={() => setUnverifiedModal(null)}
+                >
+                  Close
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

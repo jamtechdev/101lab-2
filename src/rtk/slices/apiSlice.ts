@@ -257,6 +257,13 @@ export const apiSlice = createApi({
         data: { token },
       }),
     }),
+    resendVerificationLink: builder.mutation<{ success: boolean; message: string }, { email: string }>({
+      query: (body) => ({
+        url: `/user/resend-verification-link?type=${SITE_TYPE_PROFILE}`,
+        method: "POST",
+        data: body,
+      }),
+    }),
     verifyUser: builder.query<VerifyResponse, void>({
       query: () => {
         const { accessToken, refreshToken } = getTokens();
@@ -549,6 +556,7 @@ export const {
   useCompleteSignupMutation,
   useSignupWithLinkMutation,
   useVerifyEmailByTokenMutation,
+  useResendVerificationLinkMutation,
   useVerifyUserQuery,
   useLogoutMutation,
   useGetCategoriesQuery,
