@@ -55,8 +55,21 @@ const Auth = () => {
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [signupWithLink, { isLoading: isSignupLoading }] = useSignupWithLinkMutation();
   const { data: labCategories = [] } = useLanguageAwareCategories();
+  const [returnedFromVerify, setReturnedFromVerify] = useState(false);
 
   const allowedTypes: UserType[] = ["buyer", "seller", "admin"];
+
+  // When user comes back to this tab (after clicking email link in another tab),
+  // show "Verified? Sign in now" prompt on the check_email screen.
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && signupStep === "check_email") {
+        setReturnedFromVerify(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [signupStep]);
 
   // Close interests dropdown on outside click
   useEffect(() => {
@@ -265,6 +278,30 @@ const Auth = () => {
                     <h2 className="text-lg font-bold text-foreground">Finish Setting Up Your Account</h2>
                     <div className="w-8" />
                   </div>
+
+                  {/* Returned from verify tab — prompt to sign in */}
+                  {returnedFromVerify && (
+                    <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        <p className="text-sm font-medium text-emerald-800">
+                          Already verified your email? You can sign in now.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 flex-shrink-0"
+                        onClick={() => {
+                          setReturnedFromVerify(false);
+                          setSignupStep("form");
+                          setAuthMode("signin");
+                        }}
+                      >
+                        <LogIn className="w-3.5 h-3.5" />Sign In
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Amber info banner */}
                   <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
