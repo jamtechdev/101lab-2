@@ -166,9 +166,7 @@ const Auth = () => {
       } else { toastError(result?.message || "Login failed."); }
     } catch (err: any) {
       const code = err?.data?.code;
-      if (code === "EMAIL_NOT_VERIFIED" || code === "LINK_EXPIRED") {
-        setUnverifiedModal({ email, type: "not_verified" });
-      } else if (err?.status === 403 || code === "ACCOUNT_PENDING") {
+      if (err?.status === 403 || code === "ACCOUNT_PENDING") {
         setUnverifiedModal({ email, type: "pending" });
       } else {
         toastError(err?.data?.message || "Login failed.");
@@ -349,15 +347,11 @@ const Auth = () => {
                         onClick={async () => {
                           setIsResending(true);
                           try {
-                            await signupWithLink({
-                              email: form.email, password: form.password, role: "buyer",
-                              first_name: form.first_name, last_name: form.last_name,
-                              phone: form.phone, company: form.company, country: form.country,
-                              interests: selectedInterests,
-                            }).unwrap();
+                            await resendVerificationLink({ email: pendingEmail }).unwrap();
                             toastSuccess("Verification email resent.");
-                          } catch { toastError("Failed to resend. Please try again."); }
-                          finally { setIsResending(false); }
+                          } catch (err: any) {
+                            toastError(err?.data?.message || "Failed to resend. Please try again.");
+                          } finally { setIsResending(false); }
                         }}
                         className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -648,91 +642,60 @@ const Auth = () => {
             </button>
 
             {/* Icon */}
-            <div className={cn(
-              "w-16 h-16 rounded-full flex items-center justify-center mb-5",
-              unverifiedModal.type === "not_verified" ? "bg-amber-100" : "bg-primary/10"
-            )}>
-              {unverifiedModal.type === "not_verified"
-                ? <Mail className="w-8 h-8 text-amber-500" />
-                : <AlertCircle className="w-8 h-8 text-primary" />
-              }
+            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-5">
+              <AlertCircle className="w-8 h-8 text-amber-500" />
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-foreground mb-2">
-              {unverifiedModal.type === "not_verified"
-                ? "Email Not Verified"
-                : "Account Pending Approval"
-              }
-            </h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">Account Pending Approval</h3>
 
             {/* Body */}
-            <p className="text-sm text-muted-foreground leading-relaxed mb-2">
-              {unverifiedModal.type === "not_verified"
-                ? "Your account hasn't been verified yet. We sent a verification link to:"
-                : "Your email is verified but your account is currently under review by our team."
-              }
+            <p className="text-sm text-muted-foreground leading-relaxed mb-1">
+              Your account has been created but is pending review. We sent a verification email to:
             </p>
-            <p className="text-sm font-semibold text-foreground mb-6">{unverifiedModal.email}</p>
+            <p className="text-sm font-semibold text-foreground mb-4">{unverifiedModal.email}</p>
 
-            {unverifiedModal.type === "not_verified" ? (
-              <>
-                <p className="text-xs text-muted-foreground mb-5">
-                  Click the link in your inbox to complete registration. Didn't receive it? Resend below.
-                </p>
-                <Button
-                  type="button"
-                  className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
-                  disabled={isResendingLink}
-                  onClick={async () => {
-                    setIsResendingLink(true);
-                    try {
-                      await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
-                      toastSuccess("Verification email resent. Please check your inbox.");
-                    } catch (err: any) {
-                      toastError(err?.data?.message || "Failed to resend. Please register again.");
-                    } finally {
-                      setIsResendingLink(false);
-                    }
-                  }}
-                >
-                  {isResendingLink
-                    ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
-                    : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
-                  }
-                </Button>
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setUnverifiedModal(null)}
-                >
-                  Back to sign in
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Our team typically reviews new accounts within <strong>1–2 business days</strong>.
-                    You'll receive an email notification once your account is approved.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
-                  onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}
-                >
-                  Browse Marketplace While You Wait
-                </Button>
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground underline"
-                  onClick={() => setUnverifiedModal(null)}
-                >
-                  Close
-                </button>
-              </>
-            )}
+            <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Our team reviews new accounts within <strong>1–2 business days</strong>.
+                If you haven't verified your email yet, click the link we sent or resend it below.
+              </p>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
+              disabled={isResendingLink}
+              onClick={async () => {
+                setIsResendingLink(true);
+                try {
+                  await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
+                  toastSuccess("Verification email resent. Please check your inbox.");
+                } catch (err: any) {
+                  toastError(err?.data?.message || "Failed to resend.");
+                } finally { setIsResendingLink(false); }
+              }}
+            >
+              {isResendingLink
+                ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
+                : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
+              }
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-10 text-sm mb-3"
+              onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}
+            >
+              Browse Marketplace While You Wait
+            </Button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+              onClick={() => setUnverifiedModal(null)}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
