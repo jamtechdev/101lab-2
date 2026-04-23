@@ -877,7 +877,7 @@ export const adminApi = createApi({
       UpdateUserStatusPayload
     >({
       query: ({ userId, status }) => ({
-        url: `/admin/users/status`,
+        url: `/admin/users/status?type=${SITE_TYPE}`,
         method: "PUT",
         data: { userId, status },
       }),

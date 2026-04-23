@@ -425,7 +425,7 @@ export const apiSlice = createApi({
     updateUserStatus: builder.mutation<any, { userId: number; status: string }>(
       {
         query: ({ userId, status }) => ({
-          url: `/admin/users/status`,
+          url: `/admin/users/status?type=${SITE_TYPE_PROFILE}`,
           method: "PUT",
           data: { userId, status },
         }),
