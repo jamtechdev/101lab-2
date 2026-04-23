@@ -487,7 +487,13 @@
     "confirmBidDesc": "您確定要提交此出價嗎？此操作無法撤銷。",
     "yesBuyNow": "是的，立即購買",
     "yesPlaceBid": "是的，提交出價",
-    "goBack": "返回"
+    "goBack": "返回",
+    "offerSuccessTitle": "報價提交成功！",
+    "offerSuccessMessage": "您的報價已提交，賣家將審核並通知您任何更新。",
+    "bidSuccessTitle": "競標提交成功！",
+    "bidSuccessMessage": "您的競標已提交，賣家將審核並通知您任何更新。",
+    "buyNowSuccessTitle": "購買已確認！",
+    "buyNowSuccessMessage": "您的購買已確認，賣家將與您聯繫以安排後續步驟。"
   },
   "factories": {
     "hero": {

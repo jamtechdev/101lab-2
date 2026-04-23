@@ -474,7 +474,13 @@
     "confirmBidDesc": "Are you sure you want to place this bid? This action cannot be undone.",
     "yesBuyNow": "Yes, Buy Now",
     "yesPlaceBid": "Yes, Place Bid",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "offerSuccessTitle": "Offer Submitted Successfully!",
+    "offerSuccessMessage": "Your offer has been submitted. The seller will review it and you will be notified of any updates.",
+    "bidSuccessTitle": "Bid Placed Successfully!",
+    "bidSuccessMessage": "Your bid has been submitted. The seller will review it and you will be notified of any updates.",
+    "buyNowSuccessTitle": "Purchase Confirmed!",
+    "buyNowSuccessMessage": "Your purchase has been confirmed. The seller will be in touch to arrange the next steps."
   },
   "factories": {
     "hero": {

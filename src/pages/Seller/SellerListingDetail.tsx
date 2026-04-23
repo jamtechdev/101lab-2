@@ -1708,12 +1708,16 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 <DialogTitle className="text-xl font-bold text-foreground">
                   {bidDialogMode === "make_offer"
                     ? t("buyer.offerSuccessTitle", "Offer Submitted Successfully!")
+                    : bidDialogMode === "buy_now"
+                    ? t("buyer.buyNowSuccessTitle", "Purchase Confirmed!")
                     : t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {bidDialogMode === "make_offer"
                   ? t("buyer.offerSuccessMessage", "Your offer has been submitted. The seller will review it and you will be notified of any updates.")
+                  : bidDialogMode === "buy_now"
+                  ? t("buyer.buyNowSuccessMessage", "Your purchase has been confirmed. The seller will be in touch to arrange the next steps.")
                   : t("buyer.bidSuccessMessage", "Your bid has been submitted. The seller will review it and you will be notified of any updates.")}
               </p>
               <div className="flex flex-col w-full gap-2 pt-2">
