@@ -166,7 +166,9 @@ const Auth = () => {
       } else { toastError(result?.message || "Login failed."); }
     } catch (err: any) {
       const code = err?.data?.code;
-      if (err?.status === 403 || code === "ACCOUNT_PENDING") {
+      if (code === "EMAIL_NOT_VERIFIED") {
+        setUnverifiedModal({ email, type: "not_verified" });
+      } else if (err?.status === 403 || code === "ACCOUNT_PENDING") {
         setUnverifiedModal({ email, type: "pending" });
       } else {
         toastError(err?.data?.message || "Login failed.");
@@ -642,45 +644,60 @@ const Auth = () => {
             </button>
 
             {/* Icon */}
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-5">
-              <AlertCircle className="w-8 h-8 text-amber-500" />
+            <div className={cn(
+              "w-16 h-16 rounded-full flex items-center justify-center mb-5",
+              unverifiedModal.type === "not_verified" ? "bg-amber-100" : "bg-blue-50"
+            )}>
+              {unverifiedModal.type === "not_verified"
+                ? <Mail className="w-8 h-8 text-amber-500" />
+                : <CheckCircle2 className="w-8 h-8 text-blue-500" />
+              }
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-foreground mb-2">Account Pending Approval</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              {unverifiedModal.type === "not_verified" ? "Email Not Verified" : "Account Pending Approval"}
+            </h3>
 
             {/* Body */}
             <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-              Your account has been created but is pending review. We sent a verification email to:
+              {unverifiedModal.type === "not_verified"
+                ? "Your account is created but your email hasn't been verified yet. Check your inbox for the link we sent to:"
+                : "Your email is verified. Our team is reviewing your account."
+              }
             </p>
             <p className="text-sm font-semibold text-foreground mb-4">{unverifiedModal.email}</p>
 
             <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Our team reviews new accounts within <strong>1–2 business days</strong>.
-                If you haven't verified your email yet, click the link we sent or resend it below.
+                {unverifiedModal.type === "not_verified"
+                  ? "Click the verification link in your inbox to activate your account. Didn't get it? Resend below."
+                  : "Our team typically reviews new accounts within 1–2 business days. You'll receive an email once approved."
+                }
               </p>
             </div>
 
-            <Button
-              type="button"
-              className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
-              disabled={isResendingLink}
-              onClick={async () => {
-                setIsResendingLink(true);
-                try {
-                  await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
-                  toastSuccess("Verification email resent. Please check your inbox.");
-                } catch (err: any) {
-                  toastError(err?.data?.message || "Failed to resend.");
-                } finally { setIsResendingLink(false); }
-              }}
-            >
-              {isResendingLink
-                ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
-                : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
-              }
-            </Button>
+            {unverifiedModal.type === "not_verified" && (
+              <Button
+                type="button"
+                className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
+                disabled={isResendingLink}
+                onClick={async () => {
+                  setIsResendingLink(true);
+                  try {
+                    await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
+                    toastSuccess("Verification email resent. Please check your inbox.");
+                  } catch (err: any) {
+                    toastError(err?.data?.message || "Failed to resend.");
+                  } finally { setIsResendingLink(false); }
+                }}
+              >
+                {isResendingLink
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
+                  : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
+                }
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
