@@ -51,6 +51,7 @@ const Auth = () => {
   const [interestDropdownOpen, setInterestDropdownOpen] = useState(false);
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
 
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [signupWithLink, { isLoading: isSignupLoading }] = useSignupWithLinkMutation();
@@ -330,7 +331,9 @@ const Auth = () => {
                       </div>
                       <button
                         type="button"
+                        disabled={isResending}
                         onClick={async () => {
+                          setIsResending(true);
                           try {
                             await signupWithLink({
                               email: form.email, password: form.password, role: "buyer",
@@ -340,10 +343,15 @@ const Auth = () => {
                             }).unwrap();
                             toastSuccess("Verification email resent.");
                           } catch { toastError("Failed to resend. Please try again."); }
+                          finally { setIsResending(false); }
                         }}
-                        className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1"
+                        className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <RefreshCw className="w-3.5 h-3.5" />Resend
+                        {isResending
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <RefreshCw className="w-3.5 h-3.5" />
+                        }
+                        Resend
                       </button>
                     </div>
 
