@@ -17,34 +17,29 @@ import {
   Loader2,
   UserPlus,
   CheckCircle2,
+  Check,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 import {
   useLoginMutation,
-  useSignupMutation,
-  useSignupInitiateMutation,
-  useVerifySignupCodeMutation,
-  useResendVerificationCodeMutation,
-  useCompleteSignupMutation,
+  useSignupWithLinkMutation,
 } from "@/rtk/slices/apiSlice";
 import { CountrySelect } from "@/components/common/CountrySelect";
+import { SITE_CATEGORIES } from "@/config/categories";
 
 import {
   toastSuccess,
   toastError,
   toastWarning,
 } from "../../helper/toasterNotification";
-import { showSuccess } from "../../helper/sweetAlertNotification";
 import { getSocket } from "@/services/socket";
 import { pushLoginEvent, pushSignupEvent, pushRoleSelectedEvent, pushFormInteractEvent } from "@/utils/gtm";
 
 type UserType = "buyer" | "seller" | "admin";
 type AuthMode = "signup" | "signin";
-
-
-
+type SignupStep = 1 | 2 | "check_email";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -55,36 +50,30 @@ const Auth = () => {
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [signupStep, setSignupStep] = useState<SignupStep>(1);
 
   // Sign in state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Simple signup state
+  // Step 1 state
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [showProfileForm, setShowProfileForm] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
-  const [pendingEmail, setPendingEmail] = useState("");
 
-  // Profile form state
+  // Step 2 state
   const [profileData, setProfileData] = useState({
     first_name: "", last_name: "", phone: "",
     company: "", company_tax_id: "",
     street_address: "", city: "", district_state: "", postal_code: "", country: "",
   });
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
-  const [signup] = useSignupMutation();
-  const [signupInitiate, { isLoading: isInitiateLoading }] = useSignupInitiateMutation();
-  const [verifySignupCode, { isLoading: isVerifyLoading }] = useVerifySignupCodeMutation();
-  const [resendVerificationCode, { isLoading: isResendLoading }] = useResendVerificationCodeMutation();
-  const [completeSignup, { isLoading: isCompleteLoading }] = useCompleteSignupMutation();
-  const allowedTypes: UserType[] = ["buyer", "seller", "admin"];
+  const [signupWithLink, { isLoading: isSignupLoading }] = useSignupWithLinkMutation();
 
+  const allowedTypes: UserType[] = ["buyer", "seller", "admin"];
   const isUpgraded = searchParams.get("upgraded") === "true";
 
   useEffect(() => {
@@ -108,7 +97,7 @@ const Auth = () => {
   const handleTypeSwitch = (type: UserType) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("type", type);
-    newParams.set("mode", authMode); // always preserve current mode
+    newParams.set("mode", authMode);
     setSearchParams(newParams, { replace: true });
     setUserType(type);
     setSignupStep(1);
@@ -116,70 +105,41 @@ const Auth = () => {
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const handleSignupCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleStep1Next = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateEmail(signupEmail)) { toastWarning("Please enter a valid email address."); return; }
     if (signupPassword.length < 6) { toastWarning("Password must be at least 6 characters."); return; }
     if (signupPassword !== signupConfirmPassword) { toastWarning("Passwords do not match."); return; }
     if (!termsAccepted) { toastWarning("Please accept the terms to continue."); return; }
-
-    try {
-      const result = await signupInitiate({ email: signupEmail, password: signupPassword, role: "buyer" }).unwrap();
-      if (result?.success) {
-        setPendingEmail(signupEmail);
-        setShowVerification(true);
-      }
-    } catch (err: any) {
-      toastError(err?.data?.message || "Failed to send verification code.");
-    }
+    setSignupStep(2);
   };
 
-  const handleVerifyCode = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!verificationCode.trim()) { toastWarning("Please enter the verification code."); return; }
-
-    try {
-      const result = await verifySignupCode({ email: pendingEmail, code: verificationCode }).unwrap();
-      if (result?.success) {
-        toastSuccess("Email verified! Please complete your profile.");
-        setShowVerification(false);
-        setShowProfileForm(true);
-        setVerificationCode("");
-      }
-    } catch (err: any) {
-      toastError(err?.data?.message || "Invalid code. Please try again.");
-    }
+  const toggleInterest = (slug: string) => {
+    setSelectedInterests(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    );
   };
 
-  const handleCompleteSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleStep2Submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!profileData.first_name.trim()) { toastWarning("First name is required."); return; }
     if (!profileData.last_name.trim()) { toastWarning("Last name is required."); return; }
 
     try {
-      const result = await completeSignup({ email: pendingEmail, ...profileData }).unwrap();
-      if (result?.success) {
-        try { pushRoleSelectedEvent(userType); } catch {}
-        try { pushSignupEvent(userType); } catch {}
-        toastSuccess("Account created successfully!");
-        await showSuccess("Welcome!", "Your account has been created. Please wait for admin approval before signing in.");
-        setShowProfileForm(false);
-        setSignupEmail(""); setSignupPassword(""); setSignupConfirmPassword("");
-        setTermsAccepted(false); setPendingEmail("");
-        setProfileData({ first_name: "", last_name: "", phone: "", company: "", company_tax_id: "", street_address: "", city: "", district_state: "", postal_code: "", country: "" });
-        setAuthMode("signin");
-      }
-    } catch (err: any) {
-      toastError(err?.data?.message || "Failed to complete registration.");
-    }
-  };
+      await signupWithLink({
+        email: signupEmail,
+        password: signupPassword,
+        role: "buyer",
+        ...profileData,
+        interests: selectedInterests,
+      }).unwrap();
 
-  const handleResendCode = async () => {
-    try {
-      await resendVerificationCode({ email: pendingEmail }).unwrap();
-      toastSuccess("New code sent to your email.");
+      try { pushRoleSelectedEvent(userType); } catch {}
+      try { pushSignupEvent(userType); } catch {}
+
+      setSignupStep("check_email");
     } catch (err: any) {
-      toastError(err?.data?.message || "Failed to resend code.");
+      toastError(err?.data?.message || "Registration failed. Please try again.");
     }
   };
 
@@ -225,13 +185,6 @@ const Auth = () => {
     }
   };
 
-  const toggleCategory = (slug: string) => {
-    setSelectedCategories(prev =>
-      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
-    );
-  };
-
-
   const FEATURES = [
     t("auth.features.verifiedMarketplace"),
     t("auth.features.secureBidding"),
@@ -269,6 +222,28 @@ const Auth = () => {
               }
             </div>
           )}
+
+          {/* Step indicator (signup only) */}
+          {authMode === "signup" && userType !== "admin" && typeof signupStep === "number" && (
+            <div className="mt-8 flex items-center gap-3">
+              {[1, 2].map((step) => (
+                <div key={step} className="flex items-center gap-2">
+                  <div className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all",
+                    signupStep >= step
+                      ? "bg-white text-primary border-white"
+                      : "bg-white/10 text-white/50 border-white/20"
+                  )}>
+                    {signupStep > step ? <Check className="w-3 h-3" /> : step}
+                  </div>
+                  <span className={cn("text-xs", signupStep >= step ? "opacity-90" : "opacity-40")}>
+                    {step === 1 ? "Account" : "Profile"}
+                  </span>
+                  {step < 2 && <div className="w-6 h-px bg-white/30" />}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Bottom features */}
@@ -291,7 +266,6 @@ const Auth = () => {
             <ArrowLeft className="w-4 h-4" /> {t("auth.backToHome")}
           </button>
           <span className="text-sm font-semibold text-primary lg:hidden">GreenBidz</span>
-          {/* Language switcher — right-aligned */}
           <div className="ml-auto">
             <LanguageSwitcher />
           </div>
@@ -300,8 +274,8 @@ const Auth = () => {
         <div className="flex-1 flex items-start justify-center py-8 px-6 lg:px-10">
         <div className="w-full max-w-xl">
 
-          {/* ── Signup: only buyer registration allowed ── */}
-          {userType !== "admin" && authMode === "signup" && (
+          {/* ── Signup buyer badge ── */}
+          {userType !== "admin" && authMode === "signup" && signupStep !== "check_email" && (
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-sm font-semibold text-primary">
                 <ShoppingCart className="w-4 h-4" />
@@ -313,8 +287,6 @@ const Auth = () => {
           {/* ══ SIGN IN ══ */}
           {authMode === "signin" && (
             <div className="animate-fade-in">
-
-              {/* Icon + heading */}
               <div className="text-center mb-7">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
                   <Lock className="w-6 h-6 text-primary" />
@@ -329,10 +301,7 @@ const Auth = () => {
                 </p>
               </div>
 
-
-              {/* Form */}
               <form onSubmit={handleSignIn} className="space-y-4">
-                {/* Email */}
                 <div className="space-y-1.5">
                   <Label htmlFor="signin-email" className="text-sm font-medium text-foreground">
                     {t("auth.companyEmail")} <span className="text-destructive">*</span>
@@ -352,18 +321,13 @@ const Auth = () => {
                   </div>
                 </div>
 
-                {/* Password */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="signin-password" className="text-sm font-medium text-foreground">
                       {t("auth.password")} <span className="text-destructive">*</span>
                     </Label>
                     {userType !== "admin" && (
-                      <button
-                        type="button"
-                        className="text-xs text-primary hover:underline"
-                        onClick={() => navigate("/forgot-password")}
-                      >
+                      <button type="button" className="text-xs text-primary hover:underline" onClick={() => navigate("/forgot-password")}>
                         {t("auth.forgotPassword")}
                       </button>
                     )}
@@ -379,59 +343,30 @@ const Auth = () => {
                       required
                       className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary"
                     />
-                    <button
-                      type="button"
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setShowPassword(v => !v)}
-                    >
+                    <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" onClick={() => setShowPassword(v => !v)}>
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Submit */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-2"
-                  disabled={isLoginLoading}
-                >
-                  {isLoginLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> {t("auth.signingIn")}</>
-                  ) : (
-                    <><LogIn className="w-4 h-4" /> {t("auth.loginButton")}</>
-                  )}
+                <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2 mt-2" disabled={isLoginLoading}>
+                  {isLoginLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> {t("auth.signingIn")}</> : <><LogIn className="w-4 h-4" /> {t("auth.loginButton")}</>}
                 </Button>
               </form>
 
-              {/* Divider */}
               <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">
-                    or
-                  </span>
-                </div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">or</span></div>
               </div>
 
-              {/* Create Account CTA card */}
               <div className="rounded-xl border border-border bg-muted/30 p-5 text-center">
                 <p className="text-sm font-semibold text-foreground mb-0.5">Don't have an account yet?</p>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Join thousands of buyers &amp; sellers on GreenBidz
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full h-10 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-2"
-                  onClick={() => setAuthMode("signup")}
-                >
+                <p className="text-xs text-muted-foreground mb-4">Join thousands of buyers &amp; sellers on GreenBidz</p>
+                <Button type="button" variant="outline" className="w-full h-10 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-2" onClick={() => setAuthMode("signup")}>
                   <UserPlus className="w-4 h-4" />
                   Create Account — It's Free
                 </Button>
               </div>
-
             </div>
           )}
 
@@ -439,19 +374,116 @@ const Auth = () => {
           {authMode === "signup" && userType !== "admin" && (
             <div className="animate-fade-in">
 
+              {/* ─── Check email screen ─── */}
+              {signupStep === "check_email" && (
+                <div className="animate-fade-in text-center space-y-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 mx-auto">
+                    <Mail className="w-7 h-7 text-primary" />
+                  </div>
 
-              {/* Profile details form (step 3) */}
-              {showProfileForm ? (
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-foreground">Check your email</h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      We sent a verification link to{" "}
+                      <span className="font-semibold text-foreground">{signupEmail}</span>.
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Click the link in the email to verify your address and complete your registration.
+                      It may take a minute to arrive — check your spam folder if you don't see it.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-muted/40 border border-border p-4 text-left space-y-2">
+                    <p className="text-xs font-semibold text-foreground">What happens next?</p>
+                    <ul className="text-xs text-muted-foreground space-y-1.5">
+                      <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" /> Click the link in your email to verify</li>
+                      <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" /> Our team reviews your account</li>
+                      <li className="flex items-start gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" /> Once approved, sign in and start bidding</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Button className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2" onClick={() => navigate("/marketplace")}>
+                      Browse Marketplace While You Wait
+                    </Button>
+                    <button type="button" className="text-sm text-muted-foreground hover:text-foreground hover:underline" onClick={() => { setSignupStep(1); setSignupEmail(""); setSignupPassword(""); setSignupConfirmPassword(""); setTermsAccepted(false); setProfileData({ first_name: "", last_name: "", phone: "", company: "", company_tax_id: "", street_address: "", city: "", district_state: "", postal_code: "", country: "" }); setSelectedInterests([]); }}>
+                      Start over
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── Step 1: Email + password ─── */}
+              {signupStep === 1 && (
+                <div className="animate-fade-in space-y-5">
+                  <div className="text-center mb-2">
+                    <h2 className="text-2xl font-bold text-foreground">Create account</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Step 1 of 2 — Account credentials</p>
+                  </div>
+                  <form onSubmit={handleStep1Next} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="s-email" className="text-sm font-medium">Company Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input id="s-email" type="email" placeholder="company@yourcompany.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch {} }} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="s-password" className="text-sm font-medium">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input id="s-password" type={showPassword ? "text" : "password"} placeholder="Minimum 6 characters" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
+                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="s-confirm" className="text-sm font-medium">Confirm password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <Input id="s-confirm" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
+                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(v => !v)}>
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground leading-relaxed">
+                        I agree with the{" "}
+                        <span className="text-primary hover:underline cursor-pointer">user terms</span>,{" "}
+                        <span className="text-primary hover:underline cursor-pointer">privacy statement</span>{" "}
+                        and I give permission for GreenBidz to carry out activities for both sellers and buyers.
+                      </span>
+                    </label>
+                    <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                      Continue →
+                    </Button>
+                  </form>
+                  <div className="relative my-2">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                    <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">Already have an account?</span></div>
+                  </div>
+                  <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-2" onClick={() => setAuthMode("signin")}>
+                    <LogIn className="w-4 h-4" />
+                    Sign in
+                  </Button>
+                </div>
+              )}
+
+              {/* ─── Step 2: Profile + Interests ─── */}
+              {signupStep === 2 && (
                 <div className="animate-fade-in">
                   <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
                       <CheckCircle2 className="w-6 h-6 text-primary" />
                     </div>
                     <h2 className="text-2xl font-bold text-foreground">Complete your profile</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Fill in your details to finish creating your account</p>
+                    <p className="text-sm text-muted-foreground mt-1">Step 2 of 2 — Your details &amp; interests</p>
                   </div>
 
-                  <form onSubmit={handleCompleteSignup} className="space-y-4">
+                  <form onSubmit={handleStep2Submit} className="space-y-4">
                     {/* Name row */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
@@ -496,184 +528,81 @@ const Auth = () => {
                       />
                     </div>
 
-                    {/* Company Tax ID (sellers only) */}
-                    {userType === "seller" && (
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-foreground">Company Tax ID</label>
-                        <input
-                          type="text" placeholder="Tax ID number"
-                          value={profileData.company_tax_id}
-                          onChange={(e) => setProfileData(p => ({ ...p, company_tax_id: e.target.value }))}
-                          className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                        />
-                      </div>
-                    )}
-
-                    {/* Address section */}
-                    <div className="pt-1">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Address</p>
-                      <div className="space-y-3">
-                        <input
-                          type="text" placeholder="Street address"
-                          value={profileData.street_address}
-                          onChange={(e) => setProfileData(p => ({ ...p, street_address: e.target.value }))}
-                          className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                        />
-                        <div className="grid grid-cols-2 gap-3">
-                          <input
-                            type="text" placeholder="City"
-                            value={profileData.city}
-                            onChange={(e) => setProfileData(p => ({ ...p, city: e.target.value }))}
-                            className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                          />
-                          <input
-                            type="text" placeholder="State / District"
-                            value={profileData.district_state}
-                            onChange={(e) => setProfileData(p => ({ ...p, district_state: e.target.value }))}
-                            className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <input
-                            type="text" placeholder="Postal code"
-                            value={profileData.postal_code}
-                            onChange={(e) => setProfileData(p => ({ ...p, postal_code: e.target.value }))}
-                            className="w-full h-11 px-3 rounded-md border border-border bg-muted/30 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                          />
-                          <CountrySelect
-                            value={profileData.country}
-                            onChange={(v) => setProfileData(p => ({ ...p, country: v }))}
-                            className="h-11"
-                          />
-                        </div>
-                      </div>
+                    {/* Country */}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Country</label>
+                      <CountrySelect
+                        value={profileData.country}
+                        onChange={(v) => setProfileData(p => ({ ...p, country: v }))}
+                        className="h-11"
+                      />
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-                      disabled={isCompleteLoading}
-                    >
-                      {isCompleteLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</> : "Complete Registration"}
-                    </Button>
-                  </form>
-                </div>
-              ) : showVerification ? (
-                <div className="animate-fade-in space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-                      <Mail className="w-6 h-6 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground">Create account</h2>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {"We've sent an email with a code to your inbox at "}
-                      <span className="font-semibold text-foreground">{pendingEmail}</span>.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      It might take a few minutes for your code to arrive. If you don't see it, we recommend checking your Spam folder.
-                    </p>
-                  </div>
-                  <form onSubmit={handleVerifyCode} className="space-y-4">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="Enter your verification or recovery code"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
-                      className="h-12 text-center text-lg tracking-widest border-primary/40 focus:border-primary bg-muted/20"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={handleResendCode}
-                      disabled={isResendLoading}
-                      className="text-sm text-primary hover:underline disabled:opacity-50"
-                    >
-                      {isResendLoading ? "Sending..." : "Resend code"}
-                    </button>
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-                      disabled={isVerifyLoading}
-                    >
-                      {isVerifyLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verifying...</> : "Submit"}
-                    </Button>
-                  </form>
-                  <div className="text-center">
-                    <button
-                      type="button"
-                      className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                      onClick={() => { setShowVerification(false); setVerificationCode(""); }}
-                    >
-                      Cancel registration
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="animate-fade-in space-y-5">
-                  <div className="text-center mb-2">
-                    <h2 className="text-2xl font-bold text-foreground">Create account</h2>
-                  </div>
-                  <form onSubmit={handleSignupCreate} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="s-email" className="text-sm font-medium">Company Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input id="s-email" type="email" placeholder="company@yourcompany.com" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch {} }} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
+                    {/* ─── Interests ─── */}
+                    <div className="pt-2">
+                      <div className="mb-3">
+                        <p className="text-sm font-semibold text-foreground">
+                          What are you interested in?
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Select the categories you'd like to buy. You can change this later.
+                        </p>
                       </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="s-password" className="text-sm font-medium">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input id="s-password" type={showPassword ? "text" : "password"} placeholder="Password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
-                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
+                      <div className="flex flex-wrap gap-2">
+                        {SITE_CATEGORIES.map((cat) => {
+                          const selected = selectedInterests.includes(cat.slug);
+                          return (
+                            <button
+                              key={cat.slug}
+                              type="button"
+                              onClick={() => toggleInterest(cat.slug)}
+                              className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                                selected
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-muted/30 text-muted-foreground border-border hover:border-primary hover:text-primary"
+                              )}
+                            >
+                              {selected && <Check className="w-3 h-3 inline mr-1" />}
+                              {cat.name}
+                            </button>
+                          );
+                        })}
                       </div>
+                      {selectedInterests.length > 0 && (
+                        <p className="text-xs text-primary mt-2">{selectedInterests.length} selected</p>
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="s-confirm" className="text-sm font-medium">Confirm password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                        <Input id="s-confirm" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
-                        <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(v => !v)}>
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
+
+                    <div className="flex gap-3 pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-12 px-5 text-sm font-semibold border-border"
+                        onClick={() => setSignupStep(1)}
+                      >
+                        ← Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="flex-1 h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                        disabled={isSignupLoading}
+                      >
+                        {isSignupLoading
+                          ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
+                          : "Create Account"}
+                      </Button>
                     </div>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
-                      <span className="text-xs text-muted-foreground leading-relaxed">
-                        I agree with the{" "}
-                        <span className="text-primary hover:underline cursor-pointer">user terms</span>,{" "}
-                        <span className="text-primary hover:underline cursor-pointer">privacy statement</span>{" "}
-                        and I give permission for GreenBidz to carry out activities for both sellers and buyers.
-                      </span>
-                    </label>
-                    <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled={isInitiateLoading}>
-                      {isInitiateLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending code...</> : "Create"}
-                    </Button>
                   </form>
-                  <div className="relative my-2">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-background px-3 text-xs text-muted-foreground">Already have an account?</span>
-                    </div>
-                  </div>
-                  <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all gap-2" onClick={() => setAuthMode("signin")}>
-                    <LogIn className="w-4 h-4" />
-                    Sign in
-                  </Button>
                 </div>
               )}
+
             </div>
           )}
 
         </div>
-        </div>{/* end inner scroll content */}
-      </div>{/* end right panel */}
+        </div>
+      </div>
     </div>
   );
 };

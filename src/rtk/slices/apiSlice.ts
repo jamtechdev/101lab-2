@@ -236,6 +236,27 @@ export const apiSlice = createApi({
         data: body,
       }),
     }),
+    signupWithLink: builder.mutation<{ success: boolean; message: string }, {
+      email: string; password: string; role?: string;
+      first_name: string; last_name: string; phone?: string;
+      company?: string; company_tax_id?: string;
+      street_address?: string; city?: string; district_state?: string;
+      postal_code?: string; country?: string;
+      interests?: string[];
+    }>({
+      query: (body) => ({
+        url: `/user/signup-with-link?type=${SITE_TYPE_PROFILE}`,
+        method: "POST",
+        data: body,
+      }),
+    }),
+    verifyEmailByToken: builder.mutation<{ success: boolean; message: string; data?: any }, { token: string }>({
+      query: ({ token }) => ({
+        url: `/user/verify-email-token?type=${SITE_TYPE_PROFILE}`,
+        method: "POST",
+        data: { token },
+      }),
+    }),
     verifyUser: builder.query<VerifyResponse, void>({
       query: () => {
         const { accessToken, refreshToken } = getTokens();
@@ -526,6 +547,8 @@ export const {
   useVerifySignupCodeMutation,
   useResendVerificationCodeMutation,
   useCompleteSignupMutation,
+  useSignupWithLinkMutation,
+  useVerifyEmailByTokenMutation,
   useVerifyUserQuery,
   useLogoutMutation,
   useGetCategoriesQuery,

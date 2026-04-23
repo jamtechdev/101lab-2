@@ -19,6 +19,7 @@ import Resellers from "./pages/landing/Resellers";
 import ContactInquiryTest from "./pages/Test/ContactInquiryTest";
 import Auth from "./pages/auth/Auth";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import Submissions from "./pages/dashboard/Submissions";
 import BatchView from "./pages/dashboard/BatchView";
@@ -211,6 +212,7 @@ const App = () => {
               </Route>
 
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/seo-analytics" element={<SEOAnalytics />} />
 
               {/* PUBLIC MARKETPLACE */}
