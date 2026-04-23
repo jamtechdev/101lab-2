@@ -1675,7 +1675,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                     <div className="flex gap-3">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setPlaceBidStep("form")}>
-                        Go back
+                        {t("buyer.goBack") || "Go back"}
                       </Button>
                       <Button
                         type="button"

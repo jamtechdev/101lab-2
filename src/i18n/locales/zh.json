@@ -478,7 +478,16 @@
     "submitOffer": "提交報價",
     "offerAmount": "您的報價金額",
     "enterAmount": "輸入金額",
-    "price": "價格"
+    "price": "價格",
+    "confirmBuyNow": "確認購買",
+    "confirmBid": "確認出價",
+    "yourPrice": "您的價格",
+    "yourBid": "您的出價",
+    "confirmBuyNowDesc": "您確定要購買嗎？此操作無法撤銷。",
+    "confirmBidDesc": "您確定要提交此出價嗎？此操作無法撤銷。",
+    "yesBuyNow": "是的，立即購買",
+    "yesPlaceBid": "是的，提交出價",
+    "goBack": "返回"
   },
   "factories": {
     "hero": {

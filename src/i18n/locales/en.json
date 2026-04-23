@@ -465,7 +465,16 @@
     "submitOffer": "Submit Offer",
     "offerAmount": "Your Offer Amount",
     "enterAmount": "Enter amount",
-    "price": "Price"
+    "price": "Price",
+    "confirmBuyNow": "Confirm Purchase",
+    "confirmBid": "Confirm Bid",
+    "yourPrice": "Your Price",
+    "yourBid": "Your Bid",
+    "confirmBuyNowDesc": "Are you sure you want to buy this? This action cannot be undone.",
+    "confirmBidDesc": "Are you sure you want to place this bid? This action cannot be undone.",
+    "yesBuyNow": "Yes, Buy Now",
+    "yesPlaceBid": "Yes, Place Bid",
+    "goBack": "Go back"
   },
   "factories": {
     "hero": {
