@@ -24,6 +24,54 @@ type UserType = "buyer" | "seller" | "admin";
 type AuthMode = "signup" | "signin";
 type SignupStep = "form" | "check_email";
 
+const INDUSTRY_OPTIONS = [
+  "Academic / University",
+  "Research Institute",
+  "Biotechnology",
+  "Pharmaceutical",
+  "Healthcare / Hospital",
+  "Clinical Diagnostics Lab",
+  "Environmental Testing",
+  "Food & Beverage Testing",
+  "Chemical Industry",
+  "Agriculture / AgriTech",
+  "Oil & Gas / Energy",
+  "Semiconductor / Electronics",
+  "Contract Research Organization (CRO)",
+  "Government / Regulatory",
+  "Manufacturing / Industrial Lab",
+  "Distributor / Reseller",
+  "Startup / Small Business",
+  "Other",
+];
+
+const PHONE_CODES = [
+  { code: "+1",   flag: "🇺🇸", label: "US" },
+  { code: "+44",  flag: "🇬🇧", label: "GB" },
+  { code: "+852", flag: "🇭🇰", label: "HK" },
+  { code: "+886", flag: "🇹🇼", label: "TW" },
+  { code: "+86",  flag: "🇨🇳", label: "CN" },
+  { code: "+81",  flag: "🇯🇵", label: "JP" },
+  { code: "+82",  flag: "🇰🇷", label: "KR" },
+  { code: "+65",  flag: "🇸🇬", label: "SG" },
+  { code: "+60",  flag: "🇲🇾", label: "MY" },
+  { code: "+61",  flag: "🇦🇺", label: "AU" },
+  { code: "+49",  flag: "🇩🇪", label: "DE" },
+  { code: "+33",  flag: "🇫🇷", label: "FR" },
+  { code: "+31",  flag: "🇳🇱", label: "NL" },
+  { code: "+91",  flag: "🇮🇳", label: "IN" },
+  { code: "+971", flag: "🇦🇪", label: "AE" },
+  { code: "+966", flag: "🇸🇦", label: "SA" },
+  { code: "+55",  flag: "🇧🇷", label: "BR" },
+  { code: "+52",  flag: "🇲🇽", label: "MX" },
+  { code: "+27",  flag: "🇿🇦", label: "ZA" },
+  { code: "+7",   flag: "🇷🇺", label: "RU" },
+  { code: "+90",  flag: "🇹🇷", label: "TR" },
+  { code: "+20",  flag: "🇪🇬", label: "EG" },
+  { code: "+234", flag: "🇳🇬", label: "NG" },
+  { code: "+254", flag: "🇰🇪", label: "KE" },
+];
+
 const Auth = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -44,7 +92,9 @@ const Auth = () => {
   const [form, setForm] = useState({
     email: "", password: "", confirmPassword: "",
     first_name: "", last_name: "", phone: "",
+    phoneCode: "+1",
     company: "", country: "",
+    industry: "", industryOther: "",
   });
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
@@ -121,7 +171,9 @@ const Auth = () => {
       await signupWithLink({
         email: form.email, password: form.password, role: "buyer",
         first_name: form.first_name, last_name: form.last_name,
-        phone: form.phone, company: form.company, country: form.country,
+        phone: form.phone ? `${form.phoneCode}${form.phone}` : "",
+        company: form.company, country: form.country,
+        industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
         interests: selectedInterests,
       }).unwrap();
       try { pushRoleSelectedEvent(userType); } catch {}
@@ -229,7 +281,7 @@ const Auth = () => {
 
           {/* ══ SIGN IN ══ */}
           {authMode === "signin" && (
-            <div className="animate-fade-in">
+            <div className="animate-fade-in max-w-md mx-auto rounded-2xl border border-border bg-card shadow-sm p-8 lg:p-10">
               <div className="text-center mb-7">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
                   <Lock className="w-6 h-6 text-primary" />
@@ -478,10 +530,23 @@ const Auth = () => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium text-foreground">Phone number</Label>
-                          <div className="relative">
-                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type="tel" placeholder="+1 234 567 8900" value={form.phone} onChange={setF("phone")}
-                              className="h-11 pl-10 bg-background border-border focus:border-primary" />
+                          <div className="flex h-11 rounded-md border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden">
+                            <select
+                              value={form.phoneCode}
+                              onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
+                              className="h-full pl-2 pr-1 text-sm bg-muted/40 border-r border-border text-foreground focus:outline-none cursor-pointer shrink-0"
+                            >
+                              {PHONE_CODES.map(({ code, flag, label }) => (
+                                <option key={code} value={code}>{flag} {code}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="tel"
+                              placeholder="234 567 8900"
+                              value={form.phone}
+                              onChange={setF("phone")}
+                              className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
+                            />
                           </div>
                         </div>
                       </div>
@@ -500,6 +565,29 @@ const Auth = () => {
                           <Label className="text-sm font-medium text-foreground">Country</Label>
                           <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-11 bg-background" />
                         </div>
+                      </div>
+
+                      {/* Customer Industry — full row */}
+                      <div className="space-y-1.5">
+                        <Label className="text-sm font-medium text-foreground">Customer Industry</Label>
+                        <select
+                          value={form.industry}
+                          onChange={e => setForm(p => ({ ...p, industry: e.target.value, industryOther: "" }))}
+                          className="w-full h-11 px-3 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        >
+                          <option value="">Select your industry…</option>
+                          {INDUSTRY_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {form.industry === "Other" && (
+                          <Input
+                            placeholder="Please specify your industry"
+                            value={form.industryOther}
+                            onChange={setF("industryOther")}
+                            className="h-11 bg-background border-border focus:border-primary mt-2"
+                          />
+                        )}
                       </div>
                     </div>
 

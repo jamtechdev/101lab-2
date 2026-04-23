@@ -243,6 +243,7 @@ export const apiSlice = createApi({
       street_address?: string; city?: string; district_state?: string;
       postal_code?: string; country?: string;
       interests?: string[];
+      industry?: string;
     }>({
       query: (body) => ({
         url: `/user/signup-with-link?type=${SITE_TYPE_PROFILE}`,
