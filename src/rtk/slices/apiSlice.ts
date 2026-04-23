@@ -205,14 +205,14 @@ export const apiSlice = createApi({
     }),
     signupInitiate: builder.mutation<{ success: boolean; message: string }, { email: string; password: string; role: string }>({
       query: (body) => ({
-        url: "/user/signup-initiate",
+        url: `/user/signup-initiate?type=${SITE_TYPE_PROFILE}`,
         method: "POST",
         data: body,
       }),
     }),
     verifySignupCode: builder.mutation<{ success: boolean; message: string; data?: any }, { email: string; code: string }>({
       query: (body) => ({
-        url: "/user/verify-signup-code",
+        url: `/user/verify-signup-code?type=${SITE_TYPE_PROFILE}`,
         method: "POST",
         data: body,
       }),
@@ -231,7 +231,7 @@ export const apiSlice = createApi({
       postal_code?: string; country?: string;
     }>({
       query: (body) => ({
-        url: "/user/complete-signup",
+        url: `/user/complete-signup?type=${SITE_TYPE_PROFILE}`,
         method: "POST",
         data: body,
       }),
@@ -311,7 +311,7 @@ export const apiSlice = createApi({
     >({
       query: (payload) => ({
         url: `/user/settings${
-          payload?.userId ? `?userId=${payload.userId}&type=Recycle` : "?type=Recycle"
+          payload?.userId ? `?userId=${payload.userId}&type=${SITE_TYPE_PROFILE}` : `?type=${SITE_TYPE_PROFILE}`
         }`,
         method: "PUT",
         data: payload,
