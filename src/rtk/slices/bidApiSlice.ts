@@ -485,7 +485,7 @@ export const bidApiSlice = createApi({
     // Offer endpoints
     submitOffer: builder.mutation<SubmitOfferResponse, FormData>({
       query: (formData) => ({
-        url: `/offer/submit`,
+        url: `/offer/submit?type=${SITE_TYPE}`,
         method: "POST",
         data: formData,
       }),

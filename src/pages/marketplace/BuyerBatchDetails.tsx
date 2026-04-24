@@ -45,6 +45,7 @@ import BuyerHeader from "../buyer/BuyerHeader";
 import { extractValuesFromPhpSerialized } from "@/utils/parsePhpSerializedUrl";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
 import { pushLogoutEvent, pushViewListingEvent } from "@/utils/gtm";
+import MakeOfferModal from "@/pages/Seller/MakeOfferModal";
 
 export default function BuyerBatchDetails() {
     const { batchId } = useParams<{ batchId: string }>();
@@ -59,6 +60,7 @@ export default function BuyerBatchDetails() {
         payment_method: ""
     });
     const [paymentProof, setPaymentProof] = useState<File | null>(null);
+    const [isMakeOfferOpen, setIsMakeOfferOpen] = useState(false);
 
     // Fetch buyer-specific batch summary
     const { data: buyerData, isLoading: buyerLoading, error: buyerError, refetch } = useGetBuyerBatchSummaryQuery({ batch_id: Number(batchId), buyer_id: buyerId }, { skip: !batchId });
@@ -556,6 +558,8 @@ export default function BuyerBatchDetails() {
 
                                                 const condition = extractValuesFromPhpSerialized(conditionRaw)[0] || null;
                                                 const operationStatus = extractValuesFromPhpSerialized(operationStatusRaw)[0] || null;
+                                                const quantityRaw = product.meta?.find((m: any) => m.meta_key === "quantity")?.meta_value;
+                                                const productQuantity = quantityRaw ? Number(quantityRaw) : null;
 
                                                 const image = product.attachments?.[0]?.url;
 
@@ -605,6 +609,12 @@ export default function BuyerBatchDetails() {
                                                                         <div className="flex items-center gap-1.5 text-muted-foreground">
                                                                             <Info className="w-3.5 h-3.5" />
                                                                             <span className="truncate">{operationStatus}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {productQuantity !== null && (
+                                                                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                                                                            <Package className="w-3.5 h-3.5" />
+                                                                            <span>{t('buyerDashboard.quantity')}: {productQuantity}</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -820,11 +830,46 @@ export default function BuyerBatchDetails() {
                                 </CardContent>
                             </Card>
 
-
+                            {/* Make Offer Card */}
+                            {batch.status !== 'sold' && bidStatus !== 'accepted' && (
+                                <Card className="shadow-lg border-0 overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-amber-500/5 to-amber-500/10 border-b">
+                                        <div className="flex items-center gap-2">
+                                            <Target className="w-5 h-5 text-amber-600" />
+                                            <CardTitle>{t('buyerDashboard.makeOfferBtn')}</CardTitle>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-6 text-center space-y-3">
+                                        <p className="text-sm text-muted-foreground">
+                                            {t('marketplace.makeOfferDescription')}
+                                        </p>
+                                        <Button
+                                            className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                                            onClick={() => setIsMakeOfferOpen(true)}
+                                        >
+                                            <Target className="w-4 h-4 mr-2" />
+                                            {t('buyerDashboard.makeOfferBtn')}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                         </div>
                     </div>
                 </div>
+
+                {/* Make Offer Modal */}
+                <MakeOfferModal
+                    isOpen={isMakeOfferOpen}
+                    onClose={() => setIsMakeOfferOpen(false)}
+                    batch={batch}
+                    quantity={1}
+                    maxQuantity={products.length > 0 ? products.reduce((sum: number, p: any) => {
+                        const q = p.meta?.find((m: any) => m.meta_key === 'quantity')?.meta_value;
+                        return sum + (q ? Number(q) : 1);
+                    }, 0) : undefined}
+                    currency={batch?.currency || 'USD'}
+                />
 
                 {/* Payment Dialog */}
                 <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>

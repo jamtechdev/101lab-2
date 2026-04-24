@@ -330,7 +330,7 @@ export default function BuyerDetails() {
                     {/* Buyer Information Card */}
                     <Card className="border-border/50 shadow-lg">
                         <CardHeader>
-                            <CardTitle>{t('admin.buyerDetails.buyerInformation12')}</CardTitle>
+                            <CardTitle>{t('admin.buyerDetails.buyerInformation')}</CardTitle>
                             <CardDescription>{t('admin.buyerDetails.personalDetails')}</CardDescription>
                         </CardHeader>
 

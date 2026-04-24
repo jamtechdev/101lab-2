@@ -530,6 +530,114 @@ export interface UpdateCommissionRulePayload {
   is_active?: boolean;
 }
 
+/* ---------- ADMIN OFFER TYPES ---------- */
+export interface AdminOfferRow {
+  offer_id: number;
+  batch_id: number;
+  product_title: string | null;
+  offer_price: string;
+  offer_quantity: number;
+  status: "pending" | "accepted" | "rejected" | string;
+  platform: string;
+  offer_round: number;
+  message: string | null;
+  submitted_at: string;
+  buyer: { id: number; name: string; email: string; phone: string | null; company: string | null };
+  seller: { id: number; name: string; email: string; phone: string | null; company: string | null };
+}
+
+export interface AdminOfferStats {
+  total: number;
+  pending: number;
+  accepted: number;
+  rejected: number;
+}
+
+export interface AdminOfferResponse {
+  success: boolean;
+  stats: AdminOfferStats;
+  data: AdminOfferRow[];
+  pagination: { total: number; total_pages: number; current_page: number; limit: number };
+}
+
+/* ---------- ADMIN CHECKOUT (BUY NOW) TYPES ---------- */
+export interface AdminCheckoutRow {
+  checkout_id: number;
+  batch_id: number;
+  product_id: number;
+  product_title: string | null;
+  quantity: number;
+  price_per_unit: number;
+  total_price: number;
+  currency: string;
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "completed" | "cancelled" | string;
+  payment_status: "pending" | "manual_received" | "success" | "failed" | "refunded" | string;
+  payment_method: string | null;
+  platform: string;
+  shipping_address: string;
+  message: string | null;
+  submitted_at: string;
+  buyer: { id: number; name: string; email: string; phone: string | null; company: string | null };
+  seller: { id: number; name: string; email: string; phone: string | null; company: string | null };
+}
+
+export interface AdminCheckoutStats {
+  total: number;
+  pending: number;
+  completed: number;
+  cancelled: number;
+}
+
+export interface AdminCheckoutResponse {
+  success: boolean;
+  stats: AdminCheckoutStats;
+  data: AdminCheckoutRow[];
+  pagination: { total: number; total_pages: number; current_page: number; limit: number };
+}
+
+/* ---------- ADMIN BID TYPES ---------- */
+export interface AdminBidRow {
+  buyer_bid_id: number;
+  bid_id: number;
+  batch_id: number;
+  product_title: string | null;
+  amount: string;
+  currency: string;
+  bid_status: "pending" | "accepted" | "rejected" | "counter_offer" | string;
+  submitted_at: string;
+  company_name: string | null;
+  contact_person: string | null;
+  country: string | null;
+  bid_type: string | null;
+  bid_start_date: string | null;
+  bid_end_date: string | null;
+  bidding_status: string | null;
+  target_price: string | null;
+  is_auction: boolean;
+  platform: string;
+  buyer: { id: number; name: string; email: string; phone: string | null };
+  seller: { id: number; name: string; email: string; phone: string | null; company: string | null };
+}
+
+export interface AdminBidStats {
+  total: number;
+  pending: number;
+  accepted: number;
+  rejected: number;
+}
+
+export interface AdminBidResponse {
+  success: boolean;
+  stats: AdminBidStats;
+  data: AdminBidRow[];
+  pagination: {
+    total: number;
+    total_pages: number;
+    current_page: number;
+    limit: number;
+  };
+}
+
 /* ---------- ADMIN AUCTION GROUP TYPES ---------- */
 export interface AdminAuctionGroupItem {
   group_id: number;
@@ -609,9 +717,9 @@ export const adminApi = createApi({
     /* ---------------- GET ADMIN BATCHES ---------------- */
     getAdminBatches: builder.query<
       AdminBatchResponse,
-      { page?: number; limit?: number; type?: string; dateFrom?: string; dateTo?: string; sort?: string }
+      { page?: number; limit?: number; type?: string; dateFrom?: string; dateTo?: string; sort?: string; search?: string; status?: string; approvalStatus?: string }
     >({
-      query: ({ page = 1, limit = 10, type, dateFrom, dateTo, sort }) => {
+      query: ({ page = 1, limit = 10, type, dateFrom, dateTo, sort, search, status, approvalStatus }) => {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
@@ -620,6 +728,9 @@ export const adminApi = createApi({
         if (dateFrom) params.set("dateFrom", dateFrom);
         if (dateTo) params.set("dateTo", dateTo);
         if (sort) params.set("sort", sort);
+        if (search) params.set("search", search);
+        if (status) params.set("status", status);
+        if (approvalStatus) params.set("approvalStatus", approvalStatus);
 
         return {
           url: `/admin/batches?${params.toString()}`,
@@ -1068,6 +1179,54 @@ export const adminApi = createApi({
       invalidatesTags: ["AdminAuctionGroups"],
     }),
 
+    /* ---------------- ALL OFFERS (admin) ---------------- */
+    getAdminAllOffers: builder.query<
+      AdminOfferResponse,
+      { page?: number; limit?: number; search?: string; status?: string; type?: string; sort?: string }
+    >({
+      query: ({ page = 1, limit = 20, search, status, type, sort }) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (search) params.set("search", search);
+        if (status) params.set("status", status);
+        if (type) params.set("type", type);
+        if (sort) params.set("sort", sort);
+        return { url: `/admin/all-offers?${params.toString()}`, method: "GET" };
+      },
+    }),
+
+    /* ---------------- ALL CHECKOUTS / BUY NOW (admin) ---------------- */
+    getAdminAllCheckouts: builder.query<
+      AdminCheckoutResponse,
+      { page?: number; limit?: number; search?: string; status?: string; paymentStatus?: string; type?: string; sort?: string }
+    >({
+      query: ({ page = 1, limit = 20, search, status, paymentStatus, type, sort }) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (search) params.set("search", search);
+        if (status) params.set("status", status);
+        if (paymentStatus) params.set("paymentStatus", paymentStatus);
+        if (type) params.set("type", type);
+        if (sort) params.set("sort", sort);
+        return { url: `/admin/all-checkouts?${params.toString()}`, method: "GET" };
+      },
+    }),
+
+    /* ---------------- ALL BUYER BIDS (admin) ---------------- */
+    getAdminAllBids: builder.query<
+      AdminBidResponse,
+      { page?: number; limit?: number; search?: string; status?: string; type?: string; sort?: string; isAuction?: boolean | null }
+    >({
+      query: ({ page = 1, limit = 20, search, status, type, sort, isAuction }) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (search) params.set("search", search);
+        if (status) params.set("status", status);
+        if (type) params.set("type", type);
+        if (sort) params.set("sort", sort);
+        if (isAuction !== undefined && isAuction !== null) params.set("isAuction", String(isAuction));
+        return { url: `/admin/all-bids?${params.toString()}`, method: "GET" };
+      },
+      providesTags: ["Batches"],
+    }),
+
     /* ---------------- PRODUCT REQUESTS ---------------- */
     submitProductRequest: builder.mutation<
       { success: boolean; message: string; data: any },
@@ -1187,4 +1346,13 @@ export const {
   useGetAdminProductRequestsQuery,
   useUpdateProductRequestStatusMutation,
   useGetPublicWantedRequestsQuery,
+
+  /* ---------- ADMIN BIDS ---------- */
+  useGetAdminAllBidsQuery,
+
+  /* ---------- ADMIN OFFERS ---------- */
+  useGetAdminAllOffersQuery,
+
+  /* ---------- ADMIN CHECKOUTS / BUY NOW ---------- */
+  useGetAdminAllCheckoutsQuery,
 } = adminApi;

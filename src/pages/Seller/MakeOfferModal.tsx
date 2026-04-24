@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useSubmitOfferMutation } from '@/rtk/slices/bidApiSlice';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { pushMakeOfferEvent } from '@/utils/gtm';
+import { SITE_TYPE } from '@/config/site';
 
 export default function MakeOfferModal({
   isOpen,
@@ -17,8 +19,10 @@ export default function MakeOfferModal({
   maxQuantity,
   currency = 'USD'
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'form' | 'review'>('form');
   const [offerPrice, setOfferPrice] = useState('');
+  const [offerQuantity, setOfferQuantity] = useState(quantity || 1);
   const [company, setCompany] = useState(localStorage.getItem('companyName') || '');
   const [contactPerson, setContactPerson] = useState(localStorage.getItem('userName') || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,12 +37,14 @@ export default function MakeOfferModal({
   const handleReview = (e) => {
     e.preventDefault();
     if (!offerPrice || Number(offerPrice) <= 0) return;
+    if (!offerQuantity || Number(offerQuantity) < 1) return;
     setStep('review');
   };
 
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+      const qty = Number(offerQuantity) || 1;
       const payload = {
         batch_id: batch.batch_id,
         buyer_id: buyerId,
@@ -46,8 +52,8 @@ export default function MakeOfferModal({
         company_name: company,
         amount: Number(offerPrice),
         notes: '',
-        type: 'other',
-        offer_quantity: 1,
+        type: SITE_TYPE,
+        offer_quantity: qty,
         lang,
       };
       await SubmitOfferRequest(payload);
@@ -56,7 +62,7 @@ export default function MakeOfferModal({
         pushMakeOfferEvent({
           batch_id:       batch.batch_id,
           offer_amount:   Number(offerPrice),
-          offer_quantity: 1,
+          offer_quantity: qty,
           currency,
         });
       } catch { /* tracking errors must never affect UX */ }
@@ -88,13 +94,17 @@ export default function MakeOfferModal({
         <div className="px-6 pt-6 pb-4 flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-neutral-900">
-              {isSuccess ? 'Offer Submitted!' : step === 'review' ? 'Confirm Your Offer' : 'Make Offer'}
+              {isSuccess
+                ? t('makeOfferModal.successTitle')
+                : step === 'review'
+                ? t('makeOfferModal.confirmTitle')
+                : t('makeOfferModal.title')}
             </h2>
             {!isSuccess && (
               <p className="text-sm text-neutral-500 mt-1">
                 {step === 'review'
-                  ? 'Please double-check before submitting. This action cannot be undone.'
-                  : 'Submit your price for this item.'}
+                  ? t('makeOfferModal.confirmSubtitle')
+                  : t('makeOfferModal.subtitle')}
               </p>
             )}
           </div>
@@ -107,16 +117,16 @@ export default function MakeOfferModal({
         {isSuccess ? (
           <div className="px-6 pb-6 text-center space-y-4">
             <CheckCircle2 className="mx-auto w-14 h-14 text-green-500" />
-            <p className="text-neutral-600">Your offer has been sent to the seller.</p>
+            <p className="text-neutral-600">{t('makeOfferModal.successMessage')}</p>
             <div className="flex flex-col gap-2 mt-2">
               <Button
                 onClick={() => navigate('/dashboard/offers')}
                 className="bg-[#1a3c2a] hover:bg-[#152e21] text-white"
               >
-                View My Offers
+                {t('makeOfferModal.viewOffers')}
               </Button>
               <Button variant="outline" onClick={() => navigate('/dashboard/browse')}>
-                Browse More Products
+                {t('makeOfferModal.browseMore')}
               </Button>
             </div>
           </div>
@@ -127,22 +137,26 @@ export default function MakeOfferModal({
             {/* Summary table */}
             <div className="border border-neutral-200 rounded-lg overflow-hidden text-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-                <span className="text-neutral-500">Company</span>
+                <span className="text-neutral-500">{t('makeOfferModal.company')}</span>
                 <span className="font-semibold text-neutral-900 text-right max-w-[60%] break-words">{company}</span>
               </div>
-              <div className="flex items-center justify-between px-4 py-3">
-                <span className="text-neutral-500">Contact</span>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+                <span className="text-neutral-500">{t('makeOfferModal.contactPerson')}</span>
                 <span className="font-semibold text-neutral-900 text-right max-w-[60%] break-words">{contactPerson}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-neutral-500">{t('makeOfferModal.quantity')}</span>
+                <span className="font-semibold text-neutral-900">{offerQuantity}</span>
               </div>
             </div>
 
             {/* Offer amount box */}
             <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5 text-center">
-              <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">Your Offer</p>
+              <p className="text-xs uppercase tracking-widest text-neutral-400 mb-2">{t('makeOfferModal.yourOffer')}</p>
               <p className="text-3xl font-bold text-neutral-900">{formatCurrency(offerPrice)}</p>
             </div>
 
-            <p className="text-sm text-center text-neutral-500">Are you sure you want to submit this offer?</p>
+            <p className="text-sm text-center text-neutral-500">{t('makeOfferModal.confirmQuestion')}</p>
 
             <div className="flex gap-3">
               <Button
@@ -151,7 +165,7 @@ export default function MakeOfferModal({
                 onClick={() => setStep('form')}
                 className="flex-1 border-neutral-300"
               >
-                Go Back
+                {t('makeOfferModal.goBack')}
               </Button>
               <Button
                 type="button"
@@ -159,7 +173,7 @@ export default function MakeOfferModal({
                 disabled={isSubmitting}
                 className="flex-1 bg-[#1a3c2a] hover:bg-[#152e21] text-white"
               >
-                {isSubmitting ? 'Submitting...' : 'Yes, Submit Offer'}
+                {isSubmitting ? t('makeOfferModal.submitting') : t('makeOfferModal.submitOffer')}
               </Button>
             </div>
           </div>
@@ -170,12 +184,12 @@ export default function MakeOfferModal({
             {/* Company */}
             <div>
               <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">
-                Company
+                {t('makeOfferModal.company')}
               </Label>
               <Input
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="Your company name"
+                placeholder={t('makeOfferModal.companyPlaceholder')}
                 className="bg-neutral-50 border-neutral-200"
                 required
               />
@@ -184,21 +198,44 @@ export default function MakeOfferModal({
             {/* Contact Person */}
             <div>
               <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">
-                Contact Person
+                {t('makeOfferModal.contactPerson')}
               </Label>
               <Input
                 value={contactPerson}
                 onChange={(e) => setContactPerson(e.target.value)}
-                placeholder="Contact person name"
+                placeholder={t('makeOfferModal.contactPersonPlaceholder')}
                 className="bg-neutral-50 border-neutral-200"
                 required
               />
             </div>
 
+            {/* Offer Quantity */}
+            <div>
+              <Label className="text-sm font-semibold text-neutral-900 mb-2 block">
+                {t('makeOfferModal.offerQuantity')}
+              </Label>
+              <Input
+                type="number"
+                min="1"
+                max={maxQuantity || undefined}
+                step="1"
+                value={offerQuantity}
+                onChange={(e) => setOfferQuantity(e.target.value)}
+                placeholder={t('makeOfferModal.offerQuantityPlaceholder')}
+                className="bg-neutral-50 border-neutral-200"
+                required
+              />
+              {maxQuantity && (
+                <p className="text-xs text-neutral-400 mt-1">
+                  {t('auctionPage.maximumUnits', { count: maxQuantity })}
+                </p>
+              )}
+            </div>
+
             {/* Offer Price */}
             <div>
               <Label className="text-sm font-semibold text-neutral-900 mb-2 block">
-                Offer Price ({currency})
+                {t('makeOfferModal.offerPrice')} ({currency})
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-medium select-none">
@@ -210,7 +247,7 @@ export default function MakeOfferModal({
                   min="0.01"
                   value={offerPrice}
                   onChange={(e) => setOfferPrice(e.target.value)}
-                  placeholder="Enter your offer"
+                  placeholder={t('makeOfferModal.offerPricePlaceholder')}
                   className="pl-8 bg-neutral-50 border-neutral-200"
                   required
                 />
@@ -224,13 +261,13 @@ export default function MakeOfferModal({
                 onClick={onClose}
                 className="flex-1 border-neutral-300"
               >
-                Cancel
+                {t('makeOfferModal.cancel')}
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-[#1a3c2a] hover:bg-[#152e21] text-white"
               >
-                Review Offer
+                {t('makeOfferModal.reviewOffer')}
               </Button>
             </div>
           </form>

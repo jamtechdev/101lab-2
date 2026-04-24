@@ -272,6 +272,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [bidDialogMode, setBidDialogMode] = useState<"place_bid" | "make_offer" | "buy_now">("place_bid");
   const [makeOfferStep, setMakeOfferStep] = useState<"form" | "review">("form");
+  const [offerQuantity, setOfferQuantity] = useState<number>(1);
   // ── NEW: confirmation step for place bid ──
   const [placeBidStep, setPlaceBidStep] = useState<"form" | "review">("form");
   const [showBidSuccessDialog, setShowBidSuccessDialog] = useState(false);
@@ -709,7 +710,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
-    formData.append("offer_quantity", 1);
+    formData.append("offer_quantity", String(offerQuantity || 1));
     if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
     if (documentFile) formData.append("document_image", documentFile);
 
@@ -1421,6 +1422,25 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     </div>
                     <div>
                       <Label className="text-sm font-semibold text-foreground mb-2 block">
+                        {t("makeOfferModal.offerQuantity") || "Offer Quantity"}
+                      </Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={products[0]?.quantity !== "N/A" ? Number(products[0]?.quantity) : undefined}
+                        step="1"
+                        value={offerQuantity}
+                        onChange={(e) => setOfferQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        placeholder={t("makeOfferModal.offerQuantityPlaceholder") || "Enter quantity"}
+                      />
+                      {products[0]?.quantity && products[0].quantity !== "N/A" && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t("auctionPage.maximumUnits", { count: products[0].quantity })}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-semibold text-foreground mb-2 block">
                         Offer Price ({bidDetail?.currency || "USD"})
                       </Label>
                       <div className="relative">
@@ -1462,9 +1482,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <span className="text-muted-foreground">Company</span>
                         <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{companyBuyerName}</span>
                       </div>
-                      <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                         <span className="text-muted-foreground">Contact</span>
                         <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{contactPerson}</span>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <span className="text-muted-foreground">{t("makeOfferModal.quantity") || "Quantity"}</span>
+                        <span className="font-semibold text-foreground">{offerQuantity}</span>
                       </div>
                     </div>
 

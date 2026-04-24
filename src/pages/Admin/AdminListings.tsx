@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const { RangePicker } = DatePicker;
 import {
@@ -138,6 +139,7 @@ const getDynamicStatus = (item: BatchItem): {
     { label: string; variant: "default" | "secondary" | "destructive" | "outline"; color: string }
   > = {
     sold: { label: "Sold", variant: "secondary", color: "bg-gray-500" },
+    publish: { label: "Published", variant: "default", color: "bg-blue-500" },
     published: { label: "Published", variant: "default", color: "bg-blue-500" },
     inspection_schedule: { label: "Inspection Scheduled", variant: "secondary", color: "bg-yellow-500" },
   };
@@ -225,11 +227,13 @@ const AdminListings = () => {
   const [editBatchId, setEditBatchId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [platformType, setPlatformType] = useState<string>(SITE_TYPE);
   const [dateRange, setDateRange] = useState<"all" | "today" | "thisMonth" | "custom">("all");
   const [customDateRange, setCustomDateRange] = useState<[string, string] | null>(null);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [batchStatus, setBatchStatus] = useState<string>("all");
+  const [approvalStatus, setApprovalStatus] = useState<string>("all");
 
   // Compute dateFrom/dateTo for API
   const { dateFrom, dateTo } = useMemo(() => {
@@ -255,7 +259,15 @@ const AdminListings = () => {
     return { dateFrom: undefined, dateTo: undefined };
   }, [dateRange, customDateRange]);
 
-  // Fetch batches (platform, date range, sort)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch batches (platform, date range, sort, search)
   const { data, isLoading, isFetching, isError, refetch } = useGetAdminBatchesQuery({
     page,
     limit: 10,
@@ -263,6 +275,9 @@ const AdminListings = () => {
     dateFrom,
     dateTo,
     sort: sortOrder,
+    search: debouncedSearch || undefined,
+    status: batchStatus !== "all" ? batchStatus : undefined,
+    approvalStatus: approvalStatus !== "all" ? approvalStatus : undefined,
   });
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [deleteBatch, { isLoading: isDeleting }] = useDeleteBatchMutation();
@@ -314,38 +329,35 @@ const AdminListings = () => {
     return unsub;
   }, []);
 
-  // Filter listings based on search query and status
-  const filteredListings = useMemo(() => {
-    let filtered = listings;
+  // ---------------- Filter helpers ----------------
+  const BATCH_STATUS_LABELS: Record<string, string> = {
+    publish: "Published",
+    live_for_bids: "Live for Bids",
+    inspection_schedule: "Inspection Scheduled",
+    sold: "Sold",
+  };
 
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((item) => {
-        const statusInfo = getDynamicStatus(item);
-        const label = statusInfo?.label;
-        return label && String(label).toLowerCase().replace(/\s+/g, "_") === statusFilter;
-      });
-    }
+  const activeFilters = [
+    searchQuery ? { key: "search", label: `Search: "${searchQuery}"`, clear: () => setSearchQuery("") } : null,
+    batchStatus !== "all" ? { key: "status", label: `Status: ${BATCH_STATUS_LABELS[batchStatus] ?? batchStatus}`, clear: () => { setBatchStatus("all"); setPage(1); } } : null,
+    approvalStatus !== "all" ? { key: "approval", label: `Approval: ${approvalStatus === "pending" ? "Pending" : "Approved"}`, clear: () => { setApprovalStatus("all"); setPage(1); } } : null,
+    dateRange !== "all" ? {
+      key: "date",
+      label: `Date: ${dateRange === "today" ? "Today" : dateRange === "thisMonth" ? "This Month" : customDateRange ? `${dayjs(customDateRange[0]).format("MMM D")} – ${dayjs(customDateRange[1]).format("MMM D, YYYY")}` : "Custom"}`,
+      clear: () => { setDateRange("all"); setCustomDateRange(null); setPage(1); },
+    } : null,
+    sortOrder !== "newest" ? { key: "sort", label: "Sort: Oldest First", clear: () => { setSortOrder("newest"); setPage(1); } } : null,
+  ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
-    // Apply search filter (guard against undefined seller/display_name/meta/company_name)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((item) => {
-        const batchNum = item?.batch_number != null ? String(item.batch_number) : "";
-        const title = item?.products?.[0]?.title;
-        const displayName = item?.seller?.display_name;
-        const companyName = item?.seller?.meta?.greenbidz_company;
-        return (
-          batchNum.includes(query) ||
-          (typeof title === "string" && title.toLowerCase().includes(query)) ||
-          (typeof displayName === "string" && displayName.toLowerCase().includes(query)) ||
-          (typeof companyName === "string" && companyName.toLowerCase().includes(query))
-        );
-      });
-    }
-
-    return filtered;
-  }, [listings, searchQuery, statusFilter]);
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setBatchStatus("all");
+    setApprovalStatus("all");
+    setDateRange("all");
+    setCustomDateRange(null);
+    setSortOrder("newest");
+    setPage(1);
+  };
 
   // ---------------- Loading States ----------------
   const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
@@ -530,60 +542,46 @@ const AdminListings = () => {
           {/* ---------------- SEARCH AND FILTERS ---------------- */}
           <Card className="shadow-sm border-0 bg-gradient-to-r from-background to-muted/30">
             <CardContent className="p-5 space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder={t('admin.listings.searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11 border-2 focus:border-primary/50"
-                  />
-                  {searchQuery && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                      onClick={() => setSearchQuery("")}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
+
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by batch ID, product name, seller or company…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11 border-2 focus:border-primary/50"
+                />
+                {searchQuery && (
+                  <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchQuery("")}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
+
+              {/* Date tabs (original) */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    {t('admin.listings.dateRange', 'Date')}
-                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</span>
                   <Tabs
                     value={dateRange}
-                    onValueChange={(val: "all" | "today" | "thisMonth" | "custom") => {
-                      setDateRange(val);
-                      setPage(1);
-                    }}
+                    onValueChange={(val: "all" | "today" | "thisMonth" | "custom") => { setDateRange(val); setCustomDateRange(null); setPage(1); }}
                     className="w-auto"
                   >
                     <TabsList className="h-9">
-                      <TabsTrigger value="all" className="px-3 text-xs">{t('admin.listings.allTime', 'All')}</TabsTrigger>
-                      <TabsTrigger value="today" className="px-3 text-xs">{t('admin.listings.today', 'Today')}</TabsTrigger>
-                      <TabsTrigger value="thisMonth" className="px-3 text-xs">{t('admin.listings.thisMonth', 'This month')}</TabsTrigger>
-                      <TabsTrigger value="custom" className="px-3 text-xs">{t('admin.listings.custom', 'Custom')}</TabsTrigger>
+                      <TabsTrigger value="all" className="px-3 text-xs">All</TabsTrigger>
+                      <TabsTrigger value="today" className="px-3 text-xs">Today</TabsTrigger>
+                      <TabsTrigger value="thisMonth" className="px-3 text-xs">This Month</TabsTrigger>
+                      <TabsTrigger value="custom" className="px-3 text-xs">Custom</TabsTrigger>
                     </TabsList>
                   </Tabs>
                   {dateRange === "custom" && (
                     <RangePicker
                       value={customDateRange ? [dayjs(customDateRange[0]), dayjs(customDateRange[1])] : null}
                       onChange={(dates) => {
-                        if (!dates || !dates[0] || !dates[1]) {
-                          setCustomDateRange(null);
-                          return;
-                        }
-                        setCustomDateRange([
-                          dates[0].startOf("day").toISOString(),
-                          dates[1].endOf("day").toISOString(),
-                        ]);
+                        if (!dates || !dates[0] || !dates[1]) { setCustomDateRange(null); return; }
+                        setCustomDateRange([dates[0].startOf("day").toISOString(), dates[1].endOf("day").toISOString()]);
                         setPage(1);
                       }}
                       size="large"
@@ -591,25 +589,80 @@ const AdminListings = () => {
                     />
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    {t('admin.listings.sort', 'Sort')}
-                  </span>
-                  <Tabs
-                    value={sortOrder}
-                    onValueChange={(val: "newest" | "oldest") => {
-                      setSortOrder(val);
-                      setPage(1);
-                    }}
-                    className="w-auto"
-                  >
-                    <TabsList className="h-9">
-                      <TabsTrigger value="newest" className="px-3 text-xs">{t('admin.listings.newest', 'Newest')}</TabsTrigger>
-                      <TabsTrigger value="oldest" className="px-3 text-xs">{t('admin.listings.oldest', 'Oldest')}</TabsTrigger>
-                    </TabsList>
-                  </Tabs>
+              </div>
+
+              {/* Dropdowns row: Status · Approval · Sort */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch Status</label>
+                  <Select value={batchStatus} onValueChange={(val) => { setBatchStatus(val); setPage(1); }}>
+                    <SelectTrigger className="h-9 border-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="publish">Published</SelectItem>
+                      <SelectItem value="live_for_bids">Live for Bids</SelectItem>
+                      <SelectItem value="inspection_schedule">Inspection Scheduled</SelectItem>
+                      <SelectItem value="sold">Sold</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Approval</label>
+                  <Select value={approvalStatus} onValueChange={(val) => { setApprovalStatus(val); setPage(1); }}>
+                    <SelectTrigger className="h-9 border-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="pending">Pending Approval</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Sort</label>
+                  <Select value={sortOrder} onValueChange={(val: "newest" | "oldest") => { setSortOrder(val); setPage(1); }}>
+                    <SelectTrigger className="h-9 border-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest First</SelectItem>
+                      <SelectItem value="oldest">Oldest First</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+
+              {/* Active filter chips */}
+              {activeFilters.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground font-medium shrink-0">Active filters:</span>
+                  {activeFilters.map((f) => (
+                    <Badge key={f.key} variant="secondary" className="gap-1 pl-2.5 pr-1 py-1 text-xs font-medium">
+                      {f.label}
+                      <button
+                        onClick={f.clear}
+                        className="ml-0.5 rounded-full hover:bg-foreground/10 p-0.5 transition-colors"
+                        aria-label={`Remove ${f.key} filter`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={clearAllFilters}
+                  >
+                    Clear all
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -620,16 +673,15 @@ const AdminListings = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-2xl font-bold">{t('admin.listings.allListings')}</CardTitle>
-                    {filteredListings.length > 0 && (
+                    {listings.length > 0 && (
                       <Badge variant="secondary" className="ml-2">
-                        {filteredListings.length}
+                        {data?.pagination.total_batches ?? listings.length}
                       </Badge>
                     )}
                   </div>
                   <CardDescription className="mt-2 flex items-center gap-2">
                     <Sparkles className="h-3 w-3" />
-                    {t('admin.listings.listingsFound', { count: filteredListings.length })}
-                    {statusFilter !== "all" && ` • ${t('admin.listings.filteredBy', { filter: statusFilter.replace(/_/g, " ") })}`}
+                    {t('admin.listings.listingsFound', { count: data?.pagination.total_batches ?? listings.length })}
                   </CardDescription>
                 </div>
                 {isFetching && (
@@ -648,32 +700,25 @@ const AdminListings = () => {
                     <ListingSkeleton key={i} />
                   ))}
                 </div>
-              ) : filteredListings.length === 0 ? (
+              ) : listings.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <div className="p-4 rounded-full bg-muted/50 mb-4">
                     <Package className="h-12 w-12 text-muted-foreground/50" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{t('admin.listings.noListingsFound')}</h3>
                   <p className="text-muted-foreground max-w-md">
-                    {searchQuery || statusFilter !== "all"
-                      ? t('admin.listings.tryAdjusting')
+                    {activeFilters.length > 0
+                      ? "No listings match the current filters. Try removing some filters."
                       : t('admin.listings.noListingsAvailable')}
                   </p>
-                  {(searchQuery || statusFilter !== "all") && (
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchQuery("");
-                        setStatusFilter("all");
-                      }}
-                    >
+                  {activeFilters.length > 0 && (
+                    <Button variant="outline" className="mt-4" onClick={clearAllFilters}>
                       {t('admin.common.clearFilters')}
                     </Button>
                   )}
                 </div>
               ) : (
-                filteredListings.map((item) => {
+                listings.map((item) => {
                   const statusInfo = getDynamicStatus(item);
                   const isExpanded = expanded === item.batch_id;
 
@@ -967,7 +1012,7 @@ const AdminListings = () => {
           </Card>
 
           {/* ---------------- PAGINATION ---------------- */}
-          {!searchQuery && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
 
