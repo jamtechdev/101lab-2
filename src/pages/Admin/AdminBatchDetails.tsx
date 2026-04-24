@@ -134,7 +134,7 @@ const AdminBatchDetails = () => {
               <CardDescription>{t('admin.batchDetails.failedToLoad')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => navigate("/admin/listings")} variant="outline">
+              <Button onClick={() => navigate(-1)} variant="outline">
                 {t('admin.batchDetails.backToListings')}
               </Button>
             </CardContent>
@@ -185,7 +185,7 @@ const AdminBatchDetails = () => {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigate("/admin/listings")}
+              onClick={() => navigate(-1)}
               className="flex-shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -817,4 +817,3 @@ const AdminBatchDetails = () => {
 };
 
 export default AdminBatchDetails;
-
