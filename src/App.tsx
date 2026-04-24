@@ -111,6 +111,7 @@ import SellerOffersReceived from "./pages/Seller/offers/SellerOffersReceived.js"
 import SellerOrdersReceived from "./pages/Seller/orders/SellerOrdersReceived.js";
 import SellerOrder from "./pages/order/SellerOrder.js";
 import SellerOffer from "./pages/offer/SellerOffer.js";
+import SellerOffersOrders from "./pages/dashboard/SellerOffersOrders";
 import SearchPage from "./pages/dashboard/SearchPage";
 import CheckoutPage from "./pages/Seller/Checkout.js"
 import SellerMarketplace from "./pages/Seller/SellerMarketplace.js";
@@ -299,6 +300,7 @@ const App = () => {
 
                 <Route path="/dashboard/seller/offers" element={<SellerOffer />} />
                 <Route path="/dashboard/seller/orders" element={<SellerOrder />} />
+                <Route path="/dashboard/seller/offers-orders" element={<SellerOffersOrders />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
 

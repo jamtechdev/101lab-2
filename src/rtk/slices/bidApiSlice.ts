@@ -306,10 +306,20 @@ export interface SellerOffer {
   };
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 export interface GetSellerOffersResponse {
   success: boolean;
   stats?: any;
   data: SellerOffer[];
+  pagination?: PaginationMeta;
 }
 
 // --- Bid API Slice ---
@@ -514,13 +524,14 @@ export const bidApiSlice = createApi({
 
     getOwnerOffers: builder.query<
       GetSellerOffersResponse,
-      { sellerID: string }
+      { sellerID: string; page?: number; limit?: number; status?: string }
     >({
-      query: ({ sellerID }) => ({
-        url: `/offer/seller?sellerID=${sellerID}`,
-        method: "GET",
-      }),
-      // optionally remove providesTags for simplicity
+      query: ({ sellerID, page = 1, limit = 10, status }) => {
+        const params = new URLSearchParams({ sellerID, page: String(page), limit: String(limit) });
+        if (status) params.set("status", status);
+        return { url: `/offer/seller?${params.toString()}`, method: "GET" };
+      },
+      providesTags: ["Offers"],
     }),
 
     updateOfferStatus: builder.mutation<

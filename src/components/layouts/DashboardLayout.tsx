@@ -23,6 +23,7 @@ import {
   ShoppingCart,
   TableProperties,
   BarChart3,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/greenbidz_logo.png";
@@ -92,6 +93,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
         { name: t('nav.myListings'), href: "/dashboard/submissions", icon: ClipboardList, permission: null },
         { name: t('nav.bidsAndWinners'), href: "/dashboard/bids", icon: TrendingUp, permission: "bidding.view" },
         { name: "Auction Groups", href: "/dashboard/auction-groups", icon: Gavel, permission: null },
+        { name: "Offers & Orders", href: "/dashboard/seller/offers-orders", icon: Tag, permission: null },
         // { name: "Batch Groups", href: "/dashboard/batch-groups", icon: Layers, permission: null },
       ]
     },

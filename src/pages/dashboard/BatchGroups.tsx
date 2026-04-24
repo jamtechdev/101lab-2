@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ import {
   ToggleRight,
   CalendarClock,
   FileText,
+  Tag as TagIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { SITE_TYPE } from "@/config/site";
@@ -48,7 +51,11 @@ import {
   useUpdateBatchGroupMutation,
   useToggleBatchGroupMutation,
   useDeleteBatchGroupMutation,
+  useGetBatchGroupTagsQuery,
+  useCreateBatchGroupTagMutation,
+  useDeleteBatchGroupTagMutation,
   type BatchGroup,
+  type BatchGroupTag,
 } from "@/rtk/slices/batchGroupApiSlice";
 import { useGetBatchesBySellerQuery } from "@/rtk/slices/productSlice";
 
@@ -64,7 +71,22 @@ type FormState = {
   batchIds: number[];
 };
 
+type PendingTag = { uid: string; tag_name: string; content: string };
+
 const EMPTY_FORM: FormState = { title: "", description: "", batchIds: [] };
+
+// ─── Tag Editor Config ────────────────────────────────────────────────────────
+
+const TAG_EDITOR_BUTTONS = [
+  ["undo", "redo"],
+  ["font", "fontSize", "formatBlock"],
+  ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+  ["fontColor", "hiliteColor", "removeFormat"],
+  ["align", "horizontalRule", "list", "lineHeight"],
+  ["table", "link", "image"],
+  ["fullScreen", "showBlocks", "codeView"],
+  ["preview"],
+];
 
 // ─── Batch Selector (scroll-paginated) ───────────────────────────────────────
 
@@ -292,6 +314,9 @@ const GroupDialog = ({
   sellerId,
   onSave,
   saving,
+  groupId,
+  pendingTags,
+  setPendingTags,
 }: {
   open: boolean;
   onClose: () => void;
@@ -301,71 +326,226 @@ const GroupDialog = ({
   sellerId: number;
   onSave: () => void;
   saving: boolean;
-}) => (
-  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-    <DialogContent className="max-w-xl max-h-[92vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Layers className="h-5 w-5" />
-          {dialogTitle}
-        </DialogTitle>
-      </DialogHeader>
+  groupId?: number;
+  pendingTags: PendingTag[];
+  setPendingTags: React.Dispatch<React.SetStateAction<PendingTag[]>>;
+}) => {
+  const [addingTag, setAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagContent, setNewTagContent] = useState("");
 
-      <div className="space-y-5 py-1">
-        {/* Title */}
-        <div className="space-y-1.5">
-          <Label htmlFor="bg-title">
-            Group Title <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="bg-title"
-            placeholder="e.g. Heavy Machinery – Q3 2026"
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          />
+  const { data: existingTagsData, refetch: refetchTags } = useGetBatchGroupTagsQuery(groupId!, {
+    skip: !groupId,
+  });
+  const [deleteTag] = useDeleteBatchGroupTagMutation();
+
+  const existingTags: BatchGroupTag[] = existingTagsData?.data ?? [];
+
+  useEffect(() => {
+    if (!open) {
+      setAddingTag(false);
+      setNewTagName("");
+      setNewTagContent("");
+    }
+  }, [open]);
+
+  const handleAddTag = () => {
+    if (!newTagName.trim()) return;
+    setPendingTags((prev) => [
+      ...prev,
+      { uid: Math.random().toString(36).slice(2), tag_name: newTagName.trim(), content: newTagContent },
+    ]);
+    setNewTagName("");
+    setNewTagContent("");
+    setAddingTag(false);
+  };
+
+  const handleDeleteExisting = async (tagId: number) => {
+    if (!groupId) return;
+    try {
+      await deleteTag({ groupId, tagId }).unwrap();
+      refetchTags();
+    } catch {
+      toast.error("Failed to delete tag");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[92vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2">
+            <Layers className="h-5 w-5" />
+            {dialogTitle}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-5">
+            {/* Title */}
+            <div className="space-y-1.5">
+              <Label htmlFor="bg-title">
+                Group Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="bg-title"
+                placeholder="e.g. Heavy Machinery – Q3 2026"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label htmlFor="bg-desc" className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />
+                Description
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Textarea
+                id="bg-desc"
+                placeholder="Describe what this group contains, target buyers, auction notes…"
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                className="min-h-[80px] resize-none"
+              />
+            </div>
+
+            {/* Batches */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1">
+                <Package className="h-3.5 w-3.5" />
+                Batches
+              </Label>
+              <BatchSelector
+                sellerId={sellerId}
+                selected={form.batchIds}
+                onChange={(ids) => setForm((f) => ({ ...f, batchIds: ids }))}
+              />
+            </div>
+
+            {/* ── Tags ── */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm font-medium">
+                <TagIcon className="h-3.5 w-3.5" />
+                Tags
+                <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+              </Label>
+
+              {/* Existing saved tags */}
+              {existingTags.length > 0 && (
+                <div className="space-y-1.5">
+                  {existingTags.map((tag) => (
+                    <div
+                      key={tag.tag_id}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100"
+                    >
+                      <TagIcon className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                      <span className="text-sm font-medium text-blue-800 flex-1 truncate">{tag.tag_name}</span>
+                      <span className="text-xs text-blue-400 shrink-0">saved</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExisting(tag.tag_id)}
+                        className="text-red-400 hover:text-red-600 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pending tags (not yet saved) */}
+              {pendingTags.length > 0 && (
+                <div className="space-y-1.5">
+                  {pendingTags.map((tag) => (
+                    <div
+                      key={tag.uid}
+                      className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100"
+                    >
+                      <TagIcon className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="text-sm font-medium text-amber-800 flex-1 truncate">{tag.tag_name}</span>
+                      <span className="text-xs text-amber-400 shrink-0">pending</span>
+                      <button
+                        type="button"
+                        onClick={() => setPendingTags((p) => p.filter((t) => t.uid !== tag.uid))}
+                        className="text-red-400 hover:text-red-600 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Inline add-tag form */}
+              {addingTag ? (
+                <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                  <Input
+                    placeholder="Tag name (e.g. Location, Terms & Conditions, Parking)"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <div className="rounded-lg overflow-hidden border border-gray-200">
+                    <SunEditor
+                      height="220px"
+                      setContents={newTagContent}
+                      onChange={(html) => setNewTagContent(html)}
+                      setOptions={{
+                        buttonList: TAG_EDITOR_BUTTONS,
+                        font: ["Arial", "Georgia", "Tahoma", "Trebuchet MS", "Verdana"],
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setAddingTag(false); setNewTagName(""); setNewTagContent(""); }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddTag}
+                      disabled={!newTagName.trim()}
+                      className="flex-1"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Tag
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingTag(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add a tag
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Description */}
-        <div className="space-y-1.5">
-          <Label htmlFor="bg-desc" className="flex items-center gap-1">
-            <FileText className="h-3.5 w-3.5" />
-            Description
-            <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <Textarea
-            id="bg-desc"
-            placeholder="Describe what this group contains, target buyers, auction notes…"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            className="min-h-[80px] resize-none"
-          />
-        </div>
-
-        {/* Batches */}
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1">
-            <Package className="h-3.5 w-3.5" />
-            Batches
-          </Label>
-          <BatchSelector
-            sellerId={sellerId}
-            selected={form.batchIds}
-            onChange={(ids) => setForm((f) => ({ ...f, batchIds: ids }))}
-          />
-        </div>
-      </div>
-
-      <DialogFooter className="pt-2">
-        <Button variant="outline" onClick={onClose} disabled={saving}>
-          Cancel
-        </Button>
-        <Button onClick={onSave} disabled={saving} className="min-w-[90px]">
-          {saving ? "Saving…" : "Save Group"}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
+        <DialogFooter className="px-6 py-4 border-t flex-shrink-0">
+          <Button variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={onSave} disabled={saving} className="min-w-[90px]">
+            {saving ? "Saving…" : "Save Group"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // ─── Group Card ───────────────────────────────────────────────────────────────
 
@@ -507,6 +687,7 @@ const BatchGroups = () => {
   const [updateGroup, { isLoading: updating }] = useUpdateBatchGroupMutation();
   const [toggleGroup] = useToggleBatchGroupMutation();
   const [deleteGroup] = useDeleteBatchGroupMutation();
+  const [createGroupTag] = useCreateBatchGroupTagMutation();
 
   // ── Dialog state ───────────────────────────────────────────────────────────
   const [dialog, setDialog] = useState<"create" | "edit" | null>(null);
@@ -514,11 +695,13 @@ const BatchGroups = () => {
   const [form, setForm] = useState<FormState>({ ...EMPTY_FORM });
   const [deleteTarget, setDeleteTarget] = useState<BatchGroup | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [pendingTags, setPendingTags] = useState<PendingTag[]>([]);
 
   const saving = creating || updating;
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM });
+    setPendingTags([]);
     setDialog("create");
   };
 
@@ -529,6 +712,7 @@ const BatchGroups = () => {
       description: group.description ?? "",
       batchIds: group.batch_ids ?? [],
     });
+    setPendingTags([]);
     setDialog("edit");
   };
 
@@ -536,6 +720,7 @@ const BatchGroups = () => {
     setDialog(null);
     setEditTarget(null);
     setForm({ ...EMPTY_FORM });
+    setPendingTags([]);
   };
 
   // ── Validation ─────────────────────────────────────────────────────────────
@@ -551,13 +736,21 @@ const BatchGroups = () => {
   const handleCreate = async () => {
     if (!validate()) return;
     try {
-      await createGroup({
+      const res = await createGroup({
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         batch_ids: form.batchIds,
         seller_id: sellerId,
         site_id: SITE_TYPE,
       }).unwrap();
+
+      const groupId = res.data.group_id;
+      for (const tag of pendingTags) {
+        try {
+          await createGroupTag({ group_id: groupId, tag_name: tag.tag_name, content: tag.content }).unwrap();
+        } catch { /* tag failure should not block group creation */ }
+      }
+
       toast.success("Group created!");
       closeDialog();
     } catch {
@@ -576,6 +769,13 @@ const BatchGroups = () => {
         description: form.description.trim() || undefined,
         batch_ids: form.batchIds,
       }).unwrap();
+
+      for (const tag of pendingTags) {
+        try {
+          await createGroupTag({ group_id: editTarget.group_id, tag_name: tag.tag_name, content: tag.content }).unwrap();
+        } catch { /* tag failure should not block group update */ }
+      }
+
       toast.success("Group updated!");
       closeDialog();
     } catch {
@@ -699,6 +899,8 @@ const BatchGroups = () => {
         sellerId={sellerId}
         onSave={handleCreate}
         saving={saving}
+        pendingTags={pendingTags}
+        setPendingTags={setPendingTags}
       />
 
       {/* Edit dialog */}
@@ -711,6 +913,9 @@ const BatchGroups = () => {
         sellerId={sellerId}
         onSave={handleUpdate}
         saving={saving}
+        groupId={editTarget?.group_id}
+        pendingTags={pendingTags}
+        setPendingTags={setPendingTags}
       />
 
       {/* Delete confirm */}

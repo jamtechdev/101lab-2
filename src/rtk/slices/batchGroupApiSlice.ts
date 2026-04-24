@@ -43,12 +43,24 @@ export interface DeleteBatchGroupRequest {
   seller_id: number;
 }
 
+export interface BatchGroupTag {
+  tag_id: number;
+  group_id: number;
+  tag_name: string;
+  tag_icon: string;
+  content_en: string;
+  content_zh: string;
+  content_ja: string;
+  content_th: string;
+  sort_order: number;
+}
+
 // ─── API Slice ────────────────────────────────────────────────────────────────
 
 export const batchGroupApi = createApi({
   reducerPath: "batchGroupApi",
   baseQuery: axiosBaseQuery,
-  tagTypes: ["BatchGroups"],
+  tagTypes: ["BatchGroups", "BatchGroupTags"],
   endpoints: (builder) => ({
 
     // GET /batch-group?seller_id=&site_id=
@@ -115,6 +127,32 @@ export const batchGroupApi = createApi({
       }),
       invalidatesTags: ["BatchGroups"],
     }),
+
+    // ── Tags ──────────────────────────────────────────────────────────────
+    getBatchGroupTags: builder.query<{ success: boolean; data: BatchGroupTag[] }, number>({
+      query: (groupId) => ({ url: `/batch-group/${groupId}/tags`, method: "GET" }),
+      providesTags: (_r, _e, groupId) => [{ type: "BatchGroupTags", id: groupId }],
+    }),
+
+    createBatchGroupTag: builder.mutation<
+      { success: boolean; data: BatchGroupTag },
+      { group_id: number; tag_name: string; content: string; source_lang?: string }
+    >({
+      query: ({ group_id, ...body }) => ({
+        url: `/batch-group/${group_id}/tags`,
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: (_r, _e, { group_id }) => [{ type: "BatchGroupTags", id: group_id }],
+    }),
+
+    deleteBatchGroupTag: builder.mutation<{ success: boolean }, { groupId: number; tagId: number }>({
+      query: ({ groupId, tagId }) => ({
+        url: `/batch-group/${groupId}/tags/${tagId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "BatchGroupTags", id: groupId }],
+    }),
   }),
 });
 
@@ -124,4 +162,7 @@ export const {
   useUpdateBatchGroupMutation,
   useToggleBatchGroupMutation,
   useDeleteBatchGroupMutation,
+  useGetBatchGroupTagsQuery,
+  useCreateBatchGroupTagMutation,
+  useDeleteBatchGroupTagMutation,
 } = batchGroupApi;

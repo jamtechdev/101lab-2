@@ -29,6 +29,21 @@ export interface Checkout {
   manual_payment_note?: string;
   created_at: string;
   updated_at: string;
+  buyer?: any;
+  batch?: any;
+}
+
+export interface CheckoutPaginatedResponse {
+  success: boolean;
+  orders: Checkout[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export const checkoutApi = createApi({
@@ -54,13 +69,14 @@ export const checkoutApi = createApi({
       transformResponse: (response: { success: boolean; data: Checkout[] }) => response.data,
     }),
 
-    /** Get all checkouts for a seller */
-    getSellerCheckouts: builder.query<Checkout[], { sellerId: number; status?: CheckoutStatus }>({
-      query: ({ sellerId, status }) => ({
-        url: `/checkouts/seller/${sellerId}`,
-        params: status ? { status } : undefined,
-      }),
-      transformResponse: (response: { success: boolean; data: Checkout[] }) => response.data,
+    /** Get all checkouts for a seller (paginated) */
+    getSellerCheckouts: builder.query<CheckoutPaginatedResponse, { sellerId: number; page?: number; limit?: number; status?: CheckoutStatus }>({
+      query: ({ sellerId, page = 1, limit = 10, status }) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (status) params.set("status", status);
+        return { url: `/checkouts/seller/${sellerId}?${params.toString()}` };
+      },
+      providesTags: ['SellerCheckouts'],
     }),
 
     /** Get a single checkout by ID */
