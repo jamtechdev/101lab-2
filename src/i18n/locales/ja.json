@@ -249,6 +249,20 @@
     "signingIn": "サインイン中...",
     "buyerAccount": "買い手アカウント",
     "sellerAccount": "売り手アカウント",
+    "verifyPage": {
+      "noTokenMessage": "このリンクに確認トークンがありません。メールを確認してもう一度お試しください。",
+      "invalidLinkMessage": "この確認リンクは無効か、有効期限が切れています。",
+      "verifyingTitle": "メールアドレスを確認中...",
+      "pleaseWait": "しばらくお待ちください。",
+      "verifiedTitle": "メール確認完了！",
+      "verifiedDescription": "メールアドレスの確認が正常に完了しました。",
+      "underReviewTitle": "アカウント審査中",
+      "underReviewDescription": "担当チームがまもなくアカウントを審査します。承認後にサインインできます。それまでの間、マーケットプレイスを閲覧できます。",
+      "browseMarketplace": "マーケットプレイスを見る",
+      "goToSignIn": "サインインへ",
+      "failedTitle": "確認に失敗しました",
+      "tryAgain": "再試行"
+    },
     "features": {
       "verifiedMarketplace": "認証された産業マーケットプレイスへのアクセス",
       "secureBidding": "安全な入札と取引プラットフォーム",

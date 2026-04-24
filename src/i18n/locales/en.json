@@ -352,6 +352,20 @@
       "welcomeBackToast": "Welcome back!",
       "loginFailed": "Login failed."
     },
+    "verifyPage": {
+      "noTokenMessage": "No verification token found in this link. Please check your email and try again.",
+      "invalidLinkMessage": "This verification link is invalid or has expired.",
+      "verifyingTitle": "Verifying your email...",
+      "pleaseWait": "Please wait a moment.",
+      "verifiedTitle": "Email Verified!",
+      "verifiedDescription": "Your email address has been confirmed successfully.",
+      "underReviewTitle": "Account under review",
+      "underReviewDescription": "Our team will review your account shortly. You'll be able to sign in once approved. In the meantime, you can freely browse the marketplace.",
+      "browseMarketplace": "Browse Marketplace",
+      "goToSignIn": "Go to Sign In",
+      "failedTitle": "Verification Failed",
+      "tryAgain": "Try Again"
+    },
     "features": {
       "verifiedMarketplace": "Access to verified industrial marketplace",
       "secureBidding": "Secure bidding & transaction platform",
