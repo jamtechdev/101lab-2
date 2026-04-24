@@ -1,31 +1,20 @@
 // @ts-nocheck
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  CheckCircle,
-  CheckCircle2,
-  Clock,
-  Globe,
-  Loader2,
-  Search,
-  Gavel,
-  Languages,
-  Package,
-  Users,
-  Calendar,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  X,
-  Star,
-  Layers,
+  CheckCircle, CheckCircle2, Clock, Globe, Loader2, Search, Gavel,
+  Languages, Package, Users, Calendar, ChevronDown, ChevronUp,
+  Sparkles, X, Star, Layers, Plus, Trash2, Pencil, MapPin, FileText,
+  Car, Phone, CreditCard, Info, HelpCircle, Truck, Eye, Tag as TagIcon,
+  Wand2, Save,
 } from "lucide-react";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
@@ -35,36 +24,64 @@ import {
   useGetAdminAuctionGroupsQuery,
   useApproveAuctionGroupMutation,
   useSetAuctionGroupFeaturedMutation,
+  useGetGroupTagsQuery,
+  useCreateGroupTagMutation,
+  useUpdateGroupTagMutation,
+  useDeleteGroupTagMutation,
+  useTranslateTagContentMutation,
   AdminAuctionGroupItem,
+  AuctionGroupTag,
 } from "@/rtk/slices/adminApiSlice";
 
-// ─── Platform options (same as AdminListings) ────────────────────────────────
+/* ── Constants ──────────────────────────────────────────────────────────── */
 const PLATFORMS = [
-  { value: "greenbidz", label: "GreenBidz" },
-  { value: "recycle", label: "Recycle" },
+  { value: "greenbidz",    label: "GreenBidz" },
+  { value: "recycle",      label: "Recycle" },
   { value: "LabGreenbidz", label: "Lab-GreenBidz" },
-  { value: "machines", label: "Machines" },
+  { value: "machines",     label: "Machines" },
 ];
 
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({
-  title,
-  value,
-  icon: Icon,
-  color,
-  trend,
-}: {
-  title: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  trend?: string;
+const LANGS = [
+  { code: "en", label: "EN", flag: "🇬🇧" },
+  { code: "zh", label: "ZH", flag: "🇹🇼" },
+  { code: "ja", label: "JA", flag: "🇯🇵" },
+  { code: "th", label: "TH", flag: "🇹🇭" },
+];
+
+const EDITOR_BUTTONS = [
+  ["bold", "italic", "underline", "strike"],
+  ["list", "align"],
+  ["link"],
+  ["removeFormat"],
+];
+
+/* ── Icon resolver (matches backend resolveIcon) ────────────────────────── */
+const ICON_MAP: Record<string, React.ElementType> = {
+  "map-pin": MapPin, "file-text": FileText, "car": Car, "phone": Phone,
+  "clock": Clock, "credit-card": CreditCard, "info": Info, "help-circle": HelpCircle,
+  "truck": Truck, "eye": Eye, "tag": TagIcon,
+};
+const getTagIcon = (name: string) => ICON_MAP[name] ?? TagIcon;
+
+/* ── Chip color cycle ───────────────────────────────────────────────────── */
+const CHIP_COLORS = [
+  "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100",
+  "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100",
+  "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100",
+  "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amberald-100",
+  "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100",
+  "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100",
+];
+
+/* ── Stat Card ──────────────────────────────────────────────────────────── */
+const StatCard = ({ title, value, icon: Icon, color, trend }: {
+  title: string; value: number; icon: React.ElementType; color: string; trend?: string;
 }) => (
   <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group bg-gradient-to-br from-background to-muted/30">
-    <div className={`absolute top-0 right-0 w-40 h-40 ${color} opacity-5 rounded-full -mr-20 -mt-20 group-hover:opacity-10 transition-opacity`} />
+    <div className={`absolute top-0 right-0 w-40 h-40 ${color} opacity-5 rounded-full -mr-20 -mt-20`} />
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
       <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-      <div className={`p-2.5 rounded-xl ${color} bg-opacity-15 group-hover:bg-opacity-20 transition-all`}>
+      <div className={`p-2.5 rounded-xl ${color} bg-opacity-15`}>
         <Icon className={`h-5 w-5 ${color.replace("bg-", "text-")}`} />
       </div>
     </CardHeader>
@@ -77,36 +94,355 @@ const StatCard = ({
   </Card>
 );
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
-const GroupSkeleton = () => (
-  <Card className="border-2">
-    <CardContent className="p-6">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-72" />
+/* ── Tag chip ───────────────────────────────────────────────────────────── */
+function TagChip({ tag, index, onClick }: { tag: AuctionGroupTag; index: number; onClick: () => void }) {
+  const Icon = getTagIcon(tag.tag_icon);
+  const color = CHIP_COLORS[index % CHIP_COLORS.length];
+  return (
+    <button
+      onClick={onClick}
+      className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 cursor-pointer", color)}
+    >
+      <Icon className="h-3.5 w-3.5 shrink-0" />
+      {tag.tag_name}
+    </button>
+  );
+}
+
+/* ── Tag view/edit modal ────────────────────────────────────────────────── */
+function TagModal({
+  tag, groupId, onClose,
+}: {
+  tag: AuctionGroupTag | null; groupId: number; onClose: () => void;
+}) {
+  const [activeLang, setActiveLang] = useState("en");
+  const [editMode, setEditMode] = useState(false);
+  const [contents, setContents] = useState<Record<string, string>>({
+    en: tag?.content_en ?? "",
+    zh: tag?.content_zh ?? "",
+    ja: tag?.content_ja ?? "",
+    th: tag?.content_th ?? "",
+  });
+
+  const [updateTag, { isLoading: saving }] = useUpdateGroupTagMutation();
+  const [translateTag, { isLoading: translating }] = useTranslateTagContentMutation();
+
+  if (!tag) return null;
+  const Icon = getTagIcon(tag.tag_icon);
+
+  const handleTranslate = async () => {
+    const sourceContent = contents.en || tag.content_en || "";
+    if (!sourceContent.trim()) { toastError("Write English content first"); return; }
+    try {
+      const res = await translateTag({ content: sourceContent, tag_name: tag.tag_name, source_lang: "en" }).unwrap();
+      setContents({
+        en: res.data.content_en || contents.en,
+        zh: res.data.content_zh || "",
+        ja: res.data.content_ja || "",
+        th: res.data.content_th || "",
+      });
+      toastSuccess("Translated to all languages");
+    } catch { toastError("Translation failed"); }
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateTag({
+        groupId, tagId: tag.tag_id,
+        content_en: contents.en, content_zh: contents.zh,
+        content_ja: contents.ja, content_th: contents.th,
+      }).unwrap();
+      toastSuccess("Tag saved");
+      setEditMode(false);
+    } catch { toastError("Save failed"); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Icon className="h-4.5 w-4.5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">{tag.tag_name}</h3>
+              <p className="text-xs text-gray-400">Group #{groupId}</p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-24" />
-            <Skeleton className="h-9 w-9" />
+          <div className="flex items-center gap-2">
+            {!editMode && (
+              <Button size="sm" variant="outline" onClick={() => setEditMode(true)} className="gap-1.5">
+                <Pencil className="h-3.5 w-3.5" /> Edit
+              </Button>
+            )}
+            {editMode && (
+              <>
+                <Button size="sm" variant="outline" onClick={handleTranslate} disabled={translating} className="gap-1.5">
+                  {translating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                  AI Translate
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Save
+                </Button>
+              </>
+            )}
+            <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+
+        {/* Language tabs */}
+        <div className="flex border-b px-6 gap-1 pt-1">
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setActiveLang(l.code)}
+              className={cn(
+                "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                activeLang === l.code
+                  ? "border-primary text-primary"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              )}
+            >
+              {l.flag} {l.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {LANGS.map((l) => (
+            <div key={l.code} className={activeLang === l.code ? "block" : "hidden"}>
+              {editMode ? (
+                <SunEditor
+                  key={`${tag.tag_id}-${l.code}-edit`}
+                  setContents={contents[l.code]}
+                  onChange={(html) => setContents((p) => ({ ...p, [l.code]: html }))}
+                  setOptions={{
+                    height: "240",
+                    buttonList: EDITOR_BUTTONS,
+                    placeholder: `Enter ${LANGS.find((x) => x.code === l.code)?.label} content…`,
+                  }}
+                />
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none min-h-[80px] text-gray-700 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{ __html: contents[l.code] || "<p class='text-gray-400 italic'>No content yet.</p>" }}
+                />
+              )}
+            </div>
+          ))}
         </div>
       </div>
-    </CardContent>
-  </Card>
-);
+    </div>
+  );
+}
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+/* ── Create tag modal ───────────────────────────────────────────────────── */
+function CreateTagModal({ groupId, onClose }: { groupId: number; onClose: () => void }) {
+  const [tagName, setTagName] = useState("");
+  const [activeLang, setActiveLang] = useState("en");
+  const [contents, setContents] = useState({ en: "", zh: "", ja: "", th: "" });
+
+  const [createTag, { isLoading: creating }] = useCreateGroupTagMutation();
+  const [translateTag, { isLoading: translating }] = useTranslateTagContentMutation();
+
+  const handleTranslate = async () => {
+    if (!contents.en.trim()) { toastError("Write English content first to translate"); return; }
+    if (!tagName.trim()) { toastError("Enter a tag name first"); return; }
+    try {
+      const res = await translateTag({ content: contents.en, tag_name: tagName, source_lang: "en" }).unwrap();
+      setContents({
+        en: res.data.content_en || contents.en,
+        zh: res.data.content_zh || "",
+        ja: res.data.content_ja || "",
+        th: res.data.content_th || "",
+      });
+      toastSuccess("Translated to ZH, JA, TH");
+    } catch { toastError("Translation failed"); }
+  };
+
+  const handleCreate = async () => {
+    if (!tagName.trim()) { toastError("Tag name is required"); return; }
+    try {
+      // If user hasn't translated yet, create with server-side AI translation
+      await createTag({
+        groupId,
+        tag_name: tagName.trim(),
+        content: contents.en,
+        source_lang: "en",
+      }).unwrap();
+      // If user already filled all langs manually, update after create — but
+      // the server-side translation covers the common case cleanly.
+      toastSuccess("Tag created with AI translations");
+      onClose();
+    } catch { toastError("Failed to create tag"); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Plus className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Create New Tag</h3>
+              <p className="text-xs text-gray-400">AI will translate to all languages</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+          {/* Tag name */}
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5 block">Tag Name</label>
+            <Input
+              value={tagName}
+              onChange={(e) => setTagName(e.target.value)}
+              placeholder="e.g. Location, Terms & Conditions, Parking Info…"
+              className="h-10 rounded-xl border-gray-200"
+            />
+            <p className="text-xs text-gray-400 mt-1">Icon is auto-assigned based on the name.</p>
+          </div>
+
+          {/* Language tabs */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Content</label>
+              <Button size="sm" variant="outline" onClick={handleTranslate} disabled={translating} className="gap-1.5 h-7 text-xs">
+                {translating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                AI Translate from EN
+              </Button>
+            </div>
+            <div className="flex border-b gap-1 mb-3">
+              {LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => setActiveLang(l.code)}
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium border-b-2 transition-colors",
+                    activeLang === l.code ? "border-primary text-primary" : "border-transparent text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  {l.flag} {l.label}
+                  {l.code !== "en" && contents[l.code] && (
+                    <span className="ml-1 h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                  )}
+                </button>
+              ))}
+            </div>
+            {LANGS.map((l) => (
+              <div key={l.code} className={activeLang === l.code ? "block" : "hidden"}>
+                <SunEditor
+                  key={`create-${l.code}`}
+                  setContents={contents[l.code]}
+                  onChange={(html) => setContents((p) => ({ ...p, [l.code]: html }))}
+                  setOptions={{
+                    height: "220",
+                    buttonList: EDITOR_BUTTONS,
+                    placeholder: l.code === "en"
+                      ? "Enter content in English. Use 'AI Translate' to fill other languages."
+                      : `${LANGS.find((x) => x.code === l.code)?.label} content (auto-filled by AI or edit manually)`,
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-6 py-4 border-t flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleCreate} disabled={creating} className="gap-2">
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Create Tag
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Tags panel (inside expanded group) ─────────────────────────────────── */
+function GroupTagsPanel({ group }: { group: AdminAuctionGroupItem }) {
+  const { data, isLoading } = useGetGroupTagsQuery(group.group_id);
+  const [deleteTag] = useDeleteGroupTagMutation();
+
+  const [viewTag, setViewTag] = useState<AuctionGroupTag | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const tags: AuctionGroupTag[] = data?.data ?? [];
+
+  const handleDelete = async (tag: AuctionGroupTag, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Delete tag "${tag.tag_name}"?`)) return;
+    try {
+      await deleteTag({ groupId: group.group_id, tagId: tag.tag_id }).unwrap();
+      toastSuccess("Tag deleted");
+    } catch { toastError("Failed to delete tag"); }
+  };
+
+  return (
+    <>
+      <div className="px-6 pb-4 pt-3 border-t">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Content Tags</span>
+          <Button size="sm" variant="outline" onClick={() => setShowCreate(true)} className="gap-1.5 h-7 text-xs rounded-lg">
+            <Plus className="h-3 w-3" /> Add Tag
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="flex gap-2">{[1,2].map(i => <Skeleton key={i} className="h-7 w-24 rounded-full" />)}</div>
+        ) : tags.length === 0 ? (
+          <p className="text-xs text-gray-400 italic">No tags yet. Add your first tag above.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag, i) => (
+              <div key={tag.tag_id} className="flex items-center gap-1 group/chip">
+                <TagChip tag={tag} index={i} onClick={() => setViewTag(tag)} />
+                <button
+                  onClick={(e) => handleDelete(tag, e)}
+                  className="h-5 w-5 rounded-full flex items-center justify-center opacity-0 group-hover/chip:opacity-100 transition-opacity hover:bg-red-100 text-red-500"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {viewTag && <TagModal tag={viewTag} groupId={group.group_id} onClose={() => setViewTag(null)} />}
+      {showCreate && <CreateTagModal groupId={group.group_id} onClose={() => setShowCreate(false)} />}
+    </>
+  );
+}
+
+/* ── Main page ──────────────────────────────────────────────────────────── */
 const AdminAuctionGroups = () => {
   const { sidebarCollapsed } = useAdminSidebar();
   const [platformType, setPlatformType] = useState("recycle");
-  const [approvalFilter, setApprovalFilter] = useState<"all" | "pending" | "approved">("all");
+  const [approvalFilter, setApprovalFilter] = useState<"all"|"pending"|"approved">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [sortOrder, setSortOrder] = useState<"newest"|"oldest">("newest");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [approvingId, setApprovingId] = useState<number | null>(null);
   const [featuringId, setFeaturingId] = useState<number | null>(null);
@@ -121,35 +457,28 @@ const AdminAuctionGroups = () => {
 
   const groups: AdminAuctionGroupItem[] = data?.data ?? [];
 
-  // Derived stats
   const stats = useMemo(() => ({
-    total: groups.length,
-    pending: groups.filter((g) => g.approval_status === "pending").length,
+    total:    groups.length,
+    pending:  groups.filter((g) => g.approval_status === "pending").length,
     approved: groups.filter((g) => g.approval_status === "approved").length,
     featured: groups.filter((g) => g.featured_type !== "none").length,
   }), [groups]);
 
-  // Client-side search + sort
   const filtered = useMemo(() => {
     let list = [...groups];
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (g) =>
-          g.title.toLowerCase().includes(q) ||
-          String(g.group_id).includes(q) ||
-          String(g.seller_id).includes(q) ||
-          g.country?.toLowerCase().includes(q)
+      list = list.filter((g) =>
+        g.title.toLowerCase().includes(q) ||
+        String(g.group_id).includes(q) ||
+        String(g.seller_id).includes(q) ||
+        g.country?.toLowerCase().includes(q)
       );
     }
-
     list.sort((a, b) => {
-      const da = new Date(a.createdAt).getTime();
-      const db = new Date(b.createdAt).getTime();
+      const da = new Date(a.createdAt).getTime(), db = new Date(b.createdAt).getTime();
       return sortOrder === "newest" ? db - da : da - db;
     });
-
     return list;
   }, [groups, searchQuery, sortOrder]);
 
@@ -157,13 +486,11 @@ const AdminAuctionGroups = () => {
     setApprovingId(groupId);
     try {
       await approveAuctionGroup(groupId).unwrap();
-      toastSuccess("Auction group approved — seller notified by email");
+      toastSuccess("Auction group approved");
       refetch();
     } catch (err: any) {
-      toastError(err?.data?.message || "Failed to approve auction group");
-    } finally {
-      setApprovingId(null);
-    }
+      toastError(err?.data?.message || "Failed to approve");
+    } finally { setApprovingId(null); }
   };
 
   const handleToggleFeatured = async (group: AdminAuctionGroupItem) => {
@@ -171,100 +498,55 @@ const AdminAuctionGroups = () => {
     setFeaturingId(group.group_id);
     try {
       await setAuctionGroupFeatured({ groupId: group.group_id, featured_type: next }).unwrap();
-      toastSuccess(next === "featured" ? "Group marked as featured" : "Group removed from featured");
+      toastSuccess(next === "featured" ? "Marked as featured" : "Removed from featured");
       refetch();
     } catch (err: any) {
-      toastError(err?.data?.message || "Failed to update featured status");
-    } finally {
-      setFeaturingId(null);
-    }
+      toastError(err?.data?.message || "Failed to update featured");
+    } finally { setFeaturingId(null); }
   };
 
-  const toggleExpand = (id: number) => setExpanded(expanded === id ? null : id);
-
-  // ─── Loading state ──────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
-        <AdminSidebar activePath="/admin/auction-groups" />
-        <div className={cn("transition-all duration-300 min-h-screen overflow-y-auto", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
-          <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-            <Skeleton className="h-10 w-64" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="border-0 shadow-lg">
-                  <CardHeader className="pb-3"><Skeleton className="h-4 w-24" /></CardHeader>
-                  <CardContent><Skeleton className="h-10 w-16" /></CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card className="shadow-sm border-0">
-              <CardContent className="space-y-4 p-6">
-                {[1, 2, 3].map((i) => <GroupSkeleton key={i} />)}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Error state ────────────────────────────────────────────────────────────
-  if (isError) {
-    return (
-      <div className="min-h-screen w-full overflow-x-hidden bg-background">
-        <AdminSidebar activePath="/admin/auction-groups" />
-        <div className={cn("transition-all duration-300 min-h-screen flex justify-center items-center", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Error</CardTitle>
-              <CardDescription>Failed to fetch auction groups.</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Main render ─────────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
+  if (isLoading) return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <AdminSidebar activePath="/admin/auction-groups" />
+      <div className={cn("transition-all duration-300 min-h-screen", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+        <div className="p-8 space-y-6 max-w-7xl mx-auto">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
+          {[1,2,3].map(i => <Skeleton key={i} className="h-36 rounded-2xl" />)}
+        </div>
+      </div>
+    </div>
+  );
 
-      <div className={cn("transition-all duration-300 min-h-screen overflow-y-auto", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
+  if (isError) return (
+    <div className="min-h-screen bg-background">
+      <AdminSidebar activePath="/admin/auction-groups" />
+      <div className={cn("transition-all duration-300 min-h-screen flex items-center justify-center", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+        <Card className="border-destructive"><CardHeader><CardTitle className="text-destructive">Failed to load auction groups</CardTitle></CardHeader></Card>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <AdminSidebar activePath="/admin/auction-groups" />
+      <div className={cn("transition-all duration-300 min-h-screen", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
         <AdminHeader />
+        <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
 
-        <div className="p-4 lg:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-
-          {/* ── HEADER + PLATFORM SWITCHER ────────────────────────────────── */}
+          {/* Header + platform */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                <Gavel className="h-7 w-7 text-primary" />
-                Auction Groups
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Review and approve seller auction groups before they go live on the website.
-              </p>
+              <h1 className="text-3xl font-bold flex items-center gap-2"><Gavel className="h-7 w-7 text-primary" />Auction Groups</h1>
+              <p className="text-muted-foreground mt-1 text-sm">Review, approve, and enrich seller auction groups.</p>
             </div>
-
-            {/* Platform switcher — same style as AdminListings */}
             <div className="rounded-xl border-2 border-primary/20 bg-primary/5 px-4 py-3 shadow-sm">
-              <span className="block text-xs font-semibold text-primary uppercase tracking-wide mb-2">
-                Platform
-              </span>
-              <Tabs
-                value={platformType}
-                onValueChange={(val) => { setPlatformType(val); setExpanded(null); }}
-                className="w-auto"
-              >
+              <span className="block text-xs font-semibold text-primary uppercase tracking-wide mb-2">Platform</span>
+              <Tabs value={platformType} onValueChange={(v) => { setPlatformType(v); setExpanded(null); }}>
                 <TabsList className="h-10 bg-muted/80 border border-border">
                   {PLATFORMS.map((p) => (
-                    <TabsTrigger
-                      key={p.value}
-                      value={p.value}
-                      className="px-4 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    >
+                    <TabsTrigger key={p.value} value={p.value}
+                      className="px-4 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                       {p.label}
                     </TabsTrigger>
                   ))}
@@ -273,26 +555,22 @@ const AdminAuctionGroups = () => {
             </div>
           </div>
 
-          {/* ── STAT CARDS ────────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <StatCard title="Total Groups"    value={stats.total}    icon={Layers}        color="bg-blue-500"   />
-            <StatCard title="Pending Approval" value={stats.pending}  icon={Clock}         color="bg-amber-500"  trend={stats.pending > 0 ? "needs review" : undefined} />
-            <StatCard title="Approved"         value={stats.approved} icon={CheckCircle2}  color="bg-emerald-500" trend={`${stats.total ? Math.round((stats.approved / stats.total) * 100) : 0}%`} />
-            <StatCard title="Featured"         value={stats.featured} icon={Star}          color="bg-violet-500" />
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Total Groups"    value={stats.total}    icon={Layers}       color="bg-blue-500" />
+            <StatCard title="Pending"          value={stats.pending}  icon={Clock}        color="bg-amber-500" trend={stats.pending > 0 ? "needs review" : undefined} />
+            <StatCard title="Approved"         value={stats.approved} icon={CheckCircle2} color="bg-emerald-500" trend={`${stats.total ? Math.round((stats.approved/stats.total)*100) : 0}%`} />
+            <StatCard title="Featured"         value={stats.featured} icon={Star}         color="bg-violet-500" />
           </div>
 
-          {/* ── SEARCH + FILTERS ─────────────────────────────────────────── */}
+          {/* Filters */}
           <Card className="shadow-sm border-0 bg-gradient-to-r from-background to-muted/30">
             <CardContent className="p-5 space-y-4">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by title, group ID, seller ID, country…"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11 border-2 focus:border-primary/50"
-                  />
+                  <Input placeholder="Search by title, group ID, seller ID, country…" value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11 border-2 focus:border-primary/50" />
                   {searchQuery && (
                     <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setSearchQuery("")}>
                       <X className="h-4 w-4" />
@@ -300,22 +578,20 @@ const AdminAuctionGroups = () => {
                   )}
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
-                {/* Approval filter */}
+              <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approval</span>
-                  <Tabs value={approvalFilter} onValueChange={(v) => setApprovalFilter(v as any)} className="w-auto">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Approval</span>
+                  <Tabs value={approvalFilter} onValueChange={(v) => setApprovalFilter(v as any)}>
                     <TabsList className="h-9">
-                      <TabsTrigger value="all"      className="px-3 text-xs">All</TabsTrigger>
-                      <TabsTrigger value="pending"  className="px-3 text-xs">Pending</TabsTrigger>
+                      <TabsTrigger value="all" className="px-3 text-xs">All</TabsTrigger>
+                      <TabsTrigger value="pending" className="px-3 text-xs">Pending</TabsTrigger>
                       <TabsTrigger value="approved" className="px-3 text-xs">Approved</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
-                {/* Sort */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sort</span>
-                  <Tabs value={sortOrder} onValueChange={(v) => setSortOrder(v as any)} className="w-auto">
+                  <span className="text-xs font-medium text-muted-foreground uppercase">Sort</span>
+                  <Tabs value={sortOrder} onValueChange={(v) => setSortOrder(v as any)}>
                     <TabsList className="h-9">
                       <TabsTrigger value="newest" className="px-3 text-xs">Newest</TabsTrigger>
                       <TabsTrigger value="oldest" className="px-3 text-xs">Oldest</TabsTrigger>
@@ -326,282 +602,129 @@ const AdminAuctionGroups = () => {
             </CardContent>
           </Card>
 
-          {/* ── GROUP LIST ───────────────────────────────────────────────── */}
-          <Card className="shadow-lg border-0 bg-gradient-to-br from-background to-muted/20">
+          {/* Group list */}
+          <Card className="shadow-lg border-0">
             <CardHeader className="pb-4 border-b">
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-2xl font-bold">All Auction Groups</CardTitle>
-                    {filtered.length > 0 && (
-                      <Badge variant="secondary" className="ml-2">{filtered.length}</Badge>
-                    )}
-                  </div>
-                  <CardDescription className="mt-2 flex items-center gap-2">
-                    <Sparkles className="h-3 w-3" />
-                    {filtered.length} group{filtered.length !== 1 ? "s" : ""} found
-                    {approvalFilter !== "all" && ` · filtered by ${approvalFilter}`}
-                  </CardDescription>
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-2xl font-bold">All Auction Groups</CardTitle>
+                  <Badge variant="secondary">{filtered.length}</Badge>
                 </div>
-                {isFetching && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">Updating…</span>
-                  </div>
-                )}
+                {isFetching && <div className="flex items-center gap-2 text-muted-foreground text-sm"><Loader2 className="h-4 w-4 animate-spin" /> Updating…</div>}
               </div>
             </CardHeader>
-
             <CardContent className="p-6 space-y-4">
-              {isFetching && !isLoading ? (
-                <div className="space-y-4">{[1, 2].map((i) => <GroupSkeleton key={i} />)}</div>
-              ) : filtered.length === 0 ? (
+              {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <div className="p-4 rounded-full bg-muted/50 mb-4">
-                    <Gavel className="h-12 w-12 text-muted-foreground/50" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No auction groups found</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    {searchQuery || approvalFilter !== "all"
-                      ? "Try adjusting your search or filters."
-                      : "No auction groups have been created on this platform yet."}
+                  <Gavel className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                  <h3 className="text-lg font-semibold mb-1">No auction groups found</h3>
+                  <p className="text-muted-foreground text-sm">
+                    {searchQuery || approvalFilter !== "all" ? "Try adjusting your search or filters." : "No groups on this platform yet."}
                   </p>
-                  {(searchQuery || approvalFilter !== "all") && (
-                    <Button variant="outline" className="mt-4" onClick={() => { setSearchQuery(""); setApprovalFilter("all"); }}>
-                      Clear Filters
-                    </Button>
-                  )}
                 </div>
-              ) : (
-                filtered.map((group) => {
-                  const isExpanded = expanded === group.group_id;
-                  const isPending = group.approval_status === "pending";
-
-                  return (
-                    <Card
-                      key={group.group_id}
-                      className="group border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl overflow-hidden bg-gradient-to-br from-card to-muted/20"
-                    >
-                      <CardContent className="p-0">
-                        <div className="p-6">
-                          {/* ── Row header ── */}
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                <h3 className="text-2xl font-bold text-foreground tracking-tight">
-                                  Group #{group.group_id}
-                                </h3>
-                                {/* Approval badge */}
-                                {isPending ? (
-                                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
-                                    Pending approval
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
-                                    Approved
-                                  </Badge>
-                                )}
-                                {/* Status badge */}
-                                <Badge variant="secondary" className="capitalize">
-                                  {group.status}
+              ) : filtered.map((group) => {
+                const isExpanded = expanded === group.group_id;
+                const isPending = group.approval_status === "pending";
+                return (
+                  <Card key={group.group_id}
+                    className="border-2 hover:border-primary/40 transition-all duration-200 overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-5">
+                        {/* Top row */}
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                              <h3 className="text-xl font-bold">Group #{group.group_id}</h3>
+                              {isPending
+                                ? <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending</Badge>
+                                : <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Approved</Badge>
+                              }
+                              <Badge variant="secondary" className="capitalize">{group.status}</Badge>
+                              {group.featured_type !== "none" && (
+                                <Badge className="bg-violet-100 text-violet-700 border-violet-200" variant="outline">
+                                  <Star className="h-3 w-3 mr-1" />{group.featured_type}
                                 </Badge>
-                                {/* Featured badge */}
-                                {group.featured_type !== "none" && (
-                                  <Badge className="bg-violet-100 text-violet-700 border-violet-200" variant="outline">
-                                    <Star className="h-3 w-3 mr-1" />
-                                    {group.featured_type}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-lg font-semibold text-foreground mb-1 line-clamp-1">
-                                {group.title}
-                              </p>
-                              {group.description && (
-                                <p className="text-sm text-muted-foreground line-clamp-1">{group.description}</p>
                               )}
                             </div>
-
-                            {/* Action buttons */}
-                            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
-                              {isPending && (
-                                <Button
-                                  size="sm"
-                                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                                  onClick={() => handleApprove(group.group_id)}
-                                  disabled={approvingId === group.group_id}
-                                >
-                                  {approvingId === group.group_id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <CheckCircle className="h-4 w-4" />
-                                  )}
-                                  Approve
-                                </Button>
-                              )}
-                              {platformType === "LabGreenbidz" && (
-                                <Button
-                                  size="sm"
-                                  variant={group.featured_type !== "none" ? "default" : "outline"}
-                                  className={
-                                    group.featured_type !== "none"
-                                      ? "gap-2 bg-violet-600 hover:bg-violet-700 text-white border-0"
-                                      : "gap-2 border-violet-400 text-violet-600 hover:bg-violet-50 hover:border-violet-600 dark:hover:bg-violet-950"
-                                  }
-                                  onClick={() => handleToggleFeatured(group)}
-                                  disabled={featuringId === group.group_id}
-                                >
-                                  {featuringId === group.group_id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Star className={`h-4 w-4 ${group.featured_type !== "none" ? "fill-white" : ""}`} />
-                                  )}
-                                  {group.featured_type !== "none" ? "Remove from Featured" : "Mark as Featured"}
-                                </Button>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => toggleExpand(group.group_id)}
-                                className="flex-shrink-0 hover:bg-primary/10 hover:border-primary/50 transition-all"
-                              >
-                                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                              </Button>
-                            </div>
+                            <p className="font-semibold text-foreground line-clamp-1">{group.title}</p>
+                            {group.description && <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">{group.description}</p>}
                           </div>
-
-                          {/* ── Details grid (always visible) ── */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-4 border-t">
-                            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="p-1.5 rounded-md bg-background">
-                                <Users className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-muted-foreground font-medium mb-0.5">Seller ID</p>
-                                <p className="text-sm font-semibold">{group.seller_id}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="p-1.5 rounded-md bg-background">
-                                <Globe className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-muted-foreground font-medium mb-0.5">Country</p>
-                                <p className="text-sm font-semibold">{group.country}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="p-1.5 rounded-md bg-background">
-                                <Package className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-muted-foreground font-medium mb-0.5">Auctions</p>
-                                <p className="text-sm font-semibold">{group.auction_count ?? 0}</p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                              <div className="p-1.5 rounded-md bg-background">
-                                <Calendar className="h-4 w-4 text-primary" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs text-muted-foreground font-medium mb-0.5">Created</p>
-                                <p className="text-sm font-semibold">{new Date(group.createdAt).toLocaleDateString()}</p>
-                              </div>
-                            </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                            {isPending && (
+                              <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                                onClick={() => handleApprove(group.group_id)} disabled={approvingId === group.group_id}>
+                                {approvingId === group.group_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                                Approve
+                              </Button>
+                            )}
+                            {platformType === "LabGreenbidz" && (
+                              <Button size="sm"
+                                variant={group.featured_type !== "none" ? "default" : "outline"}
+                                className={group.featured_type !== "none" ? "gap-1.5 bg-violet-600 hover:bg-violet-700 text-white border-0" : "gap-1.5 border-violet-300 text-violet-600 hover:bg-violet-50"}
+                                onClick={() => handleToggleFeatured(group)} disabled={featuringId === group.group_id}>
+                                {featuringId === group.group_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className={`h-4 w-4 ${group.featured_type !== "none" ? "fill-white" : ""}`} />}
+                                {group.featured_type !== "none" ? "Remove Featured" : "Mark Featured"}
+                              </Button>
+                            )}
+                            <Button variant="outline" size="icon"
+                              onClick={() => setExpanded(isExpanded ? null : group.group_id)}
+                              className="hover:bg-primary/10 hover:border-primary/40">
+                              {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </Button>
                           </div>
                         </div>
 
-                        {/* ── Expanded section ── */}
-                        {isExpanded && (
-                          <div className="border-t bg-gradient-to-br from-muted/40 to-muted/20 p-6 animate-in slide-in-from-top-2 duration-300">
-                            <div className="flex items-center gap-3 mb-6">
-                              <div className="p-2 rounded-lg bg-primary/10">
-                                <Gavel className="h-5 w-5 text-primary" />
-                              </div>
-                              <div>
-                                <h4 className="text-lg font-bold">Group Details</h4>
-                                <p className="text-sm text-muted-foreground">Full information for this auction group</p>
-                              </div>
+                        {/* Meta grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t">
+                          {[
+                            { icon: Users,    label: "Seller ID", value: group.seller_id },
+                            { icon: Globe,    label: "Country",   value: group.country },
+                            { icon: Package,  label: "Auctions",  value: group.auction_count ?? 0 },
+                            { icon: Calendar, label: "Created",   value: new Date(group.createdAt).toLocaleDateString() },
+                          ].map(({ icon: Icon, label, value }) => (
+                            <div key={label} className="flex items-center gap-2.5 p-3 rounded-xl bg-muted/30">
+                              <div className="p-1.5 rounded-lg bg-background"><Icon className="h-4 w-4 text-primary" /></div>
+                              <div><p className="text-[11px] text-muted-foreground font-medium">{label}</p><p className="text-sm font-semibold">{value}</p></div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {/* Title (EN) */}
-                              <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Title (EN)</p>
-                                <p className="text-sm font-semibold">{group.title_en || group.title || "—"}</p>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Tags panel — always visible below meta grid */}
+                      <GroupTagsPanel group={group} />
+
+                      {/* Expanded details */}
+                      {isExpanded && (
+                        <div className="border-t bg-muted/20 p-5 animate-in slide-in-from-top-2 duration-200">
+                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wide mb-4">Multi-language Titles</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            {[
+                              { label: "🇬🇧 EN", val: group.title_en || group.title },
+                              { label: "🇹🇼 ZH", val: group.title_zh },
+                              { label: "🇯🇵 JA", val: group.title_ja },
+                              { label: "🇹🇭 TH", val: group.title_th },
+                            ].filter(x => x.val).map(({ label, val }) => (
+                              <div key={label} className="p-3 rounded-xl border bg-background/80">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">{label}</p>
+                                <p className="text-sm font-semibold line-clamp-2">{val}</p>
                               </div>
-                              {/* Title (ZH) */}
-                              {group.title_zh && (
-                                <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Title (ZH)</p>
-                                  <p className="text-sm font-semibold">{group.title_zh}</p>
-                                </div>
-                              )}
-                              {/* Title (JA) */}
-                              {group.title_ja && (
-                                <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Title (JA)</p>
-                                  <p className="text-sm font-semibold">{group.title_ja}</p>
-                                </div>
-                              )}
-                              {/* Title (TH) */}
-                              {group.title_th && (
-                                <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Title (TH)</p>
-                                  <p className="text-sm font-semibold">{group.title_th}</p>
-                                </div>
-                              )}
-                              {/* Languages */}
-                              <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                                  <Languages className="h-3 w-3" /> Languages
-                                </p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {Array.isArray(group.languages) && group.languages.length > 0
-                                    ? group.languages.map((l: string, i: number) => (
-                                        <Badge key={i} variant="secondary" className="text-xs">{l}</Badge>
-                                      ))
-                                    : <span className="text-sm text-muted-foreground">—</span>
-                                  }
-                                </div>
-                              </div>
-                              {/* Featured type */}
-                              <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
-                                  <Star className="h-3 w-3" /> Featured Type
-                                </p>
-                                <Badge
-                                  variant="outline"
-                                  className={group.featured_type !== "none"
-                                    ? "bg-violet-100 text-violet-700 border-violet-200 mt-1"
-                                    : "mt-1 capitalize"}
-                                >
-                                  {group.featured_type}
-                                </Badge>
-                              </div>
-                              {/* Slug */}
-                              {group.slug && (
-                                <div className="p-4 rounded-xl border bg-background/80 space-y-1">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Slug</p>
-                                  <p className="text-sm font-mono text-primary">{group.slug}</p>
-                                </div>
-                              )}
-                              {/* Description */}
-                              {group.description && (
-                                <div className="p-4 rounded-xl border bg-background/80 space-y-1 md:col-span-2 lg:col-span-3">
-                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</p>
-                                  <p className="text-sm">{group.description}</p>
-                                </div>
-                              )}
-                            </div>
+                            ))}
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
+                          {group.languages?.length > 0 && (
+                            <div className="mt-3 flex items-center gap-2">
+                              <Languages className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">Languages:</span>
+                              {group.languages.map((l: string) => (
+                                <Badge key={l} variant="secondary" className="text-xs">{l}</Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </CardContent>
           </Card>
         </div>

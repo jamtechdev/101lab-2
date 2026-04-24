@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Home, Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Store } from "lucide-react";
+import { Home, Loader2, Search, ChevronLeft, ChevronRight, AlertCircle, Store, ChevronDown } from "lucide-react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import Header from "@/components/common/Header";
 import CategoryBar from "@/components/common/CategoryBar";
 import { subscribeBuyerEvents } from "@/socket/buyerEvents";
 import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
+import "suneditor/dist/css/suneditor.min.css";
 
 // Batches API
 import { useGetBatchesQuery, useGetNetworkBatchesQuery } from "@/rtk/slices/batchApiSlice";
@@ -50,6 +51,13 @@ const BuyerMarketplace = () => {
   const selectedBidFilter = searchParams.get('bidFilter') || '';
   const selectedBidDate = searchParams.get('bidDate') || '';
   const selectedGroup = searchParams.get('group') || '';
+  const [openTags, setOpenTags] = useState<string[]>([]);
+
+  const toggleTag = (tagId: string) => {
+    setOpenTags(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
 
   // Sync searchQuery and debouncedSearch when URL search parameter changes
   useEffect(() => {
@@ -135,6 +143,25 @@ const BuyerMarketplace = () => {
     isError,
     refetch
   } = useGetBatchesQuery(queryParams);
+
+  // auctionGroup + its tags come back in the batch response — no extra API call needed
+  const groupDetail = batchData?.auctionGroup ?? null;
+  const groupTags = groupDetail?.tags ?? [];
+  
+
+  const getTagContent = (tag: any) => {
+    if (currentLang === 'zh' && tag?.content_zh) return tag.content_zh;
+    if (currentLang === 'ja' && tag?.content_ja) return tag.content_ja;
+    if (currentLang === 'th' && tag?.content_th) return tag.content_th;
+    return tag?.content_en || '';
+  };
+
+  const getGroupDescription = () => {
+    if (currentLang === 'zh' && groupDetail?.description_zh) return groupDetail.description_zh;
+    if (currentLang === 'ja' && groupDetail?.description_ja) return groupDetail.description_ja;
+    if (currentLang === 'th' && groupDetail?.description_th) return groupDetail.description_th;
+    return groupDetail?.description_en || groupDetail?.description || '';
+  };
 
   // Force refetch when search query changes
   useEffect(() => {
@@ -545,6 +572,56 @@ const BuyerMarketplace = () => {
             </div>
           )}
         </div>
+        {/* ── Auction Group banner + tags (shown when group filter is active) ── */}
+        {selectedGroup && groupDetail && (
+          <div className="mb-5 bg-white border border-border rounded-lg overflow-hidden">
+            {/* Group title */}
+            <div className="px-4 py-3 border-b bg-muted/30">
+              <p className="text-sm font-semibold text-foreground">
+                {currentLang === 'zh' ? (groupDetail?.title_zh || groupDetail?.title) :
+                 currentLang === 'ja' ? (groupDetail?.title_ja || groupDetail?.title) :
+                 currentLang === 'th' ? (groupDetail?.title_th || groupDetail?.title) :
+                 (groupDetail?.title_en || groupDetail?.title)}
+              </p>
+            </div>
+
+            {/* Description */}
+            {getGroupDescription() && (
+              <div className="px-4 py-3 text-sm text-muted-foreground border-b">
+                {getGroupDescription()}
+              </div>
+            )}
+
+            {/* Tags as collapsible rows */}
+            {groupTags.length > 0 && (
+              <div className="divide-y divide-border">
+                {groupTags.map((tag: any) => {
+                  const isOpen = openTags.includes(String(tag?.tag_id));
+                  return (
+                    <div key={tag?.tag_id}>
+                      <button
+                        onClick={() => toggleTag(String(tag?.tag_id))}
+                        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/30 transition-colors text-left"
+                      >
+                        {tag?.tag_name}
+                        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1">
+                          <div
+                            className="sun-editor-editable prose prose-sm max-w-none text-sm text-foreground [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
+                            dangerouslySetInnerHTML={{ __html: getTagContent(tag) || '' }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main layout: sidebar + content */}
         <div className="flex gap-6">
           {/* Filter Sidebar */}

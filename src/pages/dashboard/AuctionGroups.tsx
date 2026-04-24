@@ -1,5 +1,7 @@
 // @ts-nocheck
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import { CountrySelectItems } from "@/components/common/CountrySelect";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +44,8 @@ import {
   AlertCircle,
   Loader2,
   Eye,
-  MoreVertical
+  MoreVertical,
+  Tag as TagIcon,
 } from "lucide-react";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { SITE_TYPE } from "@/config/site";
@@ -55,7 +58,12 @@ import {
   useGetAuctionsInGroupQuery,
   useAddAuctionToGroupMutation,
   useReplaceGroupBatchesMutation,
+  useGetGroupTagsQuery,
+  useCreateGroupTagMutation,
+  useDeleteGroupTagMutation,
 } from "@/rtk/slices/auctionGroupApiSlice";
+
+type PendingTag = { uid: string; tag_name: string; content: string };
 import { useGetBatchesBySellerQuery } from "@/rtk/slices/productSlice";
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
@@ -330,7 +338,7 @@ const BatchSelector = ({
             <div className="text-center py-8">
               <Package className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
               <p className="text-sm text-muted-foreground">
-                {searchTerm ? "No matching batches found" : "No machine batches found for your account"}
+                {searchTerm ? "No matching batches found" : `No ${SITE_TYPE} batches found for your account`}
               </p>
               {searchTerm && (
                 <Button
@@ -622,6 +630,13 @@ const GroupCard = ({
 
 // ─── Auction Group Form Dialog ────────────────────────────────────────────────
 
+const TAG_EDITOR_BUTTONS = [
+  ["bold", "italic", "underline"],
+  ["list"],
+  ["link"],
+  ["removeFormat"],
+];
+
 const AuctionGroupDialog = ({
   open,
   onClose,
@@ -632,14 +647,17 @@ const AuctionGroupDialog = ({
   batchesLoading,
   onSave,
   saving,
+  groupId,
+  pendingTags,
+  setPendingTags,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
-  form: { 
-    title: string; 
-    country: string; 
-    languages: string[]; 
+  form: {
+    title: string;
+    country: string;
+    languages: string[];
     batchIds: number[];
     description: string;
   };
@@ -648,129 +666,273 @@ const AuctionGroupDialog = ({
   batchesLoading: boolean;
   onSave: () => void;
   saving: boolean;
-}) => (
-  <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-    <DialogContent className="w-[95vw] max-w-5xl h-[95vh] max-h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col p-0">
-      <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
-        <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-          <Gavel className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span className="truncate">{title}</span>
-        </DialogTitle>
-        <div className="mt-2 text-sm text-muted-foreground space-y-1">
-          <p>Create organized auction groups by country and language to better manage your machine batches.</p>
-          <p>Select batches to include in this group for targeted auctions.</p>
-        </div>
-      </DialogHeader>
+  groupId?: number;
+  pendingTags: PendingTag[];
+  setPendingTags: React.Dispatch<React.SetStateAction<PendingTag[]>>;
+}) => {
+  const [addingTag, setAddingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [newTagContent, setNewTagContent] = useState("");
 
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-        <div className="space-y-4 sm:space-y-5">
-          {/* Title */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ag-title" className="text-sm font-medium">
-              Group Title <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="ag-title"
-              placeholder="e.g. Heavy Machinery – Europe Q3"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              className="w-full text-sm sm:text-base"
-            />
+  const { data: existingTagsData, refetch: refetchTags } = useGetGroupTagsQuery(groupId!, { skip: !groupId });
+  const [deleteTag, { isLoading: deletingTagId }] = useDeleteGroupTagMutation();
+
+  const existingTags = existingTagsData?.data ?? [];
+
+  useEffect(() => {
+    if (!open) {
+      setAddingTag(false);
+      setNewTagName("");
+      setNewTagContent("");
+    }
+  }, [open]);
+
+  const handleAddTag = () => {
+    if (!newTagName.trim()) return;
+    setPendingTags((prev) => [
+      ...prev,
+      { uid: Math.random().toString(36).slice(2), tag_name: newTagName.trim(), content: newTagContent },
+    ]);
+    setNewTagName("");
+    setNewTagContent("");
+    setAddingTag(false);
+  };
+
+  const handleDeleteExisting = async (tagId: number) => {
+    try {
+      await deleteTag({ groupId: groupId!, tagId }).unwrap();
+      refetchTags();
+    } catch {
+      toastError("Failed to delete tag");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="w-[95vw] max-w-5xl h-[95vh] max-h-[95vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <Gavel className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="truncate">{title}</span>
+          </DialogTitle>
+          <div className="mt-2 text-sm text-muted-foreground space-y-1">
+            <p>Create organized auction groups by country and language to better manage your machine batches.</p>
+            <p>Select batches to include in this group for targeted auctions.</p>
           </div>
+        </DialogHeader>
 
-          {/* Country & Languages - Side by side on larger screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Country */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          <div className="space-y-4 sm:space-y-5">
+            {/* Title */}
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">
-                Country <span className="text-destructive">*</span>
+              <Label htmlFor="ag-title" className="text-sm font-medium">
+                Group Title <span className="text-destructive">*</span>
               </Label>
-              <Select
-                value={form.country}
-                onValueChange={(v) => setForm((f) => ({ ...f, country: v }))}
-              >
-                <SelectTrigger className="w-full text-sm sm:text-base">
-                  <SelectValue placeholder="Select a country…" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <CountrySelectItems />
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Languages */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">
-                Languages <span className="text-destructive">*</span>
-              </Label>
-              <LanguageSelector
-                selected={form.languages}
-                onChange={(langs) => setForm((f) => ({ ...f, languages: langs }))}
+              <Input
+                id="ag-title"
+                placeholder="e.g. Heavy Machinery – Europe Q3"
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                className="w-full text-sm sm:text-base"
               />
             </div>
-          </div>
 
-          {/* Description */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ag-description" className="text-sm font-medium">
-              Description <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            <textarea
-              id="ag-description"
-              placeholder="Enter a description for this auction group..."
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              className="w-full min-h-[100px] px-3 py-2 text-sm border border-input bg-background rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              rows={4}
-            />
-          </div>
+            {/* Country & Languages */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  Country <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={form.country}
+                  onValueChange={(v) => setForm((f) => ({ ...f, country: v }))}
+                >
+                  <SelectTrigger className="w-full text-sm sm:text-base">
+                    <SelectValue placeholder="Select a country…" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    <CountrySelectItems />
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  Languages <span className="text-destructive">*</span>
+                </Label>
+                <LanguageSelector
+                  selected={form.languages}
+                  onChange={(langs) => setForm((f) => ({ ...f, languages: langs }))}
+                />
+              </div>
+            </div>
 
-          {/* Batches */}
-          <div className="space-y-1.5">
-            <Label className="text-sm font-medium">
-              Add Batches{" "}
-              <span className="text-muted-foreground font-normal text-xs sm:text-sm">(machines)</span>
-            </Label>
-            <div className="min-h-[120px] sm:min-h-[150px]">
-              <BatchSelector
-                batches={sellerBatches}
-                selected={form.batchIds}
-                onChange={(ids) => setForm((f) => ({ ...f, batchIds: ids }))}
-                loading={batchesLoading}
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label htmlFor="ag-description" className="text-sm font-medium">
+                Description <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <textarea
+                id="ag-description"
+                placeholder="Enter a description for this auction group..."
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                className="w-full min-h-[100px] px-3 py-2 text-sm border border-input bg-background rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                rows={4}
               />
+            </div>
+
+            {/* Batches */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                Add Batches{" "}
+                <span className="text-muted-foreground font-normal text-xs sm:text-sm">({SITE_TYPE})</span>
+              </Label>
+              <div className="min-h-[120px] sm:min-h-[150px]">
+                <BatchSelector
+                  batches={sellerBatches}
+                  selected={form.batchIds}
+                  onChange={(ids) => setForm((f) => ({ ...f, batchIds: ids }))}
+                  loading={batchesLoading}
+                />
+              </div>
+            </div>
+
+            {/* ── Tags ── */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <TagIcon className="h-3.5 w-3.5" />
+                Tags
+                <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+              </Label>
+
+              {/* Existing tags (edit mode only) */}
+              {existingTags.length > 0 && (
+                <div className="space-y-1.5">
+                  {existingTags.map((tag) => (
+                    <div
+                      key={tag.tag_id}
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100"
+                    >
+                      <TagIcon className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                      <span className="text-sm font-medium text-blue-800 flex-1 truncate">{tag.tag_name}</span>
+                      <span className="text-xs text-blue-400 shrink-0">saved</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteExisting(tag.tag_id)}
+                        className="text-red-400 hover:text-red-600 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pending tags (not yet saved) */}
+              {pendingTags.length > 0 && (
+                <div className="space-y-1.5">
+                  {pendingTags.map((tag) => (
+                    <div
+                      key={tag.uid}
+                      className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100"
+                    >
+                      <TagIcon className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="text-sm font-medium text-amber-800 flex-1 truncate">{tag.tag_name}</span>
+                      <span className="text-xs text-amber-400 shrink-0">pending</span>
+                      <button
+                        type="button"
+                        onClick={() => setPendingTags((p) => p.filter((t) => t.uid !== tag.uid))}
+                        className="text-red-400 hover:text-red-600 transition-colors shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add tag inline form */}
+              {addingTag ? (
+                <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3 bg-gray-50/50">
+                  <Input
+                    placeholder="Tag name (e.g. Location, Terms & Conditions, Parking)"
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="text-sm"
+                    autoFocus
+                  />
+                  <div className="rounded-lg overflow-hidden border border-gray-200">
+                    <SunEditor
+                      height="160px"
+                      setContents={newTagContent}
+                      onChange={(html) => setNewTagContent(html)}
+                      setOptions={{ buttonList: TAG_EDITOR_BUTTONS }}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setAddingTag(false); setNewTagName(""); setNewTagContent(""); }}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAddTag}
+                      disabled={!newTagName.trim()}
+                      className="flex-1"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Tag
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setAddingTag(true)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add a tag
+                </button>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
-      <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 flex-col-reverse sm:flex-row gap-2 sm:gap-0">
-        <Button 
-          variant="outline" 
-          onClick={onClose} 
-          disabled={saving}
-          className="w-full sm:w-auto order-2 sm:order-1"
-        >
-          Cancel
-        </Button>
-        <Button 
-          onClick={onSave} 
-          disabled={saving} 
-          className="w-full sm:w-auto min-w-[100px] order-1 sm:order-2"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              <span className="hidden sm:inline">Saving...</span>
-              <span className="sm:hidden">Save</span>
-            </>
-          ) : (
-            title
-          )}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
+        <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={saving}
+            className="w-full sm:w-auto order-2 sm:order-1"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={onSave}
+            disabled={saving}
+            className="w-full sm:w-auto min-w-[100px] order-1 sm:order-2"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span className="hidden sm:inline">Saving...</span>
+                <span className="sm:hidden">Save</span>
+              </>
+            ) : (
+              title
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -823,6 +985,7 @@ const AuctionGroups = () => {
   const [deleteGroup] = useDeleteAuctionGroupMutation();
   const [addAuction] = useAddAuctionToGroupMutation();
   const [replaceBatches] = useReplaceGroupBatchesMutation();
+  const [createGroupTag] = useCreateGroupTagMutation();
 
   // ── Filter state ──────────────────────────────────────────────────────────
   const [activeOnly, setActiveOnly] = useState(true);
@@ -832,9 +995,11 @@ const AuctionGroups = () => {
   const [editGroup, setEditGroup] = useState<any>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
+  const [pendingTags, setPendingTags] = useState<PendingTag[]>([]);
 
   const openCreate = () => {
     setForm({ ...EMPTY_FORM });
+    setPendingTags([]);
     setDialog("create");
   };
 
@@ -847,6 +1012,7 @@ const AuctionGroups = () => {
       batchIds: currentBatchIds,
       description: group.description || ""
     });
+    setPendingTags([]);
     setDialog("edit");
   };
 
@@ -854,6 +1020,7 @@ const AuctionGroups = () => {
     setDialog(null);
     setEditGroup(null);
     setForm({ ...EMPTY_FORM });
+    setPendingTags([]);
   };
 
   // ── Validation ─────────────────────────────────────────────────────────────
@@ -879,9 +1046,18 @@ const AuctionGroups = () => {
         site_id: SITE_TYPE,
       }).unwrap();
 
+      const groupId = res.data.group_id;
+
       // Add selected batches as a single auction item
       if (form.batchIds.length > 0) {
-        await addAuction({ group_id: res.data.group_id, batch_ids: form.batchIds }).unwrap();
+        await addAuction({ group_id: groupId, batch_ids: form.batchIds }).unwrap();
+      }
+
+      // Create pending tags
+      for (const tag of pendingTags) {
+        try {
+          await createGroupTag({ group_id: groupId, tag_name: tag.tag_name, content: tag.content }).unwrap();
+        } catch { /* tag failure should not block group creation */ }
       }
 
       toastSuccess("Auction group created successfully!");
@@ -914,6 +1090,13 @@ const AuctionGroups = () => {
         group_id: editGroup.group_id,
         batch_ids: form.batchIds,
       }).unwrap();
+
+      // Create any newly added pending tags
+      for (const tag of pendingTags) {
+        try {
+          await createGroupTag({ group_id: editGroup.group_id, tag_name: tag.tag_name, content: tag.content }).unwrap();
+        } catch { /* tag failure should not block group update */ }
+      }
 
       toastSuccess("Group updated successfully!");
       closeDialog();
@@ -1128,6 +1311,8 @@ const AuctionGroups = () => {
         batchesLoading={batchesLoading}
         onSave={handleCreate}
         saving={saving}
+        pendingTags={pendingTags}
+        setPendingTags={setPendingTags}
       />
 
       {/* ── Edit Dialog ── */}
@@ -1141,6 +1326,9 @@ const AuctionGroups = () => {
         batchesLoading={batchesLoading}
         onSave={handleEdit}
         saving={saving}
+        groupId={editGroup?.group_id}
+        pendingTags={pendingTags}
+        setPendingTags={setPendingTags}
       />
     </DashboardLayout>
   );

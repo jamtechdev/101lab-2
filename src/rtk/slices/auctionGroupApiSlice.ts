@@ -60,6 +60,18 @@ export interface AuctionItem {
   created_at: string;
 }
 
+export interface AuctionGroupTag {
+  tag_id: number;
+  group_id: number;
+  tag_name: string;
+  tag_icon: string;
+  content_en: string;
+  content_zh: string;
+  content_ja: string;
+  content_th: string;
+  sort_order: number;
+}
+
 export interface CreateAuctionGroupRequest {
   title: string;
   slug?: string;
@@ -220,6 +232,33 @@ export const auctionGroupApi = createApi({
         "AuctionGroups",
       ],
     }),
+
+    // ── Tags ──────────────────────────────────────────────────────────────
+    getGroupTags: builder.query<{ success: boolean; data: AuctionGroupTag[] }, number>({
+      query: (groupId) => ({ url: `/auction-group/${groupId}/tags`, method: "GET" }),
+      providesTags: (_r, _e, groupId) => [{ type: "AuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    createGroupTag: builder.mutation<
+      { success: boolean; data: AuctionGroupTag },
+      { group_id: number; tag_name: string; content: string; source_lang?: string }
+    >({
+      query: ({ group_id, ...body }) => ({ url: `/auction-group/${group_id}/tags`, method: "POST", data: body }),
+      invalidatesTags: (_r, _e, { group_id }) => [{ type: "AuctionGroups", id: `tags-${group_id}` }],
+    }),
+
+    updateGroupTag: builder.mutation<
+      { success: boolean; data: AuctionGroupTag },
+      { groupId: number; tagId: number; tag_name?: string; content_en?: string; content_zh?: string; content_ja?: string; content_th?: string }
+    >({
+      query: ({ groupId, tagId, ...body }) => ({ url: `/auction-group/${groupId}/tags/${tagId}`, method: "PATCH", data: body }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "AuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    deleteGroupTag: builder.mutation<{ success: boolean }, { groupId: number; tagId: number }>({
+      query: ({ groupId, tagId }) => ({ url: `/auction-group/${groupId}/tags/${tagId}`, method: "DELETE" }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "AuctionGroups", id: `tags-${groupId}` }],
+    }),
   }),
 });
 
@@ -234,4 +273,8 @@ export const {
   useAddAuctionToGroupMutation,
   useDeleteAuctionFromGroupMutation,
   useReplaceGroupBatchesMutation,
+  useGetGroupTagsQuery,
+  useCreateGroupTagMutation,
+  useUpdateGroupTagMutation,
+  useDeleteGroupTagMutation,
 } = auctionGroupApi;

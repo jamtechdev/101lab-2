@@ -662,6 +662,27 @@ export interface AdminAuctionGroupItem {
   updatedAt: string;
 }
 
+export interface AuctionGroupTag {
+  tag_id: number;
+  group_id: number;
+  tag_name: string;
+  tag_icon: string;
+  content_en: string | null;
+  content_zh: string | null;
+  content_ja: string | null;
+  content_th: string | null;
+  sort_order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TagTranslations {
+  content_en: string;
+  content_zh: string;
+  content_ja: string;
+  content_th: string;
+}
+
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: axiosBaseQuery,
@@ -1179,6 +1200,40 @@ export const adminApi = createApi({
       invalidatesTags: ["AdminAuctionGroups"],
     }),
 
+    /* ---------------- AUCTION GROUP TAGS ---------------- */
+    getGroupTags: builder.query<{ success: boolean; data: AuctionGroupTag[] }, number>({
+      query: (groupId) => ({ url: `/admin/auction-groups/${groupId}/tags`, method: "GET" }),
+      providesTags: (_r, _e, groupId) => [{ type: "AdminAuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    createGroupTag: builder.mutation<
+      { success: boolean; message: string; data: AuctionGroupTag },
+      { groupId: number; tag_name: string; content: string; source_lang?: string }
+    >({
+      query: ({ groupId, ...body }) => ({ url: `/admin/auction-groups/${groupId}/tags`, method: "POST", data: body }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "AdminAuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    updateGroupTag: builder.mutation<
+      { success: boolean; data: AuctionGroupTag },
+      { groupId: number; tagId: number; tag_name?: string; content_en?: string; content_zh?: string; content_ja?: string; content_th?: string }
+    >({
+      query: ({ groupId, tagId, ...body }) => ({ url: `/admin/auction-groups/${groupId}/tags/${tagId}`, method: "PATCH", data: body }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "AdminAuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    deleteGroupTag: builder.mutation<{ success: boolean }, { groupId: number; tagId: number }>({
+      query: ({ groupId, tagId }) => ({ url: `/admin/auction-groups/${groupId}/tags/${tagId}`, method: "DELETE" }),
+      invalidatesTags: (_r, _e, { groupId }) => [{ type: "AdminAuctionGroups", id: `tags-${groupId}` }],
+    }),
+
+    translateTagContent: builder.mutation<
+      { success: boolean; data: TagTranslations },
+      { content: string; tag_name?: string; source_lang?: string }
+    >({
+      query: (body) => ({ url: `/admin/auction-groups/translate-tag`, method: "POST", data: body }),
+    }),
+
     /* ---------------- ALL OFFERS (admin) ---------------- */
     getAdminAllOffers: builder.query<
       AdminOfferResponse,
@@ -1340,6 +1395,11 @@ export const {
   useGetAdminAuctionGroupsQuery,
   useApproveAuctionGroupMutation,
   useSetAuctionGroupFeaturedMutation,
+  useGetGroupTagsQuery,
+  useCreateGroupTagMutation,
+  useUpdateGroupTagMutation,
+  useDeleteGroupTagMutation,
+  useTranslateTagContentMutation,
 
   /* ---------- PRODUCT REQUESTS ---------- */
   useSubmitProductRequestMutation,

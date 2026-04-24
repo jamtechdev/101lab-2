@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Loader2, Search, Home, Store, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Search, Home, Store, AlertCircle, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
 import Header from "@/components/common/Header";
@@ -17,6 +17,7 @@ import { useCategoryCache } from "@/hooks/useCategoryCache";
 import SEOMeta from "@/components/common/SEOMeta";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import ProductRequestForm from "@/components/common/ProductRequestForm";
+import "suneditor/dist/css/suneditor.min.css";
 
 // ✨ Smoothness - skeleton loaders
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
@@ -42,6 +43,13 @@ const Marketplace = () => {
   const selectedStatus = searchParams.get("status") || undefined;
   const selectedHighlighted = searchParams.get("highlighted") === "true" ? true : undefined;
   const selectedGroup = searchParams.get("group") || "";
+  const [openTags, setOpenTags] = useState<string[]>([]);
+
+  const toggleTag = (tagId: string) => {
+    setOpenTags(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
 
   // Sync searchQuery and debouncedSearch when URL search parameter changes
   useEffect(() => {
@@ -206,6 +214,31 @@ const Marketplace = () => {
     condition: selectedCondition || undefined,
     auctionGroup: selectedGroup && selectedGroup !== '' ? selectedGroup : undefined,
   });
+
+  // auctionGroup + its tags come back in the batch response — no extra API call needed
+  const groupDetail = batchData?.auctionGroup ?? null;
+  const groupTags = groupDetail?.tags ?? [];
+
+  const getTagContent = (tag: any) => {
+    if (currentLang === 'zh' && tag?.content_zh) return tag.content_zh;
+    if (currentLang === 'ja' && tag?.content_ja) return tag.content_ja;
+    if (currentLang === 'th' && tag?.content_th) return tag.content_th;
+    return tag?.content_en || '';
+  };
+
+  const getGroupTitle = () => {
+    if (currentLang === 'zh' && groupDetail?.title_zh) return groupDetail.title_zh;
+    if (currentLang === 'ja' && groupDetail?.title_ja) return groupDetail.title_ja;
+    if (currentLang === 'th' && groupDetail?.title_th) return groupDetail.title_th;
+    return groupDetail?.title_en || groupDetail?.title || '';
+  };
+
+  const getGroupDescription = () => {
+    if (currentLang === 'zh' && groupDetail?.description_zh) return groupDetail.description_zh;
+    if (currentLang === 'ja' && groupDetail?.description_ja) return groupDetail.description_ja;
+    if (currentLang === 'th' && groupDetail?.description_th) return groupDetail.description_th;
+    return groupDetail?.description_en || groupDetail?.description || '';
+  };
 
   // Ensure data is fetched when page loads with URL search parameters OR when they change
   useEffect(() => {
@@ -409,18 +442,50 @@ const Marketplace = () => {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Auction Group Details Header */}
-            {selectedGroup && batchData?.auctionGroup && (
-              <div className="mb-6 p-4 border border-border rounded-lg bg-card">
-                <h1 className="text-2xl font-bold text-foreground mb-2">
-                  {batchData.auctionGroup.title}
-                </h1>
-                <p className="text-muted-foreground mb-4">
-                  {batchData.auctionGroup.description}
-                </p>
-                <div className="flex items-center gap-4 text-sm font-medium">
-                  <span className="text-primary">{totalItems} {totalItems === 1 ? 'lot' : 'lots'}</span>
+            {/* Auction Group banner + tags (shown when group filter is active) */}
+            {selectedGroup && groupDetail && (
+              <div className="mb-5 bg-white border border-border rounded-lg overflow-hidden">
+                {/* Group title */}
+                <div className="px-4 py-3 border-b bg-muted/30">
+                  <p className="text-sm font-semibold text-foreground">
+                    {getGroupTitle()}
+                  </p>
                 </div>
+
+                {/* Description */}
+                {getGroupDescription() && (
+                  <div className="px-4 py-3 text-sm text-muted-foreground border-b">
+                    {getGroupDescription()}
+                  </div>
+                )}
+
+                {/* Tags as collapsible rows */}
+                {groupTags.length > 0 && (
+                  <div className="divide-y divide-border">
+                    {groupTags.map((tag: any) => {
+                      const isOpen = openTags.includes(String(tag?.tag_id));
+                      return (
+                        <div key={tag?.tag_id}>
+                          <button
+                            onClick={() => toggleTag(String(tag?.tag_id))}
+                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/30 transition-colors text-left"
+                          >
+                            {tag?.tag_name}
+                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                          {isOpen && (
+                            <div className="px-4 pb-4 pt-1">
+                              <div
+                                className="sun-editor-editable prose prose-sm max-w-none text-sm text-foreground [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
+                                dangerouslySetInnerHTML={{ __html: getTagContent(tag) || '' }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

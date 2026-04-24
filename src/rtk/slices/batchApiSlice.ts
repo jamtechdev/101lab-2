@@ -59,11 +59,39 @@ export interface ProductDetailResponse {
   };
 }
 
+export interface AuctionGroupTagItem {
+  tag_id: number;
+  group_id: number;
+  tag_name: string;
+  tag_icon: string;
+  content_en?: string | null;
+  content_zh?: string | null;
+  content_ja?: string | null;
+  content_th?: string | null;
+  sort_order: number;
+}
+
+export interface AuctionGroupSummary {
+  group_id: number;
+  title: string;
+  description?: string | null;
+  title_en?: string | null;
+  title_zh?: string | null;
+  title_ja?: string | null;
+  title_th?: string | null;
+  description_en?: string | null;
+  description_zh?: string | null;
+  description_ja?: string | null;
+  description_th?: string | null;
+  tags?: AuctionGroupTagItem[];
+}
+
 export interface FetchBatchesResponse {
   success: boolean;
   message: string;
   data: Batch[];
   pagination: PaginationInfo;
+  auctionGroup?: AuctionGroupSummary | null;
 }
 
 export interface CategorySummaryItem {

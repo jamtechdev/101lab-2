@@ -12,6 +12,10 @@
 - Added `biddingStep.bidIncrementsAllowed`: "Allow 2 additional bid increments"
 - Added `upload.aiCurrencyNote`: "AI Valuation Currency: USD only"
 
+
+
+<!-- ftp:145.79.213.7,   u492245504,  21,  Globalhotels@1234 -->
+
 #### `src/i18n/locales/zh.json`
 - Updated `payment.acceptedMethodsDesc`: "銀行轉帳、電匯" (removed "支票")
 - Added `payment.paymentAmount`: "付款金額 / 交易金額 *"
