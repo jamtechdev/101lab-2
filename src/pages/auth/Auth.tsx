@@ -160,12 +160,12 @@ const Auth = () => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(form.email)) { toastWarning("Please enter a valid email address."); return; }
-    if (form.password.length < 6) { toastWarning("Password must be at least 6 characters."); return; }
-    if (form.password !== form.confirmPassword) { toastWarning("Passwords do not match."); return; }
-    if (!form.first_name.trim()) { toastWarning("First name is required."); return; }
-    if (!form.last_name.trim()) { toastWarning("Last name is required."); return; }
-    if (!termsAccepted) { toastWarning("Please accept the terms to continue."); return; }
+    if (!validateEmail(form.email)) { toastWarning(t("auth.validation.validEmailAddress")); return; }
+    if (form.password.length < 6) { toastWarning(t("auth.validation.passwordMinLength")); return; }
+    if (form.password !== form.confirmPassword) { toastWarning(t("auth.passwordsNoMatch")); return; }
+    if (!form.first_name.trim()) { toastWarning(t("auth.validation.firstNameRequired")); return; }
+    if (!form.last_name.trim()) { toastWarning(t("auth.validation.lastNameRequired")); return; }
+    if (!termsAccepted) { toastWarning(t("auth.validation.acceptTerms")); return; }
 
     try {
       await signupWithLink({
@@ -181,18 +181,18 @@ const Auth = () => {
       setPendingEmail(form.email);
       setSignupStep("check_email");
     } catch (err: any) {
-      toastError(err?.data?.message || "Registration failed. Please try again.");
+      toastError(err?.data?.message || t("auth.validation.registrationFailed"));
     }
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(email)) { toastWarning("Please enter a valid email."); return; }
+    if (!validateEmail(email)) { toastWarning(t("auth.validation.validEmail")); return; }
     try {
       const result = await login({ email, password }).unwrap();
       if (result?.success) {
         try { pushLoginEvent(result, "email"); } catch {}
-        toastSuccess("Welcome back!");
+        toastSuccess(t("auth.validation.welcomeBackToast"));
         const userId = result.data?.data?.user?.id;
         const role = result.data?.data?.role;
         const userName = result.data?.data?.user?.username;
@@ -215,7 +215,7 @@ const Auth = () => {
         else if (role === "seller") window.location.href = "/dashboard";
         else if (role === "admin") window.location.href = "/admin";
         else window.location.href = "/forbidden";
-      } else { toastError(result?.message || "Login failed."); }
+      } else { toastError(result?.message || t("auth.validation.loginFailed")); }
     } catch (err: any) {
       const code = err?.data?.code;
       if (code === "EMAIL_NOT_VERIFIED") {
@@ -223,7 +223,7 @@ const Auth = () => {
       } else if (err?.status === 403 || code === "ACCOUNT_PENDING") {
         setUnverifiedModal({ email, type: "pending" });
       } else {
-        toastError(err?.data?.message || "Login failed.");
+        toastError(err?.data?.message || t("auth.validation.loginFailed"));
       }
     }
   };
@@ -247,7 +247,7 @@ const Auth = () => {
           <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100 transition-opacity mb-10">
             <ArrowLeft className="w-4 h-4" />{t("auth.backToHome")}
           </button>
-          <div className="mb-1"><span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">Welcome to</span></div>
+          <div className="mb-1"><span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">{t("auth.welcomeTo")}</span></div>
           <h1 className="text-3xl font-bold mb-3 tracking-tight">GreenBidz</h1>
           <p className="text-sm opacity-70 leading-relaxed max-w-[300px]">{t("landing.subtitle")}</p>
           {userType !== "admin" && (
@@ -318,13 +318,13 @@ const Auth = () => {
               </form>
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">or</span></div>
+                <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">{t("auth.or")}</span></div>
               </div>
               <div className="rounded-xl border border-border bg-muted/30 p-5 text-center">
-                <p className="text-sm font-semibold mb-0.5">Don't have an account yet?</p>
-                <p className="text-xs text-muted-foreground mb-4">Join thousands of buyers &amp; sellers on GreenBidz</p>
+                <p className="text-sm font-semibold mb-0.5">{t("auth.dontHaveAccountYet")}</p>
+                <p className="text-xs text-muted-foreground mb-4">{t("auth.joinThousands")}</p>
                 <Button type="button" variant="outline" className="w-full h-10 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signup")}>
-                  <UserPlus className="w-4 h-4" />Create Account — It's Free
+                  <UserPlus className="w-4 h-4" />{t("auth.createAccountFree")}
                 </Button>
               </div>
             </div>
@@ -342,7 +342,7 @@ const Auth = () => {
                     <button type="button" onClick={() => setSignupStep("form")} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
                       <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <h2 className="text-lg font-bold text-foreground">Finish Setting Up Your Account</h2>
+                    <h2 className="text-lg font-bold text-foreground">{t("auth.finishSetupTitle")}</h2>
                     <div className="w-8" />
                   </div>
 
@@ -352,7 +352,7 @@ const Auth = () => {
                       <div className="flex items-center gap-2.5">
                         <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                         <p className="text-sm font-medium text-emerald-800">
-                          Already verified your email? You can sign in now.
+                          {t("auth.alreadyVerifiedPrompt")}
                         </p>
                       </div>
                       <Button
@@ -365,7 +365,7 @@ const Auth = () => {
                           setAuthMode("signin");
                         }}
                       >
-                        <LogIn className="w-3.5 h-3.5" />Sign In
+                        <LogIn className="w-3.5 h-3.5" />{t("auth.signIn")}
                       </Button>
                     </div>
                   )}
@@ -374,8 +374,7 @@ const Auth = () => {
                   <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
                     <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-amber-800 leading-relaxed">
-                      To message sellers and place bids or offers, please finish setting up your account.
-                      In the meantime, you can continue browsing listings and adding items to your watchlist.
+                      {t("auth.finishSetupBanner")}
                     </p>
                   </div>
 
@@ -383,15 +382,15 @@ const Auth = () => {
                   <div className="rounded-xl border border-border bg-background overflow-hidden">
                     <div className="flex items-start gap-4 p-5">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground mb-3">Verify Email</p>
+                        <p className="text-sm font-bold text-foreground mb-3">{t("auth.verifyEmailTitle")}</p>
                         <div className="flex items-start gap-3">
                           <div className="w-7 h-7 rounded-full border-2 border-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                             <AlertCircle className="w-4 h-4 text-red-400" />
                           </div>
                           <p className="text-sm text-muted-foreground leading-relaxed">
-                            Confirm your email address by clicking the link we sent to{" "}
+                            {t("auth.verifyEmailInstructionPrefix")}{" "}
                             <span className="font-semibold text-foreground">{pendingEmail}</span>.{" "}
-                            (Check your spam folder if needed.)
+                            {t("auth.verifyEmailInstructionSuffix")}
                           </p>
                         </div>
                       </div>
@@ -402,9 +401,9 @@ const Auth = () => {
                           setIsResending(true);
                           try {
                             await resendVerificationLink({ email: pendingEmail }).unwrap();
-                            toastSuccess("Verification email resent.");
+                            toastSuccess(t("auth.verificationEmailResent"));
                           } catch (err: any) {
-                            toastError(err?.data?.message || "Failed to resend. Please try again.");
+                            toastError(err?.data?.message || t("auth.failedToResendTryAgain"));
                           } finally { setIsResending(false); }
                         }}
                         className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -413,16 +412,16 @@ const Auth = () => {
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           : <RefreshCw className="w-3.5 h-3.5" />
                         }
-                        Resend
+                        {t("auth.resend")}
                       </button>
                     </div>
 
                     {/* What's next steps */}
                     <div className="border-t border-border bg-muted/30 px-5 py-4 space-y-2.5">
                       {[
-                        "Click the verification link in your email",
-                        "Our team will review your account",
-                        "Once approved, sign in and start bidding",
+                        t("auth.verifyStep1"),
+                        t("auth.verifyStep2"),
+                        t("auth.verifyStep3"),
                       ].map((step, i) => (
                         <div key={i} className="flex items-center gap-2.5 text-xs text-muted-foreground">
                           <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] flex-shrink-0">{i + 1}</div>
@@ -433,7 +432,7 @@ const Auth = () => {
                   </div>
 
                   <Button className="w-full h-11 mt-5 bg-primary hover:bg-primary/90 font-semibold gap-2" onClick={() => navigate("/marketplace")}>
-                    Browse Marketplace While You Wait
+                    {t("auth.browseWhileWaiting")}
                   </Button>
                 </div>
               )}
@@ -442,8 +441,8 @@ const Auth = () => {
               {signupStep === "form" && (
                 <div className="animate-fade-in">
                   <div className="text-center mb-7">
-                    <h2 className="text-2xl font-bold">Create your account</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Join the marketplace — it's free</p>
+                    <h2 className="text-2xl font-bold">{t("auth.createYourAccountTitle")}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">{t("auth.joinMarketplaceFree")}</p>
                   </div>
 
                   <form onSubmit={handleSignupSubmit} className="space-y-6">
@@ -454,14 +453,14 @@ const Auth = () => {
                         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
                           <Lock className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <p className="text-sm font-semibold text-foreground">Account Credentials</p>
+                        <p className="text-sm font-semibold text-foreground">{t("auth.accountCredentials")}</p>
                       </div>
 
                       {/* Email — full row */}
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium text-foreground">
-                          Company Email <span className="text-destructive">*</span>
-                        </Label>
+                          <Label className="text-sm font-medium text-foreground">
+                            {t("auth.companyEmail")} <span className="text-destructive">*</span>
+                          </Label>
                         <div className="relative">
                           <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                           <Input type="email" placeholder="company@yourcompany.com" value={form.email}
@@ -474,11 +473,11 @@ const Auth = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium text-foreground">
-                            Password <span className="text-destructive">*</span>
+                            {t("auth.password")} <span className="text-destructive">*</span>
                           </Label>
                           <div className="relative">
                             <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type={showPassword ? "text" : "password"} placeholder="Minimum 6 characters"
+                            <Input type={showPassword ? "text" : "password"} placeholder={t("auth.passwordMinPlaceholder")}
                               value={form.password} onChange={setF("password")} required
                               className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
                             <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowPassword(v => !v)}>
@@ -488,11 +487,11 @@ const Auth = () => {
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium text-foreground">
-                            Confirm Password <span className="text-destructive">*</span>
+                            {t("auth.confirmPassword")} <span className="text-destructive">*</span>
                           </Label>
                           <div className="relative">
                             <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type={showConfirmPassword ? "text" : "password"} placeholder="Repeat your password"
+                            <Input type={showConfirmPassword ? "text" : "password"} placeholder={t("auth.repeatPasswordPlaceholder")}
                               value={form.confirmPassword} onChange={setF("confirmPassword")} required
                               className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
                             <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowConfirmPassword(v => !v)}>
@@ -509,27 +508,27 @@ const Auth = () => {
                         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
                           <User className="w-3.5 h-3.5 text-primary" />
                         </div>
-                        <p className="text-sm font-semibold text-foreground">Personal &amp; Company Details</p>
+                        <p className="text-sm font-semibold text-foreground">{t("auth.personalCompanyDetails")}</p>
                       </div>
 
                       {/* First name | Last name | Phone — 3 cols */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium text-foreground">
-                            First name <span className="text-destructive">*</span>
+                            {t("auth.firstName")} <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="e.g. John" value={form.first_name} onChange={setF("first_name")}
+                          <Input placeholder={t("auth.firstNameExample")} value={form.first_name} onChange={setF("first_name")}
                             required className="h-11 bg-background border-border focus:border-primary" />
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-sm font-medium text-foreground">
-                            Last name <span className="text-destructive">*</span>
+                            {t("auth.lastName")} <span className="text-destructive">*</span>
                           </Label>
-                          <Input placeholder="e.g. Smith" value={form.last_name} onChange={setF("last_name")}
+                          <Input placeholder={t("auth.lastNameExample")} value={form.last_name} onChange={setF("last_name")}
                             required className="h-11 bg-background border-border focus:border-primary" />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">Phone number</Label>
+                          <Label className="text-sm font-medium text-foreground">{t("auth.phoneNumber")}</Label>
                           <div className="flex h-11 rounded-md border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden">
                             <select
                               value={form.phoneCode}
@@ -542,7 +541,7 @@ const Auth = () => {
                             </select>
                             <input
                               type="tel"
-                              placeholder="234 567 8900"
+                              placeholder={t("auth.phonePlaceholder")}
                               value={form.phone}
                               onChange={setF("phone")}
                               className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
@@ -554,35 +553,35 @@ const Auth = () => {
                       {/* Company | Country — 2 cols */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">Company name</Label>
+                          <Label className="text-sm font-medium text-foreground">{t("auth.companyName")}</Label>
                           <div className="relative">
                             <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input placeholder="Your company" value={form.company} onChange={setF("company")}
+                            <Input placeholder={t("auth.yourCompany")} value={form.company} onChange={setF("company")}
                               className="h-11 pl-10 bg-background border-border focus:border-primary" />
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">Country</Label>
+                          <Label className="text-sm font-medium text-foreground">{t("auth.country")}</Label>
                           <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-11 bg-background" />
                         </div>
                       </div>
 
                       {/* Customer Industry — full row */}
                       <div className="space-y-1.5">
-                        <Label className="text-sm font-medium text-foreground">Customer Industry</Label>
+                        <Label className="text-sm font-medium text-foreground">{t("auth.customerIndustry")}</Label>
                         <select
                           value={form.industry}
                           onChange={e => setForm(p => ({ ...p, industry: e.target.value, industryOther: "" }))}
                           className="w-full h-11 px-3 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                         >
-                          <option value="">Select your industry…</option>
+                          <option value="">{t("auth.selectYourIndustry")}</option>
                           {INDUSTRY_OPTIONS.map(opt => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                         {form.industry === "Other" && (
                           <Input
-                            placeholder="Please specify your industry"
+                            placeholder={t("auth.specifyIndustryPlaceholder")}
                             value={form.industryOther}
                             onChange={setF("industryOther")}
                             className="h-11 bg-background border-border focus:border-primary mt-2"
@@ -599,7 +598,7 @@ const Auth = () => {
                             <Tag className="w-3.5 h-3.5 text-primary" />
                           </div>
                           <p className="text-sm font-semibold text-foreground">
-                            Interests <span className="text-xs font-normal text-muted-foreground ml-1">(optional)</span>
+                            {t("auth.equipmentInterests")} <span className="text-xs font-normal text-muted-foreground ml-1">({t("auth.optional")})</span>
                           </p>
                         </div>
                         <div ref={dropdownRef} className="relative">
@@ -614,8 +613,8 @@ const Auth = () => {
                           >
                             <span className="flex items-center gap-2 text-muted-foreground truncate">
                               {selectedInterests.length === 0
-                                ? "Select categories you're interested in…"
-                                : <span className="text-foreground font-medium">{selectedInterests.length} categor{selectedInterests.length === 1 ? "y" : "ies"} selected</span>
+                                ? t("auth.selectCategoriesInterested")
+                                : <span className="text-foreground font-medium">{t("auth.categoriesSelected", { count: selectedInterests.length })}</span>
                               }
                             </span>
                             <ChevronDown className={cn("w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
@@ -687,24 +686,24 @@ const Auth = () => {
                     <label className="flex items-start gap-3 cursor-pointer">
                       <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
                       <span className="text-xs text-muted-foreground leading-relaxed">
-                        I agree with the{" "}
-                        <span className="text-primary hover:underline cursor-pointer">user terms</span>,{" "}
-                        <span className="text-primary hover:underline cursor-pointer">privacy statement</span>{" "}
-                        and I give permission for GreenBidz to carry out activities for both sellers and buyers.
+                        {t("auth.agreementPrefix")}{" "}
+                        <span className="text-primary hover:underline cursor-pointer">{t("auth.userTerms")}</span>,{" "}
+                        <span className="text-primary hover:underline cursor-pointer">{t("auth.privacyStatement")}</span>{" "}
+                        {t("auth.agreementSuffix")}
                       </span>
                     </label>
 
                     <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled={isSignupLoading}>
-                      {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Creating account…</> : "Create Account"}
+                      {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.creatingAccount")}</> : t("auth.createAccount")}
                     </Button>
                   </form>
 
                   <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                    <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">Already have an account?</span></div>
+                    <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
                   </div>
                   <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signin")}>
-                    <LogIn className="w-4 h-4" />Sign in
+                    <LogIn className="w-4 h-4" />{t("auth.signIn")}
                   </Button>
                 </div>
               )}
@@ -744,14 +743,14 @@ const Auth = () => {
 
             {/* Title */}
             <h3 className="text-xl font-bold text-foreground mb-2">
-              {unverifiedModal.type === "not_verified" ? "Email Not Verified" : "Account Pending Approval"}
+              {unverifiedModal.type === "not_verified" ? t("auth.emailNotVerifiedTitle") : t("auth.accountPendingApprovalTitle")}
             </h3>
 
             {/* Body */}
             <p className="text-sm text-muted-foreground leading-relaxed mb-1">
               {unverifiedModal.type === "not_verified"
-                ? "Your account is created but your email hasn't been verified yet. Check your inbox for the link we sent to:"
-                : "Your email is verified. Our team is reviewing your account."
+                ? t("auth.emailNotVerifiedBody")
+                : t("auth.accountPendingApprovalBody")
               }
             </p>
             <p className="text-sm font-semibold text-foreground mb-4">{unverifiedModal.email}</p>
@@ -759,8 +758,8 @@ const Auth = () => {
             <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {unverifiedModal.type === "not_verified"
-                  ? "Click the verification link in your inbox to activate your account. Didn't get it? Resend below."
-                  : "Our team typically reviews new accounts within 1–2 business days. You'll receive an email once approved."
+                  ? t("auth.emailNotVerifiedHelp")
+                  : t("auth.accountPendingApprovalHelp")
                 }
               </p>
             </div>
@@ -774,15 +773,15 @@ const Auth = () => {
                   setIsResendingLink(true);
                   try {
                     await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
-                    toastSuccess("Verification email resent. Please check your inbox.");
+                    toastSuccess(t("auth.verificationEmailResentInbox"));
                   } catch (err: any) {
-                    toastError(err?.data?.message || "Failed to resend.");
+                    toastError(err?.data?.message || t("auth.failedToResend"));
                   } finally { setIsResendingLink(false); }
                 }}
               >
                 {isResendingLink
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
-                  : <><RefreshCw className="w-4 h-4" />Resend Verification Email</>
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.sending")}</>
+                  : <><RefreshCw className="w-4 h-4" />{t("auth.resendVerificationEmail")}</>
                 }
               </Button>
             )}
@@ -792,14 +791,14 @@ const Auth = () => {
               className="w-full h-10 text-sm mb-3"
               onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}
             >
-              Browse Marketplace While You Wait
+              {t("auth.browseWhileWaiting")}
             </Button>
             <button
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground underline"
               onClick={() => setUnverifiedModal(null)}
             >
-              Close
+              {t("auth.close")}
             </button>
           </div>
         </div>

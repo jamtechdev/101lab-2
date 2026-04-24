@@ -49,6 +49,13 @@
     "orders": "注文",
     "ordersReceived": "受け取った注文"
   },
+  "countrySelect": {
+    "placeholder": "国を選択",
+    "asiaPacificGroup": "アジア太平洋",
+    "otherCountriesGroup": "その他の国",
+    "asiaPacificHeader": "アジア太平洋",
+    "otherCountriesHeader": "その他の国"
+  },
   "products": {
     "privateProducts": "プライベート商品",
     "addNew": "新しい商品を追加",

@@ -73,6 +73,13 @@
     "categories": "หมวดหมู่",
     "toggleMenu": "สลับเมนู"
   },
+  "countrySelect": {
+    "placeholder": "เลือกประเทศ",
+    "asiaPacificGroup": "เอเชียแปซิฟิก",
+    "otherCountriesGroup": "ประเทศอื่น ๆ",
+    "asiaPacificHeader": "เอเชียแปซิฟิก",
+    "otherCountriesHeader": "ประเทศอื่น ๆ"
+  },
   "products": {
     "privateProducts": "สินค้าส่วนตัว",
     "addNew": "เพิ่มสินค้าใหม่",
