@@ -312,7 +312,7 @@ export default function BuyerDetails() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => navigate("/admin/buyers")}
+                            onClick={() => navigate(-1)}
                             className="hover:bg-muted"
                         >
                             <ArrowLeft className="h-5 w-5" />
