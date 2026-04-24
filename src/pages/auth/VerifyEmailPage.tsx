@@ -4,10 +4,13 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, ShoppingBag, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVerifyEmailByTokenMutation } from "@/rtk/slices/apiSlice";
+import Header from "@/components/common/Header";
+import { useTranslation } from "react-i18next";
 
 type Status = "loading" | "success" | "error";
 
 const VerifyEmailPage = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status>("loading");
@@ -19,7 +22,7 @@ const VerifyEmailPage = () => {
     const token = searchParams.get("token");
     if (!token) {
       setStatus("error");
-      setMessage("No verification token found in this link. Please check your email and try again.");
+      setMessage(t("auth.verifyPage.noTokenMessage"));
       return;
     }
 
@@ -30,13 +33,15 @@ const VerifyEmailPage = () => {
       })
       .catch((err) => {
         setStatus("error");
-        const msg = err?.data?.message || "This verification link is invalid or has expired.";
+        const msg = err?.data?.message || t("auth.verifyPage.invalidLinkMessage");
         setMessage(msg);
       });
-  }, []);
+  }, [searchParams, t, verifyEmailByToken]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f0f5f2] to-[#e8f4ee] px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#f0f5f2] to-[#e8f4ee]">
+      <Header />
+      <div className="px-4 py-10 sm:py-14 flex items-center justify-center">
       <div className="w-full max-w-md">
 
         {/* Card */}
@@ -53,8 +58,8 @@ const VerifyEmailPage = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 border border-primary/20 mx-auto">
                   <Loader2 className="w-7 h-7 text-primary animate-spin" />
                 </div>
-                <h2 className="text-xl font-bold text-foreground">Verifying your email…</h2>
-                <p className="text-sm text-muted-foreground">Please wait a moment.</p>
+                <h2 className="text-xl font-bold text-foreground">{t("auth.verifyPage.verifyingTitle")}</h2>
+                <p className="text-sm text-muted-foreground">{t("auth.verifyPage.pleaseWait")}</p>
               </div>
             )}
 
@@ -66,18 +71,17 @@ const VerifyEmailPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-foreground">Email Verified!</h2>
+                  <h2 className="text-2xl font-bold text-foreground">{t("auth.verifyPage.verifiedTitle")}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Your email address has been confirmed successfully.
+                    {t("auth.verifyPage.verifiedDescription")}
                   </p>
                 </div>
 
                 {/* Status info box */}
                 <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-left space-y-2">
-                  <p className="text-sm font-semibold text-amber-800">Account under review</p>
+                  <p className="text-sm font-semibold text-amber-800">{t("auth.verifyPage.underReviewTitle")}</p>
                   <p className="text-xs text-amber-700 leading-relaxed">
-                    Our team will review your account shortly. You'll be able to sign in once approved.
-                    In the meantime, you can freely browse the marketplace.
+                    {t("auth.verifyPage.underReviewDescription")}
                   </p>
                 </div>
 
@@ -87,7 +91,7 @@ const VerifyEmailPage = () => {
                     onClick={() => navigate("/marketplace")}
                   >
                     <ShoppingBag className="w-4 h-4" />
-                    Browse Marketplace
+                    {t("auth.verifyPage.browseMarketplace")}
                   </Button>
                   <Button
                     variant="outline"
@@ -95,7 +99,7 @@ const VerifyEmailPage = () => {
                     onClick={() => navigate("/auth?mode=signin&type=buyer")}
                   >
                     <LogIn className="w-4 h-4" />
-                    Go to Sign In
+                    {t("auth.verifyPage.goToSignIn")}
                   </Button>
                 </div>
               </div>
@@ -109,7 +113,7 @@ const VerifyEmailPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-bold text-foreground">Verification Failed</h2>
+                  <h2 className="text-2xl font-bold text-foreground">{t("auth.verifyPage.failedTitle")}</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {message}
                   </p>
@@ -120,7 +124,7 @@ const VerifyEmailPage = () => {
                     className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground gap-2 font-semibold"
                     onClick={() => navigate("/auth?mode=signup&type=buyer")}
                   >
-                    Try Again
+                    {t("auth.verifyPage.tryAgain")}
                   </Button>
                   <Button
                     variant="outline"
@@ -128,7 +132,7 @@ const VerifyEmailPage = () => {
                     onClick={() => navigate("/marketplace")}
                   >
                     <ShoppingBag className="w-4 h-4" />
-                    Browse Marketplace
+                    {t("auth.verifyPage.browseMarketplace")}
                   </Button>
                 </div>
               </div>
@@ -140,6 +144,7 @@ const VerifyEmailPage = () => {
         <p className="text-center text-xs text-muted-foreground mt-4">
           © {new Date().getFullYear()} GreenBidz · All rights reserved
         </p>
+      </div>
       </div>
     </div>
   );

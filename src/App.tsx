@@ -215,6 +215,9 @@ const App = () => {
 
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/verify-email-token" element={<VerifyEmailPage />} />
+              <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/email/verify" element={<VerifyEmailPage />} />
               <Route path="/seo-analytics" element={<SEOAnalytics />} />
 
               {/* PUBLIC MARKETPLACE */}
