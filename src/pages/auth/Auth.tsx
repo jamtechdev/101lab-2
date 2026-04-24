@@ -46,30 +46,35 @@ const INDUSTRY_OPTIONS = [
 ];
 
 const PHONE_CODES = [
-  { code: "+1",   flag: "🇺🇸", label: "US" },
-  { code: "+44",  flag: "🇬🇧", label: "GB" },
-  { code: "+852", flag: "🇭🇰", label: "HK" },
+  // Keep order aligned with CountrySelect: priority countries first, then others.
+  { code: "+86", flag: "🇨🇳", label: "CN" },
+  { code: "+62", flag: "🇮🇩", label: "ID" },
+  { code: "+91", flag: "🇮🇳", label: "IN" },
+  { code: "+60", flag: "🇲🇾", label: "MY" },
   { code: "+886", flag: "🇹🇼", label: "TW" },
-  { code: "+86",  flag: "🇨🇳", label: "CN" },
-  { code: "+81",  flag: "🇯🇵", label: "JP" },
-  { code: "+82",  flag: "🇰🇷", label: "KR" },
-  { code: "+65",  flag: "🇸🇬", label: "SG" },
-  { code: "+60",  flag: "🇲🇾", label: "MY" },
-  { code: "+61",  flag: "🇦🇺", label: "AU" },
-  { code: "+49",  flag: "🇩🇪", label: "DE" },
-  { code: "+33",  flag: "🇫🇷", label: "FR" },
-  { code: "+31",  flag: "🇳🇱", label: "NL" },
-  { code: "+91",  flag: "🇮🇳", label: "IN" },
-  { code: "+971", flag: "🇦🇪", label: "AE" },
-  { code: "+966", flag: "🇸🇦", label: "SA" },
-  { code: "+55",  flag: "🇧🇷", label: "BR" },
-  { code: "+52",  flag: "🇲🇽", label: "MX" },
-  { code: "+27",  flag: "🇿🇦", label: "ZA" },
-  { code: "+7",   flag: "🇷🇺", label: "RU" },
-  { code: "+90",  flag: "🇹🇷", label: "TR" },
-  { code: "+20",  flag: "🇪🇬", label: "EG" },
-  { code: "+234", flag: "🇳🇬", label: "NG" },
+  { code: "+66", flag: "🇹🇭", label: "TH" },
+  { code: "+81", flag: "🇯🇵", label: "JP" },
+  { code: "+84", flag: "🇻🇳", label: "VN" },
+
+  { code: "+20", flag: "🇪🇬", label: "EG" },
+  { code: "+61", flag: "🇦🇺", label: "AU" },
+  { code: "+55", flag: "🇧🇷", label: "BR" },
+  { code: "+33", flag: "🇫🇷", label: "FR" },
+  { code: "+49", flag: "🇩🇪", label: "DE" },
+  { code: "+852", flag: "🇭🇰", label: "HK" },
   { code: "+254", flag: "🇰🇪", label: "KE" },
+  { code: "+82", flag: "🇰🇷", label: "KR" },
+  { code: "+52", flag: "🇲🇽", label: "MX" },
+  { code: "+31", flag: "🇳🇱", label: "NL" },
+  { code: "+234", flag: "🇳🇬", label: "NG" },
+  { code: "+65", flag: "🇸🇬", label: "SG" },
+  { code: "+7", flag: "🇷🇺", label: "RU" },
+  { code: "+966", flag: "🇸🇦", label: "SA" },
+  { code: "+27", flag: "🇿🇦", label: "ZA" },
+  { code: "+90", flag: "🇹🇷", label: "TR" },
+  { code: "+971", flag: "🇦🇪", label: "AE" },
+  { code: "+44", flag: "🇬🇧", label: "GB" },
+  { code: "+1", flag: "🇺🇸", label: "US" },
 ];
 
 const Auth = () => {
@@ -92,7 +97,7 @@ const Auth = () => {
   const [form, setForm] = useState({
     email: "", password: "", confirmPassword: "",
     first_name: "", last_name: "", phone: "",
-    phoneCode: "+1",
+    phoneCode: "+86",
     company: "", country: "",
     industry: "", industryOther: "",
   });
@@ -176,8 +181,8 @@ const Auth = () => {
         industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
         interests: selectedInterests,
       }).unwrap();
-      try { pushRoleSelectedEvent(userType); } catch {}
-      try { pushSignupEvent(userType); } catch {}
+      try { pushRoleSelectedEvent(userType); } catch { }
+      try { pushSignupEvent(userType); } catch { }
       setPendingEmail(form.email);
       setSignupStep("check_email");
     } catch (err: any) {
@@ -191,7 +196,7 @@ const Auth = () => {
     try {
       const result = await login({ email, password }).unwrap();
       if (result?.success) {
-        try { pushLoginEvent(result, "email"); } catch {}
+        try { pushLoginEvent(result, "email"); } catch { }
         toastSuccess(t("auth.validation.welcomeBackToast"));
         const userId = result.data?.data?.user?.id;
         const role = result.data?.data?.role;
@@ -208,7 +213,7 @@ const Auth = () => {
           else localStorage.removeItem("companyName");
         }
         const socket = getSocket(); socket.connect();
-        socket.emit("joinRooms", { user_id: userId, role }, (res: any) => {});
+        socket.emit("joinRooms", { user_id: userId, role }, (res: any) => { });
         if (accessToken) localStorage.setItem("accessToken", accessToken);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
         if (role === "buyer") window.location.href = "/buyer-dashboard";
@@ -277,441 +282,441 @@ const Auth = () => {
         </div>
 
         <div className="flex-1 flex items-start justify-center py-8 px-4 lg:px-8">
-        <div className="w-full max-w-2xl">
+          <div className="w-full max-w-2xl">
 
-          {/* ══ SIGN IN ══ */}
-          {authMode === "signin" && (
-            <div className="animate-fade-in max-w-md mx-auto rounded-2xl border border-border bg-card shadow-sm p-8 lg:p-10">
-              <div className="text-center mb-7">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
-                  <Lock className="w-6 h-6 text-primary" />
+            {/* ══ SIGN IN ══ */}
+            {authMode === "signin" && (
+              <div className="animate-fade-in max-w-md mx-auto rounded-2xl border border-border bg-card shadow-sm p-8 lg:p-10">
+                <div className="text-center mb-7">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 mb-4">
+                    <Lock className="w-6 h-6 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold">{t("auth.welcomeBack")}</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {userType === "admin" ? t("auth.adminPortal") : t("auth.signInToBuyer")}
+                  </p>
                 </div>
-                <h2 className="text-2xl font-bold">{t("auth.welcomeBack")}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {userType === "admin" ? t("auth.adminPortal") : t("auth.signInToBuyer")}
-                </p>
-              </div>
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">{t("auth.companyEmail")} <span className="text-destructive">*</span></Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <Input type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => { try { pushFormInteractEvent('login','email'); } catch {} }} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">{t("auth.password")} <span className="text-destructive">*</span></Label>
-                    {userType !== "admin" && <button type="button" className="text-xs text-primary hover:underline" onClick={() => navigate("/forgot-password")}>{t("auth.forgotPassword")}</button>}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
-                    <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 gap-2 mt-2" disabled={isLoginLoading}>
-                  {isLoginLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.signingIn")}</> : <><LogIn className="w-4 h-4" />{t("auth.loginButton")}</>}
-                </Button>
-              </form>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">{t("auth.or")}</span></div>
-              </div>
-              <div className="rounded-xl border border-border bg-muted/30 p-5 text-center">
-                <p className="text-sm font-semibold mb-0.5">{t("auth.dontHaveAccountYet")}</p>
-                <p className="text-xs text-muted-foreground mb-4">{t("auth.joinThousands")}</p>
-                <Button type="button" variant="outline" className="w-full h-10 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signup")}>
-                  <UserPlus className="w-4 h-4" />{t("auth.createAccountFree")}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* ══ SIGN UP ══ */}
-          {authMode === "signup" && userType !== "admin" && (
-            <div className="animate-fade-in">
-
-              {/* ── Check email screen ── */}
-              {signupStep === "check_email" && (
-                <div className="animate-fade-in">
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <button type="button" onClick={() => setSignupStep("form")} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <h2 className="text-lg font-bold text-foreground">{t("auth.finishSetupTitle")}</h2>
-                    <div className="w-8" />
-                  </div>
-
-                  {/* Returned from verify tab — prompt to sign in */}
-                  {returnedFromVerify && (
-                    <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4">
-                      <div className="flex items-center gap-2.5">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                        <p className="text-sm font-medium text-emerald-800">
-                          {t("auth.alreadyVerifiedPrompt")}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 flex-shrink-0"
-                        onClick={() => {
-                          setReturnedFromVerify(false);
-                          setSignupStep("form");
-                          setAuthMode("signin");
-                        }}
-                      >
-                        <LogIn className="w-3.5 h-3.5" />{t("auth.signIn")}
-                      </Button>
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">{t("auth.companyEmail")} <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                      <Input type="email" placeholder="you@company.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => { try { pushFormInteractEvent('login', 'email'); } catch { } }} required className="h-12 pl-10 bg-muted/30 border-border focus:border-primary" />
                     </div>
-                  )}
-
-                  {/* Amber info banner */}
-                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
-                    <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-800 leading-relaxed">
-                      {t("auth.finishSetupBanner")}
-                    </p>
                   </div>
-
-                  {/* Verify email row */}
-                  <div className="rounded-xl border border-border bg-background overflow-hidden">
-                    <div className="flex items-start gap-4 p-5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground mb-3">{t("auth.verifyEmailTitle")}</p>
-                        <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-full border-2 border-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <AlertCircle className="w-4 h-4 text-red-400" />
-                          </div>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {t("auth.verifyEmailInstructionPrefix")}{" "}
-                            <span className="font-semibold text-foreground">{pendingEmail}</span>.{" "}
-                            {t("auth.verifyEmailInstructionSuffix")}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={isResending}
-                        onClick={async () => {
-                          setIsResending(true);
-                          try {
-                            await resendVerificationLink({ email: pendingEmail }).unwrap();
-                            toastSuccess(t("auth.verificationEmailResent"));
-                          } catch (err: any) {
-                            toastError(err?.data?.message || t("auth.failedToResendTryAgain"));
-                          } finally { setIsResending(false); }
-                        }}
-                        className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isResending
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <RefreshCw className="w-3.5 h-3.5" />
-                        }
-                        {t("auth.resend")}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">{t("auth.password")} <span className="text-destructive">*</span></Label>
+                      {userType !== "admin" && <button type="button" className="text-xs text-primary hover:underline" onClick={() => navigate("/forgot-password")}>{t("auth.forgotPassword")}</button>}
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                      <Input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
+                      <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-
-                    {/* What's next steps */}
-                    <div className="border-t border-border bg-muted/30 px-5 py-4 space-y-2.5">
-                      {[
-                        t("auth.verifyStep1"),
-                        t("auth.verifyStep2"),
-                        t("auth.verifyStep3"),
-                      ].map((step, i) => (
-                        <div key={i} className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                          <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] flex-shrink-0">{i + 1}</div>
-                          {step}
-                        </div>
-                      ))}
-                    </div>
                   </div>
-
-                  <Button className="w-full h-11 mt-5 bg-primary hover:bg-primary/90 font-semibold gap-2" onClick={() => navigate("/marketplace")}>
-                    {t("auth.browseWhileWaiting")}
+                  <Button type="submit" className="w-full h-12 font-semibold bg-primary hover:bg-primary/90 gap-2 mt-2" disabled={isLoginLoading}>
+                    {isLoginLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.signingIn")}</> : <><LogIn className="w-4 h-4" />{t("auth.loginButton")}</>}
+                  </Button>
+                </form>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                  <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">{t("auth.or")}</span></div>
+                </div>
+                <div className="rounded-xl border border-border bg-muted/30 p-5 text-center">
+                  <p className="text-sm font-semibold mb-0.5">{t("auth.dontHaveAccountYet")}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t("auth.joinThousands")}</p>
+                  <Button type="button" variant="outline" className="w-full h-10 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signup")}>
+                    <UserPlus className="w-4 h-4" />{t("auth.createAccountFree")}
                   </Button>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* ── Registration form ── */}
-              {signupStep === "form" && (
-                <div className="animate-fade-in">
-                  <div className="text-center mb-7">
-                    <h2 className="text-2xl font-bold">{t("auth.createYourAccountTitle")}</h2>
-                    <p className="text-sm text-muted-foreground mt-1">{t("auth.joinMarketplaceFree")}</p>
-                  </div>
+            {/* ══ SIGN UP ══ */}
+            {authMode === "signup" && userType !== "admin" && (
+              <div className="animate-fade-in">
 
-                  <form onSubmit={handleSignupSubmit} className="space-y-6">
-
-                    {/* ── Section: Credentials ── */}
-                    <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                      <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Lock className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">{t("auth.accountCredentials")}</p>
-                      </div>
-
-                      {/* Email — full row */}
-                      <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.companyEmail")} <span className="text-destructive">*</span>
-                          </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                          <Input type="email" placeholder="company@yourcompany.com" value={form.email}
-                            onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration','email'); } catch {} }}
-                            required className="h-11 pl-10 bg-background border-border focus:border-primary" />
-                        </div>
-                      </div>
-
-                      {/* Password + Confirm — 2 cols */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.password")} <span className="text-destructive">*</span>
-                          </Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type={showPassword ? "text" : "password"} placeholder={t("auth.passwordMinPlaceholder")}
-                              value={form.password} onChange={setF("password")} required
-                              className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
-                            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowPassword(v => !v)}>
-                              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.confirmPassword")} <span className="text-destructive">*</span>
-                          </Label>
-                          <div className="relative">
-                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type={showConfirmPassword ? "text" : "password"} placeholder={t("auth.repeatPasswordPlaceholder")}
-                              value={form.confirmPassword} onChange={setF("confirmPassword")} required
-                              className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
-                            <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowConfirmPassword(v => !v)}>
-                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                {/* ── Check email screen ── */}
+                {signupStep === "check_email" && (
+                  <div className="animate-fade-in">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <button type="button" onClick={() => setSignupStep("form")} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+                        <ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <h2 className="text-lg font-bold text-foreground">{t("auth.finishSetupTitle")}</h2>
+                      <div className="w-8" />
                     </div>
 
-                    {/* ── Section: Personal + Company (combined) ── */}
-                    <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                      <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <User className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <p className="text-sm font-semibold text-foreground">{t("auth.personalCompanyDetails")}</p>
-                      </div>
-
-                      {/* First name | Last name | Phone — 3 cols */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.firstName")} <span className="text-destructive">*</span>
-                          </Label>
-                          <Input placeholder={t("auth.firstNameExample")} value={form.first_name} onChange={setF("first_name")}
-                            required className="h-11 bg-background border-border focus:border-primary" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.lastName")} <span className="text-destructive">*</span>
-                          </Label>
-                          <Input placeholder={t("auth.lastNameExample")} value={form.last_name} onChange={setF("last_name")}
-                            required className="h-11 bg-background border-border focus:border-primary" />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">{t("auth.phoneNumber")}</Label>
-                          <div className="flex h-11 rounded-md border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden">
-                            <select
-                              value={form.phoneCode}
-                              onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
-                              className="h-full pl-2 pr-1 text-sm bg-muted/40 border-r border-border text-foreground focus:outline-none cursor-pointer shrink-0"
-                            >
-                              {PHONE_CODES.map(({ code, flag, label }) => (
-                                <option key={code} value={code}>{flag} {code}</option>
-                              ))}
-                            </select>
-                            <input
-                              type="tel"
-                              placeholder={t("auth.phonePlaceholder")}
-                              value={form.phone}
-                              onChange={setF("phone")}
-                              className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Company | Country — 2 cols */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">{t("auth.companyName")}</Label>
-                          <div className="relative">
-                            <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input placeholder={t("auth.yourCompany")} value={form.company} onChange={setF("company")}
-                              className="h-11 pl-10 bg-background border-border focus:border-primary" />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">{t("auth.country")}</Label>
-                          <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-11 bg-background" />
-                        </div>
-                      </div>
-
-                      {/* Customer Industry — full row */}
-                      <div className="space-y-1.5">
-                        <Label className="text-sm font-medium text-foreground">{t("auth.customerIndustry")}</Label>
-                        <select
-                          value={form.industry}
-                          onChange={e => setForm(p => ({ ...p, industry: e.target.value, industryOther: "" }))}
-                          className="w-full h-11 px-3 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                        >
-                          <option value="">{t("auth.selectYourIndustry")}</option>
-                          {INDUSTRY_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                        {form.industry === "Other" && (
-                          <Input
-                            placeholder={t("auth.specifyIndustryPlaceholder")}
-                            value={form.industryOther}
-                            onChange={setF("industryOther")}
-                            className="h-11 bg-background border-border focus:border-primary mt-2"
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* ── Section: Interests ── */}
-                    {labCategories.length > 0 && (
-                      <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                        <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Tag className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <p className="text-sm font-semibold text-foreground">
-                            {t("auth.equipmentInterests")} <span className="text-xs font-normal text-muted-foreground ml-1">({t("auth.optional")})</span>
+                    {/* Returned from verify tab — prompt to sign in */}
+                    {returnedFromVerify && (
+                      <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4">
+                        <div className="flex items-center gap-2.5">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                          <p className="text-sm font-medium text-emerald-800">
+                            {t("auth.alreadyVerifiedPrompt")}
                           </p>
                         </div>
-                        <div ref={dropdownRef} className="relative">
-                          {/* Trigger */}
-                          <button
-                            type="button"
-                            onClick={() => setInterestDropdownOpen(v => !v)}
-                            className={cn(
-                              "w-full h-11 px-3 rounded-md border text-sm flex items-center justify-between bg-background transition-all",
-                              interestDropdownOpen ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
-                            )}
-                          >
-                            <span className="flex items-center gap-2 text-muted-foreground truncate">
-                              {selectedInterests.length === 0
-                                ? t("auth.selectCategoriesInterested")
-                                : <span className="text-foreground font-medium">{t("auth.categoriesSelected", { count: selectedInterests.length })}</span>
-                              }
-                            </span>
-                            <ChevronDown className={cn("w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
-                          </button>
-
-                          {/* Panel */}
-                          {interestDropdownOpen && (
-                            <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
-                              {labCategories.map((cat) => {
-                                const parentSel = selectedInterests.includes(cat.slug);
-                                const isExp = expandedParents.includes(cat.slug);
-                                const hasSubs = cat.subcategories?.length > 0;
-                                return (
-                                  <div key={cat.slug} className="border-b border-border/60 last:border-0">
-                                    <div className="flex items-stretch">
-                                      <button type="button" onClick={() => toggleInterest(cat.slug)}
-                                        className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
-                                        <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-primary border-primary" : "border-border")}>
-                                          {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
-                                        </div>
-                                        <span className={parentSel ? "text-primary" : "text-foreground"}>{cat.name}</span>
-                                      </button>
-                                      {hasSubs && (
-                                        <button type="button"
-                                          onClick={() => setExpandedParents(prev => prev.includes(cat.slug) ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug])}
-                                          className="px-3 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                                          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isExp && "rotate-90")} />
-                                        </button>
-                                      )}
-                                    </div>
-                                    {hasSubs && isExp && (
-                                      <div className="bg-muted/30 border-t border-border/60">
-                                        {cat.subcategories.map((sub) => {
-                                          const subSel = selectedInterests.includes(sub.slug);
-                                          return (
-                                            <button key={sub.slug} type="button" onClick={() => toggleInterest(sub.slug)}
-                                              className="flex items-center gap-2 w-full px-5 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b border-border/40 last:border-0">
-                                              <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all", subSel ? "bg-primary border-primary" : "border-border")}>
-                                                {subSel && <Check className="w-2 h-2 text-white" />}
-                                              </div>
-                                              <span className={subSel ? "text-primary font-medium" : "text-muted-foreground"}>{sub.name}</span>
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {/* Selected tags */}
-                          {selectedInterests.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {selectedInterests.map(slug => (
-                                <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
-                                  {getInterestLabel(slug)}
-                                  <button type="button" onClick={() => toggleInterest(slug)} className="hover:text-destructive ml-0.5 leading-none">×</button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 flex-shrink-0"
+                          onClick={() => {
+                            setReturnedFromVerify(false);
+                            setSignupStep("form");
+                            setAuthMode("signin");
+                          }}
+                        >
+                          <LogIn className="w-3.5 h-3.5" />{t("auth.signIn")}
+                        </Button>
                       </div>
                     )}
 
-                    {/* Terms */}
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
-                      <span className="text-xs text-muted-foreground leading-relaxed">
-                        {t("auth.agreementPrefix")}{" "}
-                        <span className="text-primary hover:underline cursor-pointer">{t("auth.userTerms")}</span>,{" "}
-                        <span className="text-primary hover:underline cursor-pointer">{t("auth.privacyStatement")}</span>{" "}
-                        {t("auth.agreementSuffix")}
-                      </span>
-                    </label>
+                    {/* Amber info banner */}
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
+                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-amber-800 leading-relaxed">
+                        {t("auth.finishSetupBanner")}
+                      </p>
+                    </div>
 
-                    <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled={isSignupLoading}>
-                      {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.creatingAccount")}</> : t("auth.createAccount")}
+                    {/* Verify email row */}
+                    <div className="rounded-xl border border-border bg-background overflow-hidden">
+                      <div className="flex items-start gap-4 p-5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-foreground mb-3">{t("auth.verifyEmailTitle")}</p>
+                          <div className="flex items-start gap-3">
+                            <div className="w-7 h-7 rounded-full border-2 border-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <AlertCircle className="w-4 h-4 text-red-400" />
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {t("auth.verifyEmailInstructionPrefix")}{" "}
+                              <span className="font-semibold text-foreground">{pendingEmail}</span>.{" "}
+                              {t("auth.verifyEmailInstructionSuffix")}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isResending}
+                          onClick={async () => {
+                            setIsResending(true);
+                            try {
+                              await resendVerificationLink({ email: pendingEmail }).unwrap();
+                              toastSuccess(t("auth.verificationEmailResent"));
+                            } catch (err: any) {
+                              toastError(err?.data?.message || t("auth.failedToResendTryAgain"));
+                            } finally { setIsResending(false); }
+                          }}
+                          className="text-sm font-semibold text-primary hover:underline flex-shrink-0 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isResending
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : <RefreshCw className="w-3.5 h-3.5" />
+                          }
+                          {t("auth.resend")}
+                        </button>
+                      </div>
+
+                      {/* What's next steps */}
+                      <div className="border-t border-border bg-muted/30 px-5 py-4 space-y-2.5">
+                        {[
+                          t("auth.verifyStep1"),
+                          t("auth.verifyStep2"),
+                          t("auth.verifyStep3"),
+                        ].map((step, i) => (
+                          <div key={i} className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                            <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] flex-shrink-0">{i + 1}</div>
+                            {step}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button className="w-full h-11 mt-5 bg-primary hover:bg-primary/90 font-semibold gap-2" onClick={() => navigate("/marketplace")}>
+                      {t("auth.browseWhileWaiting")}
                     </Button>
-                  </form>
-
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                    <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
                   </div>
-                  <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signin")}>
-                    <LogIn className="w-4 h-4" />{t("auth.signIn")}
-                  </Button>
-                </div>
-              )}
+                )}
 
-            </div>
-          )}
+                {/* ── Registration form ── */}
+                {signupStep === "form" && (
+                  <div className="animate-fade-in">
+                    <div className="text-center mb-7">
+                      <h2 className="text-2xl font-bold">{t("auth.createYourAccountTitle")}</h2>
+                      <p className="text-sm text-muted-foreground mt-1">{t("auth.joinMarketplaceFree")}</p>
+                    </div>
 
-        </div>
+                    <form onSubmit={handleSignupSubmit} className="space-y-6">
+
+                      {/* ── Section: Credentials ── */}
+                      <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
+                        <div className="flex items-center gap-2 pb-1 border-b border-border/60">
+                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Lock className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">{t("auth.accountCredentials")}</p>
+                        </div>
+
+                        {/* Email — full row */}
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium text-foreground">
+                            {t("auth.companyEmail")} <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <Input type="email" placeholder="company@yourcompany.com" value={form.email}
+                              onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }}
+                              required className="h-11 pl-10 bg-background border-border focus:border-primary" />
+                          </div>
+                        </div>
+
+                        {/* Password + Confirm — 2 cols */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">
+                              {t("auth.password")} <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="relative">
+                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                              <Input type={showPassword ? "text" : "password"} placeholder={t("auth.passwordMinPlaceholder")}
+                                value={form.password} onChange={setF("password")} required
+                                className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
+                              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowPassword(v => !v)}>
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">
+                              {t("auth.confirmPassword")} <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="relative">
+                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                              <Input type={showConfirmPassword ? "text" : "password"} placeholder={t("auth.repeatPasswordPlaceholder")}
+                                value={form.confirmPassword} onChange={setF("confirmPassword")} required
+                                className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
+                              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowConfirmPassword(v => !v)}>
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Section: Personal + Company (combined) ── */}
+                      <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
+                        <div className="flex items-center gap-2 pb-1 border-b border-border/60">
+                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <User className="w-3.5 h-3.5 text-primary" />
+                          </div>
+                          <p className="text-sm font-semibold text-foreground">{t("auth.personalCompanyDetails")}</p>
+                        </div>
+
+                        {/* First name | Last name | Phone — 3 cols */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">
+                              {t("auth.firstName")} <span className="text-destructive">*</span>
+                            </Label>
+                            <Input placeholder={t("auth.firstNameExample")} value={form.first_name} onChange={setF("first_name")}
+                              required className="h-11 bg-background border-border focus:border-primary" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">
+                              {t("auth.lastName")} <span className="text-destructive">*</span>
+                            </Label>
+                            <Input placeholder={t("auth.lastNameExample")} value={form.last_name} onChange={setF("last_name")}
+                              required className="h-11 bg-background border-border focus:border-primary" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">{t("auth.phoneNumber")}</Label>
+                            <div className="flex h-11 rounded-md border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden">
+                              <select
+                                value={form.phoneCode}
+                                onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
+                                className="h-full pl-2 pr-1 text-sm bg-muted/40 border-r border-border text-foreground focus:outline-none cursor-pointer shrink-0"
+                              >
+                                {PHONE_CODES.map(({ code, flag, label }) => (
+                                  <option key={code} value={code}>{flag} {code}</option>
+                                ))}
+                              </select>
+                              <input
+                                type="tel"
+                                placeholder={t("auth.phonePlaceholder")}
+                                value={form.phone}
+                                onChange={setF("phone")}
+                                className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Company | Country — 2 cols */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">{t("auth.companyName")}</Label>
+                            <div className="relative">
+                              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                              <Input placeholder={t("auth.yourCompany")} value={form.company} onChange={setF("company")}
+                                className="h-11 pl-10 bg-background border-border focus:border-primary" />
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-sm font-medium text-foreground">{t("auth.country")}</Label>
+                            <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-11 bg-background" />
+                          </div>
+                        </div>
+
+                        {/* Customer Industry — full row */}
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-medium text-foreground">{t("auth.customerIndustry")}</Label>
+                          <select
+                            value={form.industry}
+                            onChange={e => setForm(p => ({ ...p, industry: e.target.value, industryOther: "" }))}
+                            className="w-full h-11 px-3 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          >
+                            <option value="">{t("auth.selectYourIndustry")}</option>
+                            {INDUSTRY_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                          {form.industry === "Other" && (
+                            <Input
+                              placeholder={t("auth.specifyIndustryPlaceholder")}
+                              value={form.industryOther}
+                              onChange={setF("industryOther")}
+                              className="h-11 bg-background border-border focus:border-primary mt-2"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* ── Section: Interests ── */}
+                      {labCategories.length > 0 && (
+                        <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
+                          <div className="flex items-center gap-2 pb-1 border-b border-border/60">
+                            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <Tag className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {t("auth.equipmentInterests")} <span className="text-xs font-normal text-muted-foreground ml-1">({t("auth.optional")})</span>
+                            </p>
+                          </div>
+                          <div ref={dropdownRef} className="relative">
+                            {/* Trigger */}
+                            <button
+                              type="button"
+                              onClick={() => setInterestDropdownOpen(v => !v)}
+                              className={cn(
+                                "w-full h-11 px-3 rounded-md border text-sm flex items-center justify-between bg-background transition-all",
+                                interestDropdownOpen ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+                              )}
+                            >
+                              <span className="flex items-center gap-2 text-muted-foreground truncate">
+                                {selectedInterests.length === 0
+                                  ? t("auth.selectCategoriesInterested")
+                                  : <span className="text-foreground font-medium">{t("auth.categoriesSelected", { count: selectedInterests.length })}</span>
+                                }
+                              </span>
+                              <ChevronDown className={cn("w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
+                            </button>
+
+                            {/* Panel */}
+                            {interestDropdownOpen && (
+                              <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
+                                {labCategories.map((cat) => {
+                                  const parentSel = selectedInterests.includes(cat.slug);
+                                  const isExp = expandedParents.includes(cat.slug);
+                                  const hasSubs = cat.subcategories?.length > 0;
+                                  return (
+                                    <div key={cat.slug} className="border-b border-border/60 last:border-0">
+                                      <div className="flex items-stretch">
+                                        <button type="button" onClick={() => toggleInterest(cat.slug)}
+                                          className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
+                                          <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-primary border-primary" : "border-border")}>
+                                            {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
+                                          </div>
+                                          <span className={parentSel ? "text-primary" : "text-foreground"}>{cat.name}</span>
+                                        </button>
+                                        {hasSubs && (
+                                          <button type="button"
+                                            onClick={() => setExpandedParents(prev => prev.includes(cat.slug) ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug])}
+                                            className="px-3 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                                            <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isExp && "rotate-90")} />
+                                          </button>
+                                        )}
+                                      </div>
+                                      {hasSubs && isExp && (
+                                        <div className="bg-muted/30 border-t border-border/60">
+                                          {cat.subcategories.map((sub) => {
+                                            const subSel = selectedInterests.includes(sub.slug);
+                                            return (
+                                              <button key={sub.slug} type="button" onClick={() => toggleInterest(sub.slug)}
+                                                className="flex items-center gap-2 w-full px-5 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b border-border/40 last:border-0">
+                                                <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all", subSel ? "bg-primary border-primary" : "border-border")}>
+                                                  {subSel && <Check className="w-2 h-2 text-white" />}
+                                                </div>
+                                                <span className={subSel ? "text-primary font-medium" : "text-muted-foreground"}>{sub.name}</span>
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Selected tags */}
+                            {selectedInterests.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {selectedInterests.map(slug => (
+                                  <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
+                                    {getInterestLabel(slug)}
+                                    <button type="button" onClick={() => toggleInterest(slug)} className="hover:text-destructive ml-0.5 leading-none">×</button>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Terms */}
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground leading-relaxed">
+                          {t("auth.agreementPrefix")}{" "}
+                          <span className="text-primary hover:underline cursor-pointer">{t("auth.userTerms")}</span>,{" "}
+                          <span className="text-primary hover:underline cursor-pointer">{t("auth.privacyStatement")}</span>{" "}
+                          {t("auth.agreementSuffix")}
+                        </span>
+                      </label>
+
+                      <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled={isSignupLoading}>
+                        {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.creatingAccount")}</> : t("auth.createAccount")}
+                      </Button>
+                    </form>
+
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                      <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
+                    </div>
+                    <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signin")}>
+                      <LogIn className="w-4 h-4" />{t("auth.signIn")}
+                    </Button>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
 
