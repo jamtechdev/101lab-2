@@ -866,6 +866,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       <div>
                         <h1 className="text-xl font-bold text-foreground leading-tight">{getTranslatedField(product, 'title')}</h1>
                         <p className="text-xs text-muted-foreground mt-1 font-mono">Batch #{id}</p>
+                        {/* <h1 className="text-xs text-muted-foreground mt-1 font-monod">{t("listingDetail.quantity")}</h1> */}
+                        <p className="text-xs text-muted-foreground mt-1 font-monod">{t("listingDetail.quantity")}:{product.quantity}</p>
                       </div>
 
                       {/* Price / Bid Status Banner */}
@@ -1437,7 +1439,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       <Input value={contactPerson} disabled className="bg-muted/40" />
                     </div>
                     <div>
-                      <Label className="text-sm font-semibold text-foreground mb-2 block">
+                      {/* <Label className="text-sm font-semibold text-foreground mb-2 block">
                         {t("makeOfferModal.offerQuantity") || "Offer Quantity"}
                       </Label>
                       <Input
@@ -1448,12 +1450,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         value={offerQuantity}
                         onChange={(e) => setOfferQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                         placeholder={t("makeOfferModal.offerQuantityPlaceholder") || "Enter quantity"}
-                      />
-                      {products[0]?.quantity && products[0].quantity !== "N/A" && (
+                      /> */}
+                      {/* {products[0]?.quantity && products[0].quantity !== "N/A" && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("auctionPage.maximumUnits", { count: products[0].quantity })}
                         </p>
-                      )}
+                      )} */}
                     </div>
                     <div>
                       <Label className="text-sm font-semibold text-foreground mb-2 block">
