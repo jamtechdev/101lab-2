@@ -3223,14 +3223,14 @@
     "reviewOffer": "Review Offer"
   },
   "buyerPopup": {
-    "eyebrow": "Free to join",
-    "title": "Find lab equipment you've been searching for",
-    "description": "Join thousands of buyers on 101Lab — the leading marketplace for pre-owned lab and industrial equipment. Browse hundreds of verified listings and place bids or offers directly.",
-    "benefit1": "Access hundreds of verified lab equipment listings",
-    "benefit2": "Place bids, buy now, or make direct offers",
-    "benefit3": "Real-time notifications on your bids and offers",
-    "benefit4": "Free to register — no listing fees",
-    "cta": "Register as a Buyer",
-    "dismiss": "Maybe later"
+    "banner": "Auction closing soon — don't miss out",
+    "titleLine1": "Last chance to bid before",
+    "titleLine2": "the gavel drops.",
+    "description": "Sign up free in 30 seconds and unlock instant access to live industrial auctions — before your competition does.",
+    "cta": "Claim My Free Access",
+    "dismiss": "Maybe later",
+    "badge1": "No credit card",
+    "badge2": "Free forever",
+    "badge3": "30-sec signup"
   }
 }
