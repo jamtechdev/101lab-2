@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import SunEditor from "suneditor-react";
+import "suneditor/dist/css/suneditor.min.css";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +62,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   // ── Product fields (always edited in English) ───────────────────────────
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [extraContent, setExtraContent] = useState("");
   const [condition, setCondition] = useState("");
   const [operationStatus, setOperationStatus] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -97,6 +100,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setDescription(
         (p.description_en || p.description || "").replace(/<[^>]*>/g, "")
       );
+      setExtraContent(p.extra_content_en || p.extra_content || "");
       setExistingMedia(p.images || []);
 
       // Restore saved translations if they exist
@@ -104,12 +108,16 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
         setTranslations({
           title_en: p.title_en || p.title || "",
           description_en: (p.description_en || p.description || "").replace(/<[^>]*>/g, ""),
+          extra_content_en: p.extra_content_en || p.extra_content || "",
           title_zh: p.title_zh || "",
           description_zh: p.description_zh || "",
+          extra_content_zh: p.extra_content_zh || "",
           title_ja: p.title_ja || "",
           description_ja: p.description_ja || "",
+          extra_content_ja: p.extra_content_ja || "",
           title_th: p.title_th || "",
           description_th: p.description_th || "",
+          extra_content_th: p.extra_content_th || "",
         });
         setTranslationsStale(false);
       } else {
@@ -128,10 +136,10 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     }
   }, [data]);
 
-  // Mark translations stale when admin changes title or description
+  // Mark translations stale when admin changes title, description, or extra content
   useEffect(() => {
     if (translations) setTranslationsStale(true);
-  }, [title, description]);
+  }, [title, description, extraContent]);
 
   // Pre-fill category — runs when either data or categories tree loads
   useEffect(() => {
@@ -174,7 +182,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       return;
     }
     try {
-      const res = await translateProduct({ title, description }).unwrap();
+      const res = await translateProduct({ title, description, extra_content: extraContent }).unwrap();
       setTranslations(res.data);
       setTranslationsStale(false);
       toastSuccess("Translated into Chinese, Japanese and Thai");
@@ -236,15 +244,20 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       // Always save EN version
       body.title_en = title;
       body.description_en = description;
+      body.extra_content = extraContent;
+      body.extra_content_en = extraContent;
 
       // If translations exist and are not stale, save them too
       if (translations && !translationsStale) {
         body.title_zh = translations.title_zh;
         body.description_zh = translations.description_zh;
+        body.extra_content_zh = translations.extra_content_zh;
         body.title_ja = translations.title_ja;
         body.description_ja = translations.description_ja;
+        body.extra_content_ja = translations.extra_content_ja;
         body.title_th = translations.title_th;
         body.description_th = translations.description_th;
+        body.extra_content_th = translations.extra_content_th;
       }
 
       await updateProduct({ productId, body }).unwrap();
@@ -332,6 +345,28 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 />
               </div>
 
+              <div className="space-y-1">
+                <Label>
+                  {t("admin.edit.fieldExtraContent", "Additional Content")}
+                  <span className="text-xs text-muted-foreground ml-1">(English — rich text, shown below description)</span>
+                </Label>
+                <SunEditor
+                  setContents={extraContent}
+                  onChange={(html) => setExtraContent(html)}
+                  setOptions={{
+                    height: "200",
+                    buttonList: [
+                      ["bold", "italic", "underline", "strike"],
+                      ["fontColor", "hiliteColor"],
+                      ["align", "list", "indent", "outdent"],
+                      ["table", "link"],
+                      ["removeFormat"],
+                    ],
+                    placeholder: "Add extra rich content here (specs, features, notes)…",
+                  }}
+                />
+              </div>
+
               {/* ── AI Translate button ── */}
               <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -374,6 +409,12 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                           <p className="text-xs text-muted-foreground line-clamp-2">
                             {translations[`description_${lang}` as keyof ProductTranslations]}
                           </p>
+                        )}
+                        {translations[`extra_content_${lang}` as keyof ProductTranslations] && (
+                          <div
+                            className="text-xs text-muted-foreground line-clamp-2 prose prose-xs max-w-none"
+                            dangerouslySetInnerHTML={{ __html: translations[`extra_content_${lang}` as keyof ProductTranslations] as string }}
+                          />
                         )}
                       </div>
                     ))}

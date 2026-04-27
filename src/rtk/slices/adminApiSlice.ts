@@ -271,6 +271,11 @@ export interface BatchDetailsProduct {
   description_zh: string | null;
   description_ja: string | null;
   description_th: string | null;
+  extra_content: string | null;
+  extra_content_en: string | null;
+  extra_content_zh: string | null;
+  extra_content_ja: string | null;
+  extra_content_th: string | null;
   images: BatchDetailsProductImage[];
   category: string;
   category_ids: number[];
@@ -279,12 +284,16 @@ export interface BatchDetailsProduct {
 export interface ProductTranslations {
   title_en: string;
   description_en: string;
+  extra_content_en: string;
   title_zh: string;
   description_zh: string;
+  extra_content_zh: string;
   title_ja: string;
   description_ja: string;
+  extra_content_ja: string;
   title_th: string;
   description_th: string;
+  extra_content_th: string;
 }
 
 export interface InspectionScheduleSlot {
@@ -817,7 +826,7 @@ export const adminApi = createApi({
     /* ---------------- TRANSLATE PRODUCT (admin via OpenAI) ---------------- */
     translateAdminProduct: builder.mutation<
       { success: boolean; data: ProductTranslations },
-      { title: string; description?: string }
+      { title: string; description?: string; extra_content?: string }
     >({
       query: (body) => ({
         url: `/admin/product/translate`,

@@ -279,6 +279,17 @@ export default function BrowserListingDetail() {
                     : <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{desc}</p>;
                 })()}
 
+                {/* Extra Content (rich text) below description */}
+                {(() => {
+                  const extra = getTranslatedField('extra_content') || getMetaValue(product?.meta, 'extra_content') || "";
+                  if (!extra) return null;
+                  return (
+                    <div className="mt-4 prose prose-sm max-w-none text-neutral-700 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: extra }}
+                    />
+                  );
+                })()}
+
                 {product.categories && product.categories.length > 0 && (
                   <div className="mt-6 pt-6 border-t border-neutral-200">
                     <p className="text-sm text-neutral-600 mb-2">

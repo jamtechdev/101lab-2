@@ -121,6 +121,11 @@ const mapApiProductToUI = (product: any) => {
     description_zh: meta["description_zh"],
     description_ja: meta["description_ja"],
     description_th: meta["description_th"],
+    extra_content: meta["extra_content"],
+    extra_content_en: meta["extra_content_en"],
+    extra_content_zh: meta["extra_content_zh"],
+    extra_content_ja: meta["extra_content_ja"],
+    extra_content_th: meta["extra_content_th"],
     images: product.attachments?.filter((a: any) => a.type?.startsWith('image') || a.type?.startsWith('video')).map((a: any) => a.url) || [],
     documents: product.documents?.map((doc: any) => ({
       id: doc.id,
@@ -1326,6 +1331,17 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           : <p className="text-sm text-muted-foreground leading-relaxed">{desc || "No description available."}</p>;
                       })()}
                     </div>
+
+                    {/* Extra Content (rich text) */}
+                    {(() => {
+                      const extra = getTranslatedField(product, 'extra_content') || "";
+                      if (!extra) return null;
+                      return (
+                        <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: extra }}
+                        />
+                      );
+                    })()}
 
                     {/* Documents */}
                     {product.documents.length > 0 && (
