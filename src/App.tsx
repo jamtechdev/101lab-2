@@ -74,6 +74,7 @@ import SellerPermissionRoute from "./context/SellerPermissionRoute";
 
 import SellerNotificationListener from "./components/common/SellerNotificationListener";
 import RouteTracker from "./components/common/RouteTracker";
+import { BuyerRegistrationPopup } from "./components/common/BuyerRegistrationPopup";
 import { pushSiteEntryEvent } from "@/utils/gtm";
 
 import { initBuyerSocket } from "./socket/initBuyerSocket";
@@ -200,6 +201,7 @@ const App = () => {
           <BrowserRouter>
             <RouteTracker />
             <ScrollToTopButton showAfter={300} />
+            <BuyerRegistrationPopup />
             <LoginModalProvider>
             <Routes>
               {/* PUBLIC */}
