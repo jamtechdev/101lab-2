@@ -19,14 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, X, UploadCloud } from "lucide-react";
+import { Loader2, X, UploadCloud, Languages, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
+  useTranslateAdminProductMutation,
   useUpdateAdminBiddingMutation,
   useAddAdminProductImagesMutation,
   useDeleteAdminProductImageMutation,
   type BatchDetailsProductImage,
+  type ProductTranslations,
 } from "@/rtk/slices/adminApiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
@@ -37,17 +40,24 @@ interface Props {
   onClose: () => void;
 }
 
+const LANG_LABELS: Record<string, string> = {
+  zh: "Chinese (繁體)",
+  ja: "Japanese (日本語)",
+  th: "Thai (ภาษาไทย)",
+};
+
 const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const { t } = useTranslation();
   const { data, isLoading } = useGetBatchDetailsQuery(batchId!, { skip: !batchId || !open });
   const [updateProduct, { isLoading: savingProduct }] = useUpdateAdminProductMutation();
+  const [translateProduct, { isLoading: translating }] = useTranslateAdminProductMutation();
   const [updateBidding, { isLoading: savingBidding }] = useUpdateAdminBiddingMutation();
   const [addImages, { isLoading: uploadingImages }] = useAddAdminProductImagesMutation();
   const [deleteImage, { isLoading: deletingImage }] = useDeleteAdminProductImageMutation();
 
   const { data: categories } = useLanguageAwareCategories();
 
-  // ── Product fields ──────────────────────────────────────────────────────
+  // ── Product fields (always edited in English) ───────────────────────────
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("");
@@ -56,6 +66,10 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [parentCategorySlug, setParentCategorySlug] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [categoryName, setCategoryName] = useState("");
+
+  // ── AI Translation state ────────────────────────────────────────────────
+  const [translations, setTranslations] = useState<ProductTranslations | null>(null);
+  const [translationsStale, setTranslationsStale] = useState(false);
 
   // ── Bidding fields ──────────────────────────────────────────────────────
   const [bidType, setBidType] = useState("make_offer");
@@ -78,9 +92,29 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     if (!data) return;
     const p = data.data?.products?.[0];
     if (p) {
-      setTitle(p.title || "");
-      setDescription(p.description?.replace(/<[^>]*>/g, "") || "");
+      // Always show EN version first — fall back to raw title if EN not saved yet
+      setTitle(p.title_en || p.title || "");
+      setDescription(
+        (p.description_en || p.description || "").replace(/<[^>]*>/g, "")
+      );
       setExistingMedia(p.images || []);
+
+      // Restore saved translations if they exist
+      if (p.title_zh || p.title_ja || p.title_th) {
+        setTranslations({
+          title_en: p.title_en || p.title || "",
+          description_en: (p.description_en || p.description || "").replace(/<[^>]*>/g, ""),
+          title_zh: p.title_zh || "",
+          description_zh: p.description_zh || "",
+          title_ja: p.title_ja || "",
+          description_ja: p.description_ja || "",
+          title_th: p.title_th || "",
+          description_th: p.description_th || "",
+        });
+        setTranslationsStale(false);
+      } else {
+        setTranslations(null);
+      }
     }
     const b = data.data?.bidding;
     if (b) {
@@ -93,6 +127,11 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setIsAuction(b.isAuction ?? false);
     }
   }, [data]);
+
+  // Mark translations stale when admin changes title or description
+  useEffect(() => {
+    if (translations) setTranslationsStale(true);
+  }, [title, description]);
 
   // Pre-fill category — runs when either data or categories tree loads
   useEffect(() => {
@@ -122,10 +161,27 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
       setPendingFiles([]);
       setPendingPreviews([]);
+      setTranslations(null);
+      setTranslationsStale(false);
     }
   }, [open]);
 
   const productId = data?.data?.products?.[0]?.product_id;
+
+  const handleTranslate = async () => {
+    if (!title.trim()) {
+      toastError("Please enter a title before translating");
+      return;
+    }
+    try {
+      const res = await translateProduct({ title, description }).unwrap();
+      setTranslations(res.data);
+      setTranslationsStale(false);
+      toastSuccess("Translated into Chinese, Japanese and Thai");
+    } catch (err: any) {
+      toastError(err?.data?.message || "Translation failed");
+    }
+  };
 
   const addFiles = (files: FileList | File[]) => {
     const arr = Array.from(files).filter((f) =>
@@ -177,8 +233,26 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       if (operationStatus) body.operation_status = operationStatus;
       if (categoryId) { body.category_id = parseInt(categoryId); body.category_name = categoryName; }
 
+      // Always save EN version
+      body.title_en = title;
+      body.description_en = description;
+
+      // If translations exist and are not stale, save them too
+      if (translations && !translationsStale) {
+        body.title_zh = translations.title_zh;
+        body.description_zh = translations.description_zh;
+        body.title_ja = translations.title_ja;
+        body.description_ja = translations.description_ja;
+        body.title_th = translations.title_th;
+        body.description_th = translations.description_th;
+      }
+
       await updateProduct({ productId, body }).unwrap();
-      toastSuccess(t("admin.edit.productSaved", "Product updated"));
+      toastSuccess(
+        translations && !translationsStale
+          ? t("admin.edit.productSaved", "Product updated with translations")
+          : t("admin.edit.productSaved", "Product updated")
+      );
       onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update product");
@@ -238,17 +312,73 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
             {/* ── Product tab ─────────────────────────────────────────── */}
             <TabsContent value="product" className="space-y-4 mt-4">
               <div className="space-y-1">
-                <Label>{t("admin.edit.fieldTitle", "Title")}</Label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                <div className="flex items-center justify-between">
+                  <Label>{t("admin.edit.fieldTitle", "Title")} <span className="text-xs text-muted-foreground">(English)</span></Label>
+                </div>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter title in English"
+                />
               </div>
 
               <div className="space-y-1">
-                <Label>{t("admin.edit.fieldDescription", "Description")}</Label>
+                <Label>{t("admin.edit.fieldDescription", "Description")} <span className="text-xs text-muted-foreground">(English)</span></Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={4}
+                  placeholder="Enter description in English"
                 />
+              </div>
+
+              {/* ── AI Translate button ── */}
+              <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">AI Translation</p>
+                    <p className="text-xs text-muted-foreground">
+                      Translates title &amp; description into Chinese, Japanese and Thai
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslate}
+                    disabled={translating || !title.trim()}
+                    className="gap-2 border-primary/40"
+                  >
+                    {translating
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <Languages className="h-4 w-4" />}
+                    {translating ? "Translating…" : translationsStale ? "Re-translate" : translations ? "Re-translate" : "Translate with AI"}
+                  </Button>
+                </div>
+
+                {translations && (
+                  <div className="space-y-2">
+                    {translationsStale && (
+                      <p className="text-xs text-amber-600 font-medium">
+                        ⚠ Title or description changed — click Re-translate to update
+                      </p>
+                    )}
+                    {(["zh", "ja", "th"] as const).map((lang) => (
+                      <div key={lang} className="rounded-md bg-background border p-3 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">{LANG_LABELS[lang]}</Badge>
+                          {!translationsStale && <CheckCircle2 className="h-3 w-3 text-green-500" />}
+                        </div>
+                        <p className="text-sm font-medium">{translations[`title_${lang}` as keyof ProductTranslations]}</p>
+                        {translations[`description_${lang}` as keyof ProductTranslations] && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {translations[`description_${lang}` as keyof ProductTranslations]}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -338,7 +468,12 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 })()}
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex-col gap-2 sm:flex-row">
+                {translations && !translationsStale && (
+                  <p className="text-xs text-green-600 self-center">
+                    Translations ready — will be saved automatically
+                  </p>
+                )}
                 <Button onClick={handleSaveProduct} disabled={savingProduct}>
                   {savingProduct && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("admin.edit.saveProduct", "Save Product")}
@@ -348,7 +483,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
             {/* ── Media tab ────────────────────────────────────────────── */}
             <TabsContent value="media" className="space-y-4 mt-4">
-              {/* Existing media grid */}
               {existingMedia.length > 0 && (
                 <div>
                   <Label className="text-xs text-muted-foreground mb-2 block">
@@ -384,7 +518,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 </div>
               )}
 
-              {/* Pending uploads preview */}
               {pendingPreviews.length > 0 && (
                 <div>
                   <Label className="text-xs text-muted-foreground mb-2 block">
@@ -419,7 +552,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 </div>
               )}
 
-              {/* Drop zone */}
               <div
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                   isDragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30 hover:border-primary/50"

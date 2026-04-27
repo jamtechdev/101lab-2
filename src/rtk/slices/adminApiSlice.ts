@@ -263,9 +263,28 @@ export interface BatchDetailsProduct {
   product_id: number;
   title: string;
   description: string;
+  title_en: string | null;
+  title_zh: string | null;
+  title_ja: string | null;
+  title_th: string | null;
+  description_en: string | null;
+  description_zh: string | null;
+  description_ja: string | null;
+  description_th: string | null;
   images: BatchDetailsProductImage[];
   category: string;
   category_ids: number[];
+}
+
+export interface ProductTranslations {
+  title_en: string;
+  description_en: string;
+  title_zh: string;
+  description_zh: string;
+  title_ja: string;
+  description_ja: string;
+  title_th: string;
+  description_th: string;
 }
 
 export interface InspectionScheduleSlot {
@@ -793,6 +812,18 @@ export const adminApi = createApi({
         data: body,
       }),
       invalidatesTags: ["Batches"],
+    }),
+
+    /* ---------------- TRANSLATE PRODUCT (admin via OpenAI) ---------------- */
+    translateAdminProduct: builder.mutation<
+      { success: boolean; data: ProductTranslations },
+      { title: string; description?: string }
+    >({
+      query: (body) => ({
+        url: `/admin/product/translate`,
+        method: "POST",
+        data: body,
+      }),
     }),
 
     /* ---------------- UPDATE BIDDING (admin) ---------------- */
@@ -1344,6 +1375,7 @@ export const {
   useApproveBatchMutation,
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
+  useTranslateAdminProductMutation,
   useUpdateAdminBiddingMutation,
   useAddAdminProductImagesMutation,
   useDeleteAdminProductImageMutation,
