@@ -968,7 +968,7 @@
     "confirmApply": "Confirm & Apply",
     "fields": {
       "title": "Title",
-      "description": "Description"
+      "description": "รายละเอียดสินค้า"
     },
     "successToast": "AI data applied successfully!"
   },
@@ -1171,7 +1171,7 @@
     "productsInBatch": "สินค้าในล็อต",
     "itemSingular": "รายการ",
     "itemPlural": "รายการ",
-    "quantity": "จำนวน",
+    "quantity": "จำนวนสินค้า",
     "noDescriptionAvailable": "ไม่มีคำอธิบาย",
     "noProductsFound": "ไม่พบสินค้าในล็อตนี้",
     "inspectionDetails": "รายละเอียดการตรวจสถานที่",
@@ -1820,7 +1820,7 @@
     "invalidFileType": "檔案格式不正確。允許的格式為 PDF、Excel、CSV、Word、文字檔 和 PPT",
     "condition": "Condition",
     "operationStatus": "Operation Status",
-    "description": "Description",
+    "description": "รายละเอียดสินค้า",
     "aiGenerate": "Generate with AI",
     "titlePlaceholder": "What are you selling?"
   },
@@ -1919,7 +1919,7 @@
       "conditionRequired": "Condition *",
       "operationStatusRequired": "Operation Status *",
       "selectStatus": "Select status",
-      "descriptionLabel": "Description",
+      "descriptionLabel": "รายละเอียดสินค้า",
       "sellerNameOptional": "Seller Name (Optional)",
       "multipleLocations": "Multiple locations (optional)",
       "addressRequired": "Address {index} *",
@@ -2429,7 +2429,7 @@
       "totalBids": "Total Bids",
       "startDate": "Start Date",
       "endDate": "End Date",
-      "location": "Location",
+      "location": "แหล่งขายสินค้า",
       "buyerBids": "Buyer Bids ({count})",
       "amount": "Amount",
       "submitted": "Submitted",
