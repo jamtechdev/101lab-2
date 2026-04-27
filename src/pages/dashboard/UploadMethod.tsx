@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, Upload, FileText, X, ImagePlus, Video, ArrowLeft, Package, Sparkles, CheckCircle2, Search, Clock, Pencil, ArrowRight, Percent, MapPin, Tag as TagIcon } from "lucide-react";
+import { Plus, Trash2, Upload, FileText, X, ImagePlus, Video, ArrowLeft, Package, Sparkles, CheckCircle2, Search, Clock, Pencil, ArrowRight, Percent, MapPin } from "lucide-react";
 import toast from 'react-hot-toast';
 import logo from "@/assets/greenbidz_logo.png";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,7 +20,7 @@ import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { useGetUsersQuery } from "@/rtk/slices/adminApiSlice";
 import { useAddProductMutation, useBatchCreateMutation, useUpdateBatchVisibilityMutation } from "@/rtk/slices/productSlice";
 import axios from "axios";
-import { useGetBatchByIdQuery, useCreateBatchTagMutation } from "@/rtk/slices/batchApiSlice";
+import { useGetBatchByIdQuery } from "@/rtk/slices/batchApiSlice";
 import { SITE_TYPE } from "@/config/site";
 import { pushListingCreatedEvent } from "@/utils/gtm";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
@@ -46,17 +46,6 @@ interface UploadMethodProps {
   batchId?: number | null; // passed from parent so we don't rely on stale URL params
 }
 
-type PendingTag = { uid: string; tag_name: string; content: string };
-
-const TAG_EDITOR_BUTTONS = [
-  ["undo", "redo"],
-  ["font", "fontSize", "formatBlock"],
-  ["bold", "underline", "italic", "strike"],
-  ["fontColor", "hiliteColor", "removeFormat"],
-  ["align", "horizontalRule", "list"],
-  ["table", "link"],
-  ["fullScreen", "showBlocks", "codeView"],
-];
 
 interface MediaFile {
   file: File;
@@ -237,7 +226,6 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
   const [addProduct] = useAddProductMutation();
   const [batchCreate] = useBatchCreateMutation();
   const [updateBatchVisibility] = useUpdateBatchVisibilityMutation();
-  const [createBatchTag] = useCreateBatchTagMutation();
 
   const ALLOWED_SITES_OPTIONS = [
     { value: "101lab.co" },
@@ -252,10 +240,6 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
 
   const [loading, setLoading] = useState(false);
   const [showBatchCreatedDialog, setShowBatchCreatedDialog] = useState(false);
-  const [pendingTags, setPendingTags] = useState<PendingTag[]>([]);
-  const [addingTag, setAddingTag] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagContent, setNewTagContent] = useState("");
   const [createdBatchId, setCreatedBatchId] = useState<number | null>(null);
 
   // Field-level validation errors per item (used to highlight invalid inputs)
@@ -830,16 +814,6 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           const newBatchId = batchResult?.data?.batch_id;
           setBatchId(newBatchId);
           setCreatedBatchId(newBatchId);
-
-          // Save pending tags after batch creation
-          if (newBatchId && pendingTags.length > 0) {
-            for (const tag of pendingTags) {
-              try {
-                await createBatchTag({ batchId: newBatchId, tag_name: tag.tag_name, content: tag.content }).unwrap();
-              } catch { /* tag failure should not block batch creation */ }
-            }
-            setPendingTags([]);
-          }
 
           setShowBatchCreatedDialog(true);
           if (onBatchCreated && newBatchId) {
@@ -1964,100 +1938,6 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                               </div>
                             </div>
 
-                            {/* Batch Tags — shown once below description (batch-level, not per-item) */}
-                            {items.indexOf(item) === 0 && !batchData && (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1.5 text-sm font-medium">
-                                  <TagIcon className="h-3.5 w-3.5" />
-                                  Batch Tags
-                                  <span className="text-muted-foreground font-normal text-xs">(optional)</span>
-                                </div>
-
-                                {pendingTags.length > 0 && (
-                                  <div className="space-y-1.5">
-                                    {pendingTags.map((tag) => (
-                                      <div
-                                        key={tag.uid}
-                                        className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100"
-                                      >
-                                        <TagIcon className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                                        <span className="text-sm font-medium text-amber-800 flex-1 truncate">{tag.tag_name}</span>
-                                        <span className="text-xs text-amber-400 shrink-0">pending</span>
-                                        <button
-                                          type="button"
-                                          onClick={() => setPendingTags((p) => p.filter((t) => t.uid !== tag.uid))}
-                                          className="text-red-400 hover:text-red-600 transition-colors shrink-0"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
-                                {addingTag ? (
-                                  <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3 bg-gray-50/50">
-                                    <input
-                                      type="text"
-                                      placeholder="Tag name (e.g. Location, Terms & Conditions, Parking)"
-                                      value={newTagName}
-                                      onChange={(e) => setNewTagName(e.target.value)}
-                                      autoFocus
-                                      className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                    />
-                                    <div className="rounded-lg overflow-hidden border border-gray-200">
-                                      <SunEditor
-                                        height="220px"
-                                        setContents={newTagContent}
-                                        onChange={(html) => setNewTagContent(html)}
-                                        setOptions={{
-                                          buttonList: TAG_EDITOR_BUTTONS,
-                                          font: ["Arial", "Georgia", "Tahoma", "Trebuchet MS", "Verdana"],
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => { setAddingTag(false); setNewTagName(""); setNewTagContent(""); }}
-                                        className="flex-1"
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        onClick={() => {
-                                          if (!newTagName.trim()) return;
-                                          setPendingTags((prev) => [
-                                            ...prev,
-                                            { uid: Math.random().toString(36).slice(2), tag_name: newTagName.trim(), content: newTagContent },
-                                          ]);
-                                          setNewTagName("");
-                                          setNewTagContent("");
-                                          setAddingTag(false);
-                                        }}
-                                        disabled={!newTagName.trim()}
-                                        className="flex-1"
-                                      >
-                                        <Plus className="h-3.5 w-3.5 mr-1" /> Add Tag
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setAddingTag(true)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-gray-300 text-sm text-gray-500 hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                    Add a tag
-                                  </button>
-                                )}
-                              </div>
-                            )}
 
                             {/* <div>
                         <Label htmlFor={`seller-name-${item.id}`}>{t("upload.sellerNameLabel")} ({t("upload.optional")})</Label>
