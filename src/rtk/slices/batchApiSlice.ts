@@ -237,11 +237,23 @@ export interface SellerBidResponse {
   }[];
 }
 
+export interface BatchTag {
+  tag_id: number;
+  batch_id: number;
+  tag_name: string;
+  tag_icon: string;
+  content_en: string | null;
+  content_zh: string | null;
+  content_ja: string | null;
+  content_th: string | null;
+  sort_order: number;
+}
+
 // ---------- API Slice ----------
 export const batchApiSlice = createApi({
   reducerPath: "batchApi",
   baseQuery: axiosBaseQuery,
-  tagTypes: ["Batches", "Dashboard"],
+  tagTypes: ["Batches", "Dashboard", "BatchTags"],
 
   endpoints: (builder) => ({
     // Get all batches with pagination
@@ -454,6 +466,32 @@ export const batchApiSlice = createApi({
       invalidatesTags: ["Batches"],
     }),
 
+    // ── Batch Tags ────────────────────────────────────────────────────────
+    getBatchTags: builder.query<{ success: boolean; data: BatchTag[] }, number>({
+      query: (batchId) => ({ url: `/batch/${batchId}/tags`, method: "GET" }),
+      providesTags: (_r, _e, batchId) => [{ type: "BatchTags", id: batchId }],
+    }),
+
+    createBatchTag: builder.mutation<
+      { success: boolean; data: BatchTag },
+      { batchId: number; tag_name: string; content: string; source_lang?: string }
+    >({
+      query: ({ batchId, ...body }) => ({
+        url: `/batch/${batchId}/tags`,
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: (_r, _e, { batchId }) => [{ type: "BatchTags", id: batchId }],
+    }),
+
+    deleteBatchTag: builder.mutation<{ success: boolean }, { batchId: number; tagId: number }>({
+      query: ({ batchId, tagId }) => ({
+        url: `/batch/${batchId}/tags/${tagId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, { batchId }) => [{ type: "BatchTags", id: batchId }],
+    }),
+
     // Get batch and product details by product slug
     getBatchByProductSlug: builder.query<ProductDetailResponse, { productSlug: string; type?: string; buyerId?: number }>({
       query: ({ productSlug, type, buyerId }) => {
@@ -488,4 +526,7 @@ export const {
   useGetBatchByProductSlugQuery,
   useToggleHighlightMutation,
   useGetCategorySummaryQuery,
+  useGetBatchTagsQuery,
+  useCreateBatchTagMutation,
+  useDeleteBatchTagMutation,
 } = batchApiSlice;
