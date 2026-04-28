@@ -65,6 +65,7 @@ import AdminCommission from "./pages/Admin/AdminCommission.js";
 import AdminAuctionGroups from "./pages/Admin/AdminAuctionGroups";
 import AdminBidManagement from "./pages/Admin/AdminBidManagement";
 import AdminOffersOrders from "./pages/Admin/AdminOffersOrders";
+import AdminSalesLeads from "./pages/Admin/AdminSalesLeads";
 
 import AIChat from "./pages/buyer/AiChat";
 import SmoothnessDemo from "./pages/SmoothnessDemo";
@@ -362,6 +363,7 @@ const App = () => {
                 <Route path="/admin/auction-groups" element={<AdminAuctionGroups />} />
                 <Route path="/admin/bids" element={<AdminBidManagement />} />
                 <Route path="/admin/offers" element={<AdminOffersOrders />} />
+                <Route path="/admin/sales-leads" element={<AdminSalesLeads />} />
                 <Route path="/admin/settings/email" element={<EmailTypesPage />} />
                 <Route path="/admin/email-types/:typeId" element={<TypeDetailsModal />} />
               </Route>
