@@ -192,6 +192,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   const productId = data?.data?.products?.[0]?.product_id;
 
+  console.log("product id is there ",productId);
+  
+
   // Translate all languages at once
   const handleTranslateAll = async () => {
     if (!title.trim()) { toastError("Please enter a title before translating"); return; }
