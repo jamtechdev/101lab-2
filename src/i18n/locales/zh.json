@@ -2464,7 +2464,46 @@
       "emailsettings": "電子郵件設定",
       "users": "使用者",
       "autoApproval": "自動審核",
-      "settings": "設定"
+      "settings": "設定",
+      "salesLeads": "銷售線索",
+      "group": {
+        "overview": "概覽",
+        "listings": "刊登",
+        "users": "用戶",
+        "approvals": "審核",
+        "sales": "銷售",
+        "finance": "財務",
+        "system": "系統"
+      },
+      "adminBadge": "管理員",
+      "auctionGroups": "拍賣組",
+      "bids": "競標",
+      "offersOrders": "報價與訂單",
+      "commission": "佣金",
+      "sellerUpgradeRequests": "賣家申請",
+      "productRequests": "產品申請"
+    },
+    "salesLeads": {
+      "title": "銷售線索",
+      "totalLeads": "總線索數",
+      "directSales": "直接銷售",
+      "sellWithGreenbidz": "與 GreenBidz 合作銷售",
+      "searchPlaceholder": "搜尋姓名、公司、電郵、電話...",
+      "search": "搜尋",
+      "all": "全部",
+      "newestFirst": "最新優先",
+      "oldestFirst": "最舊優先",
+      "to": "至",
+      "noLeads": "未找到銷售線索",
+      "table": {
+        "no": "#",
+        "name": "姓名",
+        "company": "公司",
+        "email": "電郵",
+        "phone": "電話",
+        "type": "類型",
+        "date": "日期"
+      }
     },
     "dashboard": {
       "title": "管理員儀表板",

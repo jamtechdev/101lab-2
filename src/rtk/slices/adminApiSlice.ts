@@ -1,4 +1,4 @@
-// src/rtk/slices/adminApiSlice.ts
+  // src/rtk/slices/adminApiSlice.ts
 import { createApi } from "@reduxjs/toolkit/query/react";
 import axiosBaseQuery from "../api/baseQuery";
 import { SITE_TYPE } from "@/config/site";

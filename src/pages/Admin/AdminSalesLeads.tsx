@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, X, ChevronLeft, ChevronRight, TrendingUp, Users, Handshake } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,20 +14,9 @@ import { useGetSalesLeadsQuery } from "@/rtk/slices/adminApiSlice";
 const fmt = (d: string) =>
   d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-const LEAD_TYPE_LABEL: Record<string, string> = {
-  "direct-sales":        "Direct Sales",
-  "sell-with-greenbidz": "Sell with GreenBidz",
-};
-
 const LEAD_TYPE_BADGE: Record<string, string> = {
   "direct-sales":        "bg-blue-50 text-blue-700 border-blue-200",
   "sell-with-greenbidz": "bg-emerald-50 text-emerald-700 border-emerald-200",
-};
-
-const STATUS_BADGE: Record<string, string> = {
-  new:         "bg-amber-50 text-amber-700 border-amber-200",
-  synced:      "bg-emerald-50 text-emerald-700 border-emerald-200",
-  sync_failed: "bg-red-50 text-red-700 border-red-200",
 };
 
 function StatCard({ label, value, icon: Icon, color, loading }: {
@@ -57,7 +47,7 @@ function Pagination({ page, totalPages, onPageChange }: {
       <Button variant="outline" size="sm" onClick={() => onPageChange(page - 1)} disabled={page <= 1}>
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
+      <span className="text-sm text-gray-600">{page} / {totalPages}</span>
       <Button variant="outline" size="sm" onClick={() => onPageChange(page + 1)} disabled={page >= totalPages}>
         <ChevronRight className="h-4 w-4" />
       </Button>
@@ -66,40 +56,30 @@ function Pagination({ page, totalPages, onPageChange }: {
 }
 
 export default function AdminSalesLeads() {
+  const { t } = useTranslation();
   const { sidebarCollapsed } = useAdminSidebar();
 
-  const [page, setPage]           = useState(1);
-  const [search, setSearch]       = useState("");
+  const [page, setPage]               = useState(1);
+  const [search, setSearch]           = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [leadType, setLeadType]   = useState("all");
-  const [status, setStatus]       = useState("all");
-  const [sort, setSort]           = useState("newest");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate]     = useState("");
+  const [leadType, setLeadType]       = useState("all");
+  const [sort, setSort]               = useState("newest");
+  const [startDate, setStartDate]     = useState("");
+  const [endDate, setEndDate]         = useState("");
 
   const { data, isLoading, isFetching } = useGetSalesLeadsQuery({
     page,
     limit: 20,
     ...(leadType !== "all" && { lead_type: leadType }),
-    ...(status  !== "all" && { status }),
-    ...(search  && { search }),
+    ...(search    && { search }),
     sort,
     ...(startDate && { start_date: startDate }),
     ...(endDate   && { end_date: endDate }),
   });
 
-  const handleSearch = () => {
-    setSearch(searchInput.trim());
-    setPage(1);
-  };
-
-  const clearSearch = () => {
-    setSearchInput("");
-    setSearch("");
-    setPage(1);
-  };
-
-  const loading = isLoading || isFetching;
+  const handleSearch = () => { setSearch(searchInput.trim()); setPage(1); };
+  const clearSearch  = () => { setSearchInput(""); setSearch(""); setPage(1); };
+  const loading      = isLoading || isFetching;
 
   return (
     <div className="flex h-screen bg-gray-50/50 overflow-hidden">
@@ -108,25 +88,24 @@ export default function AdminSalesLeads() {
       <div className={cn("flex-1 flex flex-col min-w-0 transition-all duration-300",
         sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
       )}>
-        <AdminHeader title="Sales Leads" />
+        <AdminHeader />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
 
           {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total Leads"          value={data?.total ?? 0}                          icon={TrendingUp} color="text-purple-600"  loading={loading} />
-            <StatCard label="Direct Sales"         value={data?.summary?.direct_sales ?? 0}          icon={Users}      color="text-blue-600"    loading={loading} />
-            <StatCard label="Sell with GreenBidz"  value={data?.summary?.sell_with_greenbidz ?? 0}   icon={Handshake}  color="text-emerald-600" loading={loading} />
+            <StatCard label={t("admin.salesLeads.totalLeads", "Total Leads")}                value={data?.total ?? 0}                        icon={TrendingUp} color="text-purple-600"  loading={loading} />
+            <StatCard label={t("admin.salesLeads.directSales", "Direct Sales")}             value={data?.summary?.direct_sales ?? 0}        icon={Users}      color="text-blue-600"    loading={loading} />
+            <StatCard label={t("admin.salesLeads.sellWithGreenbidz", "Sell with GreenBidz")} value={data?.summary?.sell_with_greenbidz ?? 0} icon={Handshake}  color="text-emerald-600" loading={loading} />
           </div>
 
           {/* Filters */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
             <div className="flex flex-wrap gap-3">
-              {/* Search */}
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search name, company, email, phone..."
+                  placeholder={t("admin.salesLeads.searchPlaceholder", "Search name, company, email, phone...")}
                   className="pl-9 pr-8"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
@@ -138,51 +117,35 @@ export default function AdminSalesLeads() {
                   </button>
                 )}
               </div>
-              <Button onClick={handleSearch} className="shrink-0">Search</Button>
+              <Button onClick={handleSearch} className="shrink-0">{t("admin.salesLeads.search", "Search")}</Button>
             </div>
 
             <div className="flex flex-wrap gap-3 items-center">
-              {/* Lead Type Filter */}
               <Tabs value={leadType} onValueChange={(v) => { setLeadType(v); setPage(1); }}>
                 <TabsList className="h-9">
-                  <TabsTrigger value="all"                  className="text-xs px-3">All</TabsTrigger>
-                  <TabsTrigger value="direct-sales"         className="text-xs px-3">Direct Sales</TabsTrigger>
-                  <TabsTrigger value="sell-with-greenbidz"  className="text-xs px-3">Sell with GreenBidz</TabsTrigger>
+                  <TabsTrigger value="all"                 className="text-xs px-3">{t("admin.salesLeads.all", "All")}</TabsTrigger>
+                  <TabsTrigger value="direct-sales"        className="text-xs px-3">{t("admin.salesLeads.directSales", "Direct Sales")}</TabsTrigger>
+                  <TabsTrigger value="sell-with-greenbidz" className="text-xs px-3">{t("admin.salesLeads.sellWithGreenbidz", "Sell with GreenBidz")}</TabsTrigger>
                 </TabsList>
               </Tabs>
 
-              {/* Status */}
-              <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-                <SelectTrigger className="w-[150px] h-9 text-sm">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="synced">Synced</SelectItem>
-                  <SelectItem value="sync_failed">Sync Failed</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Sort */}
               <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1); }}>
-                <SelectTrigger className="w-[130px] h-9 text-sm">
+                <SelectTrigger className="w-[140px] h-9 text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="newest">{t("admin.salesLeads.newestFirst", "Newest First")}</SelectItem>
+                  <SelectItem value="oldest">{t("admin.salesLeads.oldestFirst", "Oldest First")}</SelectItem>
                 </SelectContent>
               </Select>
 
-              {/* Date Range */}
               <input
                 type="date"
                 className="h-9 rounded-md border border-input px-3 text-sm bg-white"
                 value={startDate}
                 onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
               />
-              <span className="text-gray-400 text-sm">to</span>
+              <span className="text-gray-400 text-sm">{t("admin.salesLeads.to", "to")}</span>
               <input
                 type="date"
                 className="h-9 rounded-md border border-input px-3 text-sm bg-white"
@@ -198,21 +161,20 @@ export default function AdminSalesLeads() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Company</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.no", "#")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.name", "Name")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.company", "Company")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.email", "Email")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.phone", "Phone")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.type", "Type")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("admin.salesLeads.table.date", "Date")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {loading ? (
                     Array.from({ length: 8 }).map((_, i) => (
                       <tr key={i}>
-                        {Array.from({ length: 8 }).map((_, j) => (
+                        {Array.from({ length: 7 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
                             <div className="h-4 bg-gray-100 rounded animate-pulse" />
                           </td>
@@ -221,8 +183,8 @@ export default function AdminSalesLeads() {
                     ))
                   ) : !data?.data?.length ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-16 text-center text-gray-400">
-                        No sales leads found
+                      <td colSpan={7} className="px-4 py-16 text-center text-gray-400">
+                        {t("admin.salesLeads.noLeads", "No sales leads found")}
                       </td>
                     </tr>
                   ) : (
@@ -237,14 +199,9 @@ export default function AdminSalesLeads() {
                           <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border",
                             LEAD_TYPE_BADGE[lead.lead_type] ?? "bg-gray-50 text-gray-600 border-gray-200"
                           )}>
-                            {LEAD_TYPE_LABEL[lead.lead_type] ?? lead.lead_type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-semibold border capitalize",
-                            STATUS_BADGE[lead.status] ?? "bg-gray-50 text-gray-600 border-gray-200"
-                          )}>
-                            {lead.status.replace("_", " ")}
+                            {lead.lead_type === "direct-sales"
+                              ? t("admin.salesLeads.directSales", "Direct Sales")
+                              : t("admin.salesLeads.sellWithGreenbidz", "Sell with GreenBidz")}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">{fmt(lead.created_at)}</td>
@@ -255,7 +212,6 @@ export default function AdminSalesLeads() {
               </table>
             </div>
 
-            {/* Pagination */}
             <div className="px-4 py-3 border-t border-gray-100">
               <Pagination page={page} totalPages={data?.totalPages ?? 1} onPageChange={setPage} />
             </div>
