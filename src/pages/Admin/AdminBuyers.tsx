@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -107,12 +107,21 @@ const AdminBuyers = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
   const limit = 10;
   const navigate = useNavigate();
 
-  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit, search: debouncedSearch || undefined });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllBuyers, { isLoading: exporting }] = useLazyGetBuyersQuery();
 
@@ -174,18 +183,7 @@ const AdminBuyers = () => {
     }
   };
 
-  const filteredBuyers = useMemo(() => {
-    if (!data?.data) return [];
-    if (!searchQuery.trim()) return data.data;
-    const query = searchQuery.toLowerCase();
-    return data.data.filter(
-      (buyer) =>
-        buyer.company_name.toLowerCase().includes(query) ||
-        buyer.email.toLowerCase().includes(query) ||
-        buyer.phone?.toLowerCase().includes(query) ||
-        buyer.address?.toLowerCase().includes(query)
-    );
-  }, [data?.data, searchQuery]);
+  const filteredBuyers = data?.data ?? [];
 
   useEffect(() => {
     const unsub = subscribeAdminEvents(() => { refetch(); });
@@ -490,7 +488,7 @@ const AdminBuyers = () => {
           </AlertDialog>
 
           {/* PAGINATION */}
-          {!searchQuery && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
     </div>

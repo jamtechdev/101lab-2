@@ -733,13 +733,14 @@ export const adminApi = createApi({
     /* ---------------- GET SELLERS ---------------- */
     getSellers: builder.query<
       SellerResponse,
-      { page?: number; limit?: number }
+      { page?: number; limit?: number; search?: string }
     >({
-      query: ({ page = 1, limit = 10 }) => {
+      query: ({ page = 1, limit = 10, search }) => {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
         });
+        if (search) params.set("search", search);
         return {
           url: `/admin/seller?${params.toString()}`,
           method: "GET",
@@ -749,12 +750,13 @@ export const adminApi = createApi({
     }),
 
     /* ---------------- GET BUYERS ---------------- */
-    getBuyers: builder.query<BuyerResponse, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 10 }) => {
+    getBuyers: builder.query<BuyerResponse, { page?: number; limit?: number; search?: string }>({
+      query: ({ page = 1, limit = 10, search }) => {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
         });
+        if (search) params.set("search", search);
         return {
           url: `/admin/buyer?${params.toString()}`,
           method: "GET",

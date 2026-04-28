@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -141,13 +141,22 @@ const AdminSellers = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
   const limit = 10;
 
   const navigate = useNavigate();
 
-  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit });
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit, search: debouncedSearch || undefined });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllSellers, { isLoading: exporting }] = useLazyGetSellersQuery();
 
@@ -206,18 +215,7 @@ const AdminSellers = () => {
   const stats = data?.stats || data?.data?.stats || {};
   const verifiedCount = sellers.filter((seller: any) => seller.total_sold > 0 || seller.total_live > 0).length;
 
-  // Filter sellers based on search query (must be called before early returns)
-  const filteredSellers = useMemo(() => {
-    if (!sellers.length) return [];
-    if (!searchQuery.trim()) return sellers;
-    const query = searchQuery.toLowerCase();
-    return sellers.filter(
-      (seller: any) =>
-        seller.company_name.toLowerCase().includes(query) ||
-        seller.email.toLowerCase().includes(query) ||
-        seller.phone?.toLowerCase().includes(query)
-    );
-  }, [sellers, searchQuery]);
+  const filteredSellers = sellers;
 
  
 
@@ -640,7 +638,7 @@ const AdminSellers = () => {
           </AlertDialog>
 
           {/* ---------------- PAGINATION ---------------- */}
-          {!searchQuery && <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </div>
       </div>
     </div>
