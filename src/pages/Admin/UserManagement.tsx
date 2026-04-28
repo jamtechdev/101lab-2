@@ -123,8 +123,8 @@ const AdminUsersAntd = () => {
     const cell = (val: string | null | undefined) => (val != null && String(val).trim() !== "" ? String(val) : NA);
 
     const totalUsers = data?.pagination?.total || 0;
-    const approvedCount = data?.data?.filter((u: any) => u.status === "approved").length || 0;
-    const pendingCount = data?.data?.filter((u: any) => u.status === "pending").length || 0;
+    const approvedCount = (data?.stats as any)?.approved_count ?? 0;
+    const pendingCount = (data?.stats as any)?.pending_count ?? 0;
 
     const columns = [
         {
