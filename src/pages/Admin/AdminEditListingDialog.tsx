@@ -21,8 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, X, UploadCloud, Languages, CheckCircle2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, X, UploadCloud, Languages } from "lucide-react";
 import {
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
@@ -31,7 +30,6 @@ import {
   useAddAdminProductImagesMutation,
   useDeleteAdminProductImageMutation,
   type BatchDetailsProductImage,
-  type ProductTranslations,
 } from "@/rtk/slices/adminApiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
@@ -48,6 +46,27 @@ const LANG_LABELS: Record<string, string> = {
   th: "Thai (ภาษาไทย)",
 };
 
+const EDITOR_OPTIONS = {
+  height: "220",
+  buttonList: [
+    ["undo", "redo"],
+    ["font", "fontSize", "formatBlock"],
+    ["bold", "underline", "italic", "strike", "subscript", "superscript"],
+    ["fontColor", "hiliteColor"],
+    ["removeFormat"],
+    ["outdent", "indent"],
+    ["align", "horizontalRule", "list", "lineHeight"],
+    ["table", "link", "image", "video"],
+    ["blockquote", "paragraphStyle", "textStyle"],
+    ["fullScreen", "showBlocks", "codeView", "preview", "print"],
+  ],
+  // Applies to the editable div inside the SunEditor iframe
+  defaultStyle: "white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.6;",
+  // Injects CSS directly into the editor iframe — overrides suneditor's own p/span rules
+  addStyleForCss: "p, span, h1, h2, h3, h4, h5, h6, li, td, th, blockquote { white-space: pre-wrap !important; word-break: break-word; }",
+  charCounter: false,
+};
+
 const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const { t } = useTranslation();
   const { data, isLoading } = useGetBatchDetailsQuery(batchId!, { skip: !batchId || !open });
@@ -59,7 +78,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   const { data: categories } = useLanguageAwareCategories();
 
-  // ── Product fields (always edited in English) ───────────────────────────
+  // ── English fields ──────────────────────────────────────────────────────
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [extraContent, setExtraContent] = useState("");
@@ -70,9 +89,24 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [categoryId, setCategoryId] = useState("");
   const [categoryName, setCategoryName] = useState("");
 
-  // ── AI Translation state ────────────────────────────────────────────────
-  const [translations, setTranslations] = useState<ProductTranslations | null>(null);
-  const [translationsStale, setTranslationsStale] = useState(false);
+  // ── Per-language editable fields ────────────────────────────────────────
+  const [titleZh, setTitleZh] = useState("");
+  const [descriptionZh, setDescriptionZh] = useState("");
+  const [extraContentZh, setExtraContentZh] = useState("");
+  const [titleJa, setTitleJa] = useState("");
+  const [descriptionJa, setDescriptionJa] = useState("");
+  const [extraContentJa, setExtraContentJa] = useState("");
+  const [titleTh, setTitleTh] = useState("");
+  const [descriptionTh, setDescriptionTh] = useState("");
+  const [extraContentTh, setExtraContentTh] = useState("");
+
+  // ── Language tab state + SunEditor re-mount keys ────────────────────────
+  const [langTab, setLangTab] = useState<"en" | "zh" | "ja" | "th">("en");
+  const [translatingLang, setTranslatingLang] = useState<"zh" | "ja" | "th" | null>(null);
+  const [zhKey, setZhKey] = useState(0);
+  const [jaKey, setJaKey] = useState(0);
+  const [thKey, setThKey] = useState(0);
+  const [dataLoadKey, setDataLoadKey] = useState(0);
 
   // ── Bidding fields ──────────────────────────────────────────────────────
   const [bidType, setBidType] = useState("make_offer");
@@ -90,39 +124,26 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-fill product + bidding fields from fetched data
+  // Pre-fill all fields from fetched data
   useEffect(() => {
     if (!data) return;
     const p = data.data?.products?.[0];
     if (p) {
-      // Always show EN version first — fall back to raw title if EN not saved yet
       setTitle(p.title_en || p.title || "");
-      setDescription(
-        (p.description_en || p.description || "").replace(/<[^>]*>/g, "")
-      );
+      setDescription((p.description_en || p.description || "").replace(/<[^>]*>/g, ""));
       setExtraContent(p.extra_content_en || p.extra_content || "");
       setExistingMedia(p.images || []);
 
-      // Restore saved translations if they exist
-      if (p.title_zh || p.title_ja || p.title_th) {
-        setTranslations({
-          title_en: p.title_en || p.title || "",
-          description_en: (p.description_en || p.description || "").replace(/<[^>]*>/g, ""),
-          extra_content_en: p.extra_content_en || p.extra_content || "",
-          title_zh: p.title_zh || "",
-          description_zh: p.description_zh || "",
-          extra_content_zh: p.extra_content_zh || "",
-          title_ja: p.title_ja || "",
-          description_ja: p.description_ja || "",
-          extra_content_ja: p.extra_content_ja || "",
-          title_th: p.title_th || "",
-          description_th: p.description_th || "",
-          extra_content_th: p.extra_content_th || "",
-        });
-        setTranslationsStale(false);
-      } else {
-        setTranslations(null);
-      }
+      setTitleZh(p.title_zh || "");
+      setDescriptionZh(p.description_zh || "");
+      setExtraContentZh(p.extra_content_zh || "");
+      setTitleJa(p.title_ja || "");
+      setDescriptionJa(p.description_ja || "");
+      setExtraContentJa(p.extra_content_ja || "");
+      setTitleTh(p.title_th || "");
+      setDescriptionTh(p.description_th || "");
+      setExtraContentTh(p.extra_content_th || "");
+      setDataLoadKey((k) => k + 1);
     }
     const b = data.data?.bidding;
     if (b) {
@@ -136,12 +157,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     }
   }, [data]);
 
-  // Mark translations stale when admin changes title, description, or extra content
-  useEffect(() => {
-    if (translations) setTranslationsStale(true);
-  }, [title, description, extraContent]);
-
-  // Pre-fill category — runs when either data or categories tree loads
+  // Pre-fill category
   useEffect(() => {
     if (!data || !categories.length) return;
     const existingId = data.data?.products?.[0]?.category_ids?.[0];
@@ -163,37 +179,56 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     }
   }, [data, categories]);
 
-  // Clean up pending previews on close
+  // Clean up on close
   useEffect(() => {
     if (!open) {
       pendingPreviews.forEach((p) => URL.revokeObjectURL(p));
       setPendingFiles([]);
       setPendingPreviews([]);
-      setTranslations(null);
-      setTranslationsStale(false);
+      setLangTab("en");
+      setTranslatingLang(null);
     }
   }, [open]);
 
   const productId = data?.data?.products?.[0]?.product_id;
 
-  const handleTranslate = async () => {
-    if (!title.trim()) {
-      toastError("Please enter a title before translating");
-      return;
-    }
+  // Translate all languages at once
+  const handleTranslateAll = async () => {
+    if (!title.trim()) { toastError("Please enter a title before translating"); return; }
     try {
       const res = await translateProduct({ title, description, extra_content: extraContent }).unwrap();
-      setTranslations(res.data);
-      setTranslationsStale(false);
+      const d = res.data;
+      setTitleZh(d.title_zh); setDescriptionZh(d.description_zh); setExtraContentZh(d.extra_content_zh);
+      setTitleJa(d.title_ja); setDescriptionJa(d.description_ja); setExtraContentJa(d.extra_content_ja);
+      setTitleTh(d.title_th); setDescriptionTh(d.description_th); setExtraContentTh(d.extra_content_th);
+      setZhKey((k) => k + 1); setJaKey((k) => k + 1); setThKey((k) => k + 1);
       toastSuccess("Translated into Chinese, Japanese and Thai");
     } catch (err: any) {
       toastError(err?.data?.message || "Translation failed");
     }
   };
 
+  // Translate a single language
+  const handleTranslateLang = async (lang: "zh" | "ja" | "th") => {
+    if (!title.trim()) { toastError("Please enter a title before translating"); return; }
+    setTranslatingLang(lang);
+    try {
+      const res = await translateProduct({ title, description, extra_content: extraContent }).unwrap();
+      const d = res.data;
+      if (lang === "zh") { setTitleZh(d.title_zh); setDescriptionZh(d.description_zh); setExtraContentZh(d.extra_content_zh); setZhKey((k) => k + 1); }
+      if (lang === "ja") { setTitleJa(d.title_ja); setDescriptionJa(d.description_ja); setExtraContentJa(d.extra_content_ja); setJaKey((k) => k + 1); }
+      if (lang === "th") { setTitleTh(d.title_th); setDescriptionTh(d.description_th); setExtraContentTh(d.extra_content_th); setThKey((k) => k + 1); }
+      toastSuccess(`Generated ${LANG_LABELS[lang]} content`);
+    } catch (err: any) {
+      toastError(err?.data?.message || "Translation failed");
+    } finally {
+      setTranslatingLang(null);
+    }
+  };
+
   const addFiles = (files: FileList | File[]) => {
-    const arr = Array.from(files).filter((f) =>
-      f.type.startsWith("image/") || f.type.startsWith("video/")
+    const arr = Array.from(files).filter(
+      (f) => f.type.startsWith("image/") || f.type.startsWith("video/")
     );
     if (!arr.length) return;
     const newPreviews = arr.map((f) => URL.createObjectURL(f));
@@ -241,31 +276,23 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       if (operationStatus) body.operation_status = operationStatus;
       if (categoryId) { body.category_id = parseInt(categoryId); body.category_name = categoryName; }
 
-      // Always save EN version
       body.title_en = title;
       body.description_en = description;
       body.extra_content = extraContent;
       body.extra_content_en = extraContent;
 
-      // If translations exist and are not stale, save them too
-      if (translations && !translationsStale) {
-        body.title_zh = translations.title_zh;
-        body.description_zh = translations.description_zh;
-        body.extra_content_zh = translations.extra_content_zh;
-        body.title_ja = translations.title_ja;
-        body.description_ja = translations.description_ja;
-        body.extra_content_ja = translations.extra_content_ja;
-        body.title_th = translations.title_th;
-        body.description_th = translations.description_th;
-        body.extra_content_th = translations.extra_content_th;
-      }
+      body.title_zh = titleZh;
+      body.description_zh = descriptionZh;
+      body.extra_content_zh = extraContentZh;
+      body.title_ja = titleJa;
+      body.description_ja = descriptionJa;
+      body.extra_content_ja = extraContentJa;
+      body.title_th = titleTh;
+      body.description_th = descriptionTh;
+      body.extra_content_th = extraContentTh;
 
       await updateProduct({ productId, body }).unwrap();
-      toastSuccess(
-        translations && !translationsStale
-          ? t("admin.edit.productSaved", "Product updated with translations")
-          : t("admin.edit.productSaved", "Product updated")
-      );
+      toastSuccess(t("admin.edit.productSaved", "Product updated"));
       onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update product");
@@ -296,7 +323,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {t("admin.edit.title", "Edit Listing")}
@@ -324,104 +351,225 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
             {/* ── Product tab ─────────────────────────────────────────── */}
             <TabsContent value="product" className="space-y-4 mt-4">
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <Label>{t("admin.edit.fieldTitle", "Title")} <span className="text-xs text-muted-foreground">(English)</span></Label>
-                </div>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter title in English"
-                />
-              </div>
 
-              <div className="space-y-1">
-                <Label>{t("admin.edit.fieldDescription", "Description")} <span className="text-xs text-muted-foreground">(English)</span></Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Enter description in English"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <Label>
-                  {t("admin.edit.fieldExtraContent", "Additional Content")}
-                  <span className="text-xs text-muted-foreground ml-1">(English — rich text, shown below description)</span>
-                </Label>
-                <SunEditor
-                  setContents={extraContent}
-                  onChange={(html) => setExtraContent(html)}
-                  setOptions={{
-                    height: "200",
-                    buttonList: [
-                      ["bold", "italic", "underline", "strike"],
-                      ["fontColor", "hiliteColor"],
-                      ["align", "list", "indent", "outdent"],
-                      ["table", "link"],
-                      ["removeFormat"],
-                    ],
-                    placeholder: "Add extra rich content here (specs, features, notes)…",
-                  }}
-                />
-              </div>
-
-              {/* ── AI Translate button ── */}
-              <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">AI Translation</p>
-                    <p className="text-xs text-muted-foreground">
-                      Translates title &amp; description into Chinese, Japanese and Thai
-                    </p>
-                  </div>
+              {/* Language sub-tabs for content editing */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Content Language
+                  </span>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleTranslate}
+                    onClick={handleTranslateAll}
                     disabled={translating || !title.trim()}
-                    className="gap-2 border-primary/40"
+                    className="gap-1.5 h-7 text-xs"
                   >
-                    {translating
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <Languages className="h-4 w-4" />}
-                    {translating ? "Translating…" : translationsStale ? "Re-translate" : translations ? "Re-translate" : "Translate with AI"}
+                    {translating && !translatingLang
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Languages className="h-3 w-3" />}
+                    {translating && !translatingLang ? "Translating…" : "Translate All with AI"}
                   </Button>
                 </div>
 
-                {translations && (
-                  <div className="space-y-2">
-                    {translationsStale && (
-                      <p className="text-xs text-amber-600 font-medium">
-                        ⚠ Title or description changed — click Re-translate to update
+                <Tabs value={langTab} onValueChange={(v) => setLangTab(v as typeof langTab)}>
+                  <TabsList className="w-full rounded-none border-b bg-muted/20 h-9">
+                    <TabsTrigger value="en" className="flex-1 text-xs h-8">🇺🇸 English</TabsTrigger>
+                    <TabsTrigger value="zh" className="flex-1 text-xs h-8">🇹🇼 中文</TabsTrigger>
+                    <TabsTrigger value="ja" className="flex-1 text-xs h-8">🇯🇵 日本語</TabsTrigger>
+                    <TabsTrigger value="th" className="flex-1 text-xs h-8">🇹🇭 ไทย</TabsTrigger>
+                  </TabsList>
+
+                  {/* English */}
+                  <TabsContent value="en" className="p-4 space-y-3 mt-0">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Title</Label>
+                      <Input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter title in English"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Description</Label>
+                      <Textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Enter description in English"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        Additional Content
+                        <span className="text-muted-foreground ml-1">(rich text)</span>
+                      </Label>
+                      <SunEditor
+                        key={`en-${dataLoadKey}`}
+                        setContents={extraContent}
+                        onChange={(html) => setExtraContent(html)}
+                        setOptions={{ ...EDITOR_OPTIONS, placeholder: "Add extra rich content here (specs, features, notes)…" }}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Chinese */}
+                  <TabsContent value="zh" className="p-4 space-y-3 mt-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        Edit Chinese content directly, or generate from English using AI.
                       </p>
-                    )}
-                    {(["zh", "ja", "th"] as const).map((lang) => (
-                      <div key={lang} className="rounded-md bg-background border p-3 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">{LANG_LABELS[lang]}</Badge>
-                          {!translationsStale && <CheckCircle2 className="h-3 w-3 text-green-500" />}
-                        </div>
-                        <p className="text-sm font-medium">{translations[`title_${lang}` as keyof ProductTranslations]}</p>
-                        {translations[`description_${lang}` as keyof ProductTranslations] && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
-                            {translations[`description_${lang}` as keyof ProductTranslations]}
-                          </p>
-                        )}
-                        {translations[`extra_content_${lang}` as keyof ProductTranslations] && (
-                          <div
-                            className="text-xs text-muted-foreground line-clamp-2 prose prose-xs max-w-none"
-                            dangerouslySetInnerHTML={{ __html: translations[`extra_content_${lang}` as keyof ProductTranslations] as string }}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTranslateLang("zh")}
+                        disabled={translating || !title.trim()}
+                        className="gap-1.5 h-7 text-xs shrink-0 ml-2"
+                      >
+                        {translatingLang === "zh"
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <Languages className="h-3 w-3" />}
+                        {translatingLang === "zh" ? "Generating…" : "Generate from English"}
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Title (Chinese)</Label>
+                      <Input
+                        value={titleZh}
+                        onChange={(e) => setTitleZh(e.target.value)}
+                        placeholder="Chinese title…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Description (Chinese)</Label>
+                      <Textarea
+                        value={descriptionZh}
+                        onChange={(e) => setDescriptionZh(e.target.value)}
+                        rows={3}
+                        placeholder="Chinese description…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        Additional Content (Chinese)
+                        <span className="text-muted-foreground ml-1">(rich text)</span>
+                      </Label>
+                      <SunEditor
+                        key={`zh-${dataLoadKey}-${zhKey}`}
+                        setContents={extraContentZh}
+                        onChange={(html) => setExtraContentZh(html)}
+                        setOptions={{ ...EDITOR_OPTIONS, placeholder: "Chinese rich content…" }}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Japanese */}
+                  <TabsContent value="ja" className="p-4 space-y-3 mt-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        Edit Japanese content directly, or generate from English using AI.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTranslateLang("ja")}
+                        disabled={translating || !title.trim()}
+                        className="gap-1.5 h-7 text-xs shrink-0 ml-2"
+                      >
+                        {translatingLang === "ja"
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <Languages className="h-3 w-3" />}
+                        {translatingLang === "ja" ? "Generating…" : "Generate from English"}
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Title (Japanese)</Label>
+                      <Input
+                        value={titleJa}
+                        onChange={(e) => setTitleJa(e.target.value)}
+                        placeholder="Japanese title…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Description (Japanese)</Label>
+                      <Textarea
+                        value={descriptionJa}
+                        onChange={(e) => setDescriptionJa(e.target.value)}
+                        rows={3}
+                        placeholder="Japanese description…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        Additional Content (Japanese)
+                        <span className="text-muted-foreground ml-1">(rich text)</span>
+                      </Label>
+                      <SunEditor
+                        key={`ja-${dataLoadKey}-${jaKey}`}
+                        setContents={extraContentJa}
+                        onChange={(html) => setExtraContentJa(html)}
+                        setOptions={{ ...EDITOR_OPTIONS, placeholder: "Japanese rich content…" }}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  {/* Thai */}
+                  <TabsContent value="th" className="p-4 space-y-3 mt-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        Edit Thai content directly, or generate from English using AI.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTranslateLang("th")}
+                        disabled={translating || !title.trim()}
+                        className="gap-1.5 h-7 text-xs shrink-0 ml-2"
+                      >
+                        {translatingLang === "th"
+                          ? <Loader2 className="h-3 w-3 animate-spin" />
+                          : <Languages className="h-3 w-3" />}
+                        {translatingLang === "th" ? "Generating…" : "Generate from English"}
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Title (Thai)</Label>
+                      <Input
+                        value={titleTh}
+                        onChange={(e) => setTitleTh(e.target.value)}
+                        placeholder="Thai title…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Description (Thai)</Label>
+                      <Textarea
+                        value={descriptionTh}
+                        onChange={(e) => setDescriptionTh(e.target.value)}
+                        rows={3}
+                        placeholder="Thai description…"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">
+                        Additional Content (Thai)
+                        <span className="text-muted-foreground ml-1">(rich text)</span>
+                      </Label>
+                      <SunEditor
+                        key={`th-${dataLoadKey}-${thKey}`}
+                        setContents={extraContentTh}
+                        onChange={(html) => setExtraContentTh(html)}
+                        setOptions={{ ...EDITOR_OPTIONS, placeholder: "Thai rich content…" }}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </div>
 
+              {/* ── Product details ──────────────────────────────────────── */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label>{t("admin.edit.fieldQuantity", "Quantity")}</Label>
@@ -509,12 +657,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 })()}
               </div>
 
-              <DialogFooter className="flex-col gap-2 sm:flex-row">
-                {translations && !translationsStale && (
-                  <p className="text-xs text-green-600 self-center">
-                    Translations ready — will be saved automatically
-                  </p>
-                )}
+              <DialogFooter>
                 <Button onClick={handleSaveProduct} disabled={savingProduct}>
                   {savingProduct && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("admin.edit.saveProduct", "Save Product")}

@@ -234,7 +234,7 @@ function TagModal({
                 />
               ) : (
                 <div
-                  className="prose prose-sm max-w-none min-h-[80px] text-gray-700 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  className="rich-content min-h-[80px] text-gray-700"
                   dangerouslySetInnerHTML={{ __html: contents[l.code] || "<p class='text-gray-400 italic'>No content yet.</p>" }}
                 />
               )}
@@ -439,7 +439,7 @@ function GroupTagsPanel({ group }: { group: AdminAuctionGroupItem }) {
 /* ── Main page ──────────────────────────────────────────────────────────── */
 const AdminAuctionGroups = () => {
   const { sidebarCollapsed } = useAdminSidebar();
-  const [platformType, setPlatformType] = useState("recycle");
+  const [platformType, setPlatformType] = useState("LabGreenbidz");
   const [approvalFilter, setApprovalFilter] = useState<"all"|"pending"|"approved">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest"|"oldest">("newest");

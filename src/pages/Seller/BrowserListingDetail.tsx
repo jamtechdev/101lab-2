@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState } from 'react';
+import "suneditor/dist/css/suneditor.min.css";
 import { Heart, Share2, MessageSquare, MapPin, Package, ArrowLeft, Calendar, User, Building2, AlertCircle, CheckCircle2, Clock, ShoppingCart, Percent } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -275,7 +276,7 @@ export default function BrowserListingDetail() {
                 {(() => {
                   const desc = getTranslatedField('description') || "";
                   return /<[a-z][\s\S]*>/i.test(desc)
-                    ? <div className="text-neutral-700 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                    ? <div className="rich-content text-neutral-700 max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
                     : <p className="text-neutral-700 leading-relaxed whitespace-pre-wrap">{desc}</p>;
                 })()}
 
@@ -284,7 +285,8 @@ export default function BrowserListingDetail() {
                   const extra = getTranslatedField('extra_content') || getMetaValue(product?.meta, 'extra_content') || "";
                   if (!extra) return null;
                   return (
-                    <div className="mt-4 prose prose-sm max-w-none text-neutral-700 leading-relaxed"
+                    <div
+                      className="rich-content mt-4 text-neutral-700 max-w-none"
                       dangerouslySetInnerHTML={{ __html: extra }}
                     />
                   );

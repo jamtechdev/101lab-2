@@ -1,5 +1,6 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
+import "suneditor/dist/css/suneditor.min.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLoginModal } from "@/context/LoginModalContext";
 import { useTranslation } from "react-i18next";
@@ -1329,7 +1330,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       {(() => {
                         const desc = getTranslatedField(product, 'description') || "";
                         return /<[a-z][\s\S]*>/i.test(desc)
-                          ? <div className="text-sm text-muted-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                          ? <div className="rich-content text-sm text-muted-foreground max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
                           : <p className="text-sm text-muted-foreground leading-relaxed">{desc || "No description available."}</p>;
                       })()}
                     </div>
@@ -1339,7 +1340,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       const extra = getTranslatedField(product, 'extra_content') || "";
                       if (!extra) return null;
                       return (
-                        <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed"
+                        <div
+                          className="rich-content text-muted-foreground max-w-none"
                           dangerouslySetInnerHTML={{ __html: extra }}
                         />
                       );
