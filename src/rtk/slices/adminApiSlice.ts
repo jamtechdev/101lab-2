@@ -1388,6 +1388,40 @@ export const adminApi = createApi({
       invalidatesTags: ["ProductRequests"],
     }),
 
+    adminPostWanted: builder.mutation<
+      { success: boolean; message: string; data: any },
+      { category?: string; search_query?: string; message?: string }
+    >({
+      query: (body) => ({
+        url: "/product-request/admin/post",
+        method: "POST",
+        data: body,
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
+
+    togglePublishProductRequest: builder.mutation<
+      { success: boolean; message: string; data: any },
+      number
+    >({
+      query: (id) => ({
+        url: `/product-request/${id}/publish`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
+
+    deleteProductRequest: builder.mutation<
+      { success: boolean; message: string },
+      number
+    >({
+      query: (id) => ({
+        url: `/product-request/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
+
     getSalesLeads: builder.query<
       {
         success: boolean;
@@ -1498,6 +1532,9 @@ export const {
   useGetAdminProductRequestsQuery,
   useUpdateProductRequestStatusMutation,
   useGetPublicWantedRequestsQuery,
+  useAdminPostWantedMutation,
+  useTogglePublishProductRequestMutation,
+  useDeleteProductRequestMutation,
 
   /* ---------- ADMIN BIDS ---------- */
   useGetAdminAllBidsQuery,

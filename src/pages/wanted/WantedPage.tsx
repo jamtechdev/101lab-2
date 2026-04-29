@@ -11,6 +11,7 @@ import { useGetPublicWantedRequestsQuery, useSubmitProductRequestMutation } from
 import { useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { formatDistanceToNow } from "date-fns";
+import Footer from "@/components/common/Footer";
 
 // ── Contact / Post-a-Wanted modal ────────────────────────────────────────────
 function RequestModal({
@@ -271,9 +272,11 @@ function DetailModal({ item, onClose, onContact }: { item: any; onClose: () => v
 
           <div className="pt-2 border-t border-border flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {item.is_verified && (
+              {item.posted_by === "admin" ? (
+                <><BadgeCheck className="w-4 h-4 text-primary" /><span className="text-primary font-medium">Posted by 101Lab</span></>
+              ) : item.is_verified ? (
                 <><BadgeCheck className="w-4 h-4 text-green-600" /><span className="text-green-700 font-medium">Buyer verified</span></>
-              )}
+              ) : null}
             </div>
             <Button onClick={onContact} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-5 h-9">
               Contact
@@ -521,9 +524,11 @@ export default function WantedPage() {
 
                     <div className="mt-auto border-t border-border pt-3 flex items-center justify-between">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {item.is_verified && (
+                        {item.posted_by === "admin" ? (
+                          <><BadgeCheck className="w-3.5 h-3.5 text-primary" /><span className="text-primary font-medium">101Lab</span></>
+                        ) : item.is_verified ? (
                           <><BadgeCheck className="w-3.5 h-3.5 text-green-600" /><span className="text-green-700">Buyer verified</span></>
-                        )}
+                        ) : null}
                       </div>
                       <Button
                         size="sm"
@@ -594,6 +599,9 @@ export default function WantedPage() {
           mode="contact"
         />
       )}
+    
+      <Footer/>
+
     </div>
   );
 }
