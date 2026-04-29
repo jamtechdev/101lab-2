@@ -253,13 +253,8 @@ const Auth = () => {
             <ArrowLeft className="w-4 h-4" />{t("auth.backToHome")}
           </button>
           <div className="mb-1"><span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">{t("auth.welcomeTo")}</span></div>
-          <h1 className="text-3xl font-bold mb-3 tracking-tight">GreenBidz</h1>
+          <h1 className="text-3xl font-bold mb-3 tracking-tight">101Lab</h1>
           <p className="text-sm opacity-70 leading-relaxed max-w-[300px]">{t("landing.subtitle")}</p>
-          {userType !== "admin" && (
-            <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold uppercase tracking-wide">
-              <ShoppingCart className="w-3.5 h-3.5" /> {t("auth.buyerAccount")}
-            </div>
-          )}
         </div>
         <div className="relative z-10 space-y-4 mt-auto">
           <div className="w-10 h-[2px] opacity-30 bg-warning" />

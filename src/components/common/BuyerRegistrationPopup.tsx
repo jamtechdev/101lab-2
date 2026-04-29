@@ -6,12 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { Clock, Gavel, X } from "lucide-react";
 
-const STORAGE_KEY = "buyerPopupDismissedUntil";
-const SUPPRESS_DAYS = 3;
 const DELAY_MS = 10_000;
-const SCROLL_THRESHOLD = 0.4;
-
-const EXCLUDED_PATHS = ["/auth", "/forgot-password", "/verify-email", "/admin"];
 
 export const BuyerRegistrationPopup = () => {
   const { t } = useTranslation();
@@ -21,29 +16,23 @@ export const BuyerRegistrationPopup = () => {
 
   useEffect(() => {
     if (localStorage.getItem("userId")) return;
-    if (EXCLUDED_PATHS.some((p) => location.pathname.startsWith(p))) return;
-    const suppressedUntil = localStorage.getItem(STORAGE_KEY);
-    if (suppressedUntil && Date.now() < Number(suppressedUntil)) return;
+    if (location.pathname.startsWith("/auth")) return;
 
-    let fired = false;
-    const show = () => { if (fired) return; fired = true; setOpen(true); };
-
-    const timer = setTimeout(show, DELAY_MS);
-    const onScroll = () => {
-      const total = document.documentElement.scrollHeight - window.innerHeight;
-      if (total > 0 && window.scrollY / total >= SCROLL_THRESHOLD) show();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => { clearTimeout(timer); window.removeEventListener("scroll", onScroll); };
+    const timer = setTimeout(() => setOpen(true), DELAY_MS);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
 
-  const suppress = () => {
-    const until = Date.now() + SUPPRESS_DAYS * 24 * 60 * 60 * 1000;
-    localStorage.setItem(STORAGE_KEY, String(until));
-  };
+  useEffect(() => {
+    if (open) return;
+    if (localStorage.getItem("userId")) return;
+    if (location.pathname.startsWith("/auth")) return;
 
-  const dismiss = () => { setOpen(false); suppress(); };
-  const goRegister = () => { setOpen(false); suppress(); navigate("/auth?type=buyer&mode=signup"); };
+    const timer = setTimeout(() => setOpen(true), DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  const dismiss = () => setOpen(false);
+  const goRegister = () => { setOpen(false); navigate("/auth?mode=signin"); };
 
   const badges = [
     t("buyerPopup.badge1"),

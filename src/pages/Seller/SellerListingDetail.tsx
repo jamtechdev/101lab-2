@@ -21,6 +21,16 @@ import {
   Share2,
   Copy,
   Check,
+  Eye,
+  Users,
+  ChevronDown,
+  Truck,
+  Tag,
+  Wrench,
+  Layers,
+  Heart,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +45,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import logo from "@/assets/greenbidz_logo.png";
 import { useGetBatchByIdQuery, useGetBatchesQuery } from "@/rtk/slices/batchApiSlice";
@@ -145,7 +161,25 @@ const mapApiProductToUI = (product: any) => {
       name: meta["seller_name"] || "N/A",
       company: meta["seller_company"] || meta["seller_name"] || "Industrial Corporation Ltd.",
     },
-    sellerVisible: meta["sellerVisible"]
+    sellerVisible: meta["sellerVisible"],
+    // Core Specifications
+    manufacturer: meta["manufacturer"] || meta["brand"] || "",
+    model: meta["model"] || "",
+    serial_number: meta["serial_number"] || meta["vin"] || "",
+    dimensions: meta["dimensions"] || "",
+    weight: meta["weight"] || "",
+    // Logistics
+    rigging_responsibility: meta["rigging_responsibility"] || "",
+    loading_responsibility: meta["loading_responsibility"] || "",
+    shipping_responsibility: meta["shipping_responsibility"] || "",
+    packaging_type: meta["packaging_type"] || "",
+    // Sale / batch level
+    lot_type: meta["lot_type"] || meta["sales_type"] || "",
+    buyer_premium: meta["buyer_premium"] || "",
+    removal_shipping: meta["removal_shipping"] || "",
+    watchers_count: meta["watchers_count"] || "",
+    visitors_count: meta["visitors_count"] || "",
+    event_id: meta["event_id"] || "",
   };
 };
 
@@ -313,6 +347,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [editAmount, setEditAmount] = useState(userBid?.amount || "");
   const [updateBuyerBid, { isLoading: isBuyerBidDetail }] = useUpdateBuyerBidMutation();
   const [selectedBid, setSelectedBid] = useState(null);
+  const [watchlistActive, setWatchlistActive] = useState(false);
 
   const [useWholePrice, setUseWholePrice] = useState(true);
   const [useWeightPrice, setUseWeightPrice] = useState(false);
@@ -859,75 +894,120 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     <ProductMedia product={product} getTranslatedField={getTranslatedField} />
                   </div>
 
-                  {/* Right: Action Panel (2/5 width) */}
+                  {/* Right: Action Panel — 101Lab design */}
                   {index === 0 && (
-                    <div className="lg:col-span-1 space-y-4">
+                    <div className="lg:col-span-1 space-y-0  ">
 
-                      {/* Title + ID */}
-                      <div>
-                        <h1 className="text-xl font-bold text-foreground leading-tight">{getTranslatedField(product, 'title')}</h1>
-                        <p className="text-xs text-muted-foreground mt-1 font-mono">{t("buyer.batchLabel")} #{id}</p>
-                        {/* <h1 className="text-xs text-muted-foreground mt-1 font-monod">{t("listingDetail.quantity")}</h1> */}
-                        <p className="text-xs text-muted-foreground mt-1 font-monod">{t("listingDetail.quantity")}:{product.quantity}</p>
+                      {/* Title */}
+                      <h1 className="text-2xl font-bold text-foreground leading-tight mb-3">
+                        {getTranslatedField(product, 'title')}
+                      </h1>
+
+                      {/* Sales / Lot Type */}
+                      <div className="flex items-baseline gap-1.5 text-sm mb-2 py-2">
+                        <span className="text-muted-foreground font-medium">Sales/Lot Type:</span>
+                        <span className="font-medium text-foreground flex items-center gap-1">
+                          {bidDetail ? t(bidTypeMap[bidDetail?.type]) : (product.lot_type || "—")}
+                          <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+                        </span>
                       </div>
 
-                      {/* Price / Bid Status Banner */}
+                      {/* Location */}
+                      <div className="flex items-center gap-1.5 text-sm mb-2 ">
+                        <span className="text-muted-foreground font-medium">Location:</span>
+                        <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        <span className="text-primary font-medium">
+                          {parsePhpArray(product.location)}{batchCountry ? `, ${batchCountry}` : ""}
+                        </span>
+                      </div>
+
+                      {/* Removal & Shipping */}
+                      <div className="flex items-baseline gap-1.5 text-sm mb-6 py-4">
+                        <span className="text-muted-foreground font-medium">Removal &amp; Shipping:</span>
+                        <span className="text-foreground">
+                          {product.removal_shipping || "Buyer Must Arrange."}
+                          {" "}
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById("logistics-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className="text-primary hover:underline text-xs font-medium"
+                          >
+                            See details.
+                          </button>
+                        </span>
+                      </div>
+
+                      {/* Countdown / Bid Status */}
                       {bidDetail && isLiveBidding && batchStep > 4 && (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-md px-4 py-2.5">
-                            <span className="text-sm font-semibold text-green-800">{t("buyer.endsIn")}:</span>
-                            <span className="text-sm font-bold text-green-900 tabular-nums">
-                              {timeLeft.days}D : {String(timeLeft.hours).padStart(2, "0")}H : {String(timeLeft.minutes).padStart(2, "0")}M : {String(timeLeft.seconds).padStart(2, "0")}S
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-md px-4 py-2.5 mb-3">
+                          <span className="text-sm font-semibold text-green-800">{t("buyer.endsIn")}:</span>
+                          <span className="text-sm font-bold text-green-900 tabular-nums">
+                            {timeLeft.days}D : {String(timeLeft.hours).padStart(2, "0")}H : {String(timeLeft.minutes).padStart(2, "0")}M : {String(timeLeft.seconds).padStart(2, "00")}S
+                          </span>
                         </div>
                       )}
-
                       {bidDetail && isBidEnded && batchStep > 4 && (
-                        <div className="flex items-center gap-2 py-2.5 px-3 bg-muted/60 rounded border border-border/50">
+                        <div className="flex items-center gap-2 py-2.5 px-3 bg-muted/60 rounded border border-border/50 mb-3">
                           <Clock className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-muted-foreground">
-                            {t("buyer.bidClosed") || "Bidding Ended"}
+                          <span className="text-sm font-semibold text-muted-foreground">{t("buyer.bidClosed") || "Bidding Ended"}</span>
+                        </div>
+                      )}
+                      {isBidScheduled && bidStartDate && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-amber-800 text-xs mb-3">
+                          <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span>
+                            {t("buyer.opensOn") || "Opens on"}:{" "}
+                            <span className="font-semibold">
+                              {new Intl.DateTimeFormat(i18n.language === "zh" ? "zh-TW" : "en-US", {
+                                year: "numeric", month: "short", day: "numeric",
+                                hour: "2-digit", minute: "2-digit", timeZoneName: "short",
+                              }).format(bidStartDate)}
+                            </span>
                           </span>
                         </div>
                       )}
 
-                      {/* Fixed / Make Offer Price */}
-                      {bidDetail?.type === "fixed_price" && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("buyer.targetPrice")}:</p>
-                          <p className="text-2xl font-bold text-foreground">
-                            {Number(bidDetail?.target_price).toLocaleString()} {bidDetail?.currency}
+                      {/* YOUR OFFER AMOUNT box */}
+                      {isLiveBidding && bidDetail?.type === "make_offer" && batchStep < 6 && (
+                        <div className="border border-border rounded-lg p-4 mb-3 bg-background">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                            YOUR OFFER AMOUNT
                           </p>
+                          <div className="relative mb-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-muted-foreground text-sm select-none">
+                              <Tag className="w-3.5 h-3.5" /> {bidDetail?.currency || "USD"}
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={bidAmount}
+                              onChange={(e) => setBidAmount(e.target.value)}
+                              placeholder="Enter amount"
+                              className="w-full border border-border rounded-md pl-24 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                            />
+                          </div>
+                          {bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
+                            <p className="text-[11px] text-muted-foreground">
+                              Suggested starting offer:{" "}
+                              <span className="font-semibold text-foreground">
+                                {bidDetail.currency || "USD"} {Number(bidDetail.target_price).toLocaleString()}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       )}
 
-                      {bidDetail?.type === "make_offer" && !bidDetail?.isHidden && (
-                        <div>
-                          <p className="text-xs text-muted-foreground">{t("buyer.make_offer")}:</p>
-                          <p className="text-2xl font-bold text-foreground">
-                            {Number(bidDetail?.target_price).toLocaleString()} {bidDetail?.currency}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* === PRIMARY ACTION BUTTONS === */}
+                      {/* Primary Action Button */}
                       {products.length > 0 && batchStep < 6 && (
-                        <div>
+                        <div className="space-y-2 mb-3">
                           {isLiveBidding && (
-                            <div className="space-y-2">
-                              {bidDetail?.type === "fixed_price" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
-                                <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded border border-border text-sm">
-                                  <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
-                                  <span className="font-bold text-primary text-base">
-                                    {bidDetail.currency || "TWD"} {Number(bidDetail.target_price).toLocaleString()}
-                                  </span>
-                                </div>
-                              )}
-
+                            <>
                               {bidDetail?.isAuction ? (
                                 <Button
-                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded-lg"
                                   onClick={() => {
                                     if (!localStorage.getItem("userId")) {
                                       openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "place_bid") });
@@ -942,76 +1022,54 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                 >
                                   {t("buyer.placeBid")}
                                 </Button>
-                              ) : (
-                                <>
-                                  {bidDetail?.type === "make_offer" && (
-                                    <Button
-                                      variant="outline"
-                                      className="w-full font-bold text-base py-5 rounded"
-                                      onClick={() => {
-                                        if (!localStorage.getItem("userId")) {
-                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
-                                          return;
-                                        }
-                                        openDialogFor(products[0], "bidding", "make_offer");
-                                      }}
-                                    >
-                                      {t("buyer.makeOffer") || "Make Offer"}
-                                    </Button>
-                                  )}
-
-                                  {bidDetail?.type === "fixed_price" && (
-                                    <Button
-                                      variant="outline"
-                                      className="w-full font-bold text-base py-5 rounded"
-                                      onClick={() => {
-                                        if (!localStorage.getItem("userId")) {
-                                          openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
-                                          return;
-                                        }
-                                        openDialogFor(products[0], "bidding", "buy_now");
-                                      }}
-                                    >
-                                      {t("buyer.buyNow") || "Buy Now"}
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-                            </div>
+                              ) : bidDetail?.type === "make_offer" ? (
+                                <Button
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded-lg"
+                                  onClick={() => {
+                                    if (!localStorage.getItem("userId")) {
+                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "make_offer") });
+                                      return;
+                                    }
+                                    openDialogFor(products[0], "bidding", "make_offer");
+                                  }}
+                                >
+                                  {t("buyer.makeOffer") || "Make Offer"}
+                                </Button>
+                              ) : bidDetail?.type === "fixed_price" ? (
+                                <Button
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded-lg"
+                                  onClick={() => {
+                                    if (!localStorage.getItem("userId")) {
+                                      openLoginModal({ portalType: "buyer", onSuccess: () => openDialogFor(products[0], "bidding", "buy_now") });
+                                      return;
+                                    }
+                                    openDialogFor(products[0], "bidding", "buy_now");
+                                  }}
+                                >
+                                  {t("buyer.buyNow") || "Buy Now"}
+                                </Button>
+                              ) : null}
+                            </>
                           )}
-                          {isBidScheduled && (
-                            <div className="space-y-2">
-                              <Button disabled className="w-full bg-muted text-muted-foreground py-5 font-semibold rounded">
-                                <Clock className="w-4 h-4 mr-2" />
-                                {t("buyer.bidScheduled") || "Bid Scheduled"}
-                              </Button>
-                              {bidStartDate && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded text-amber-800 text-xs">
-                                  <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                                  <span>
-                                    {t("buyer.opensOn") || "Opens on"}:{" "}
-                                    <span className="font-semibold">
-                                      {new Intl.DateTimeFormat(i18n.language === "zh" ? "zh-TW" : "en-US", {
-                                        year: "numeric", month: "short", day: "numeric",
-                                        hour: "2-digit", minute: "2-digit", timeZoneName: "short",
-                                      }).format(bidStartDate)}
-                                    </span>
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                          {!isLiveBidding && !isBidScheduled && !isBidEnded && batchStatus?.includes("inspection") && !userInspectionRegistration?.joined && !userInspectionRegistration?.selected && (
+                            <Button
+                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded-lg"
+                              onClick={() => openDialogFor(products[0], "inspect")}
+                            >
+                              {t("buyer.joinInspection")}
+                            </Button>
                           )}
                           {isBidEnded && batchStep < 6 && (
-                            <Button disabled className="w-full bg-muted text-muted-foreground py-5 font-semibold rounded">
+                            <Button disabled className="w-full bg-muted text-muted-foreground py-5 font-semibold rounded-lg">
                               {t("buyer.bidClosed") || "Bidding Ended"}
                             </Button>
                           )}
                         </div>
                       )}
 
-                      {/* Inspection Registration Button */}
+                      {/* Inspection badges */}
                       {batchStatus?.includes("inspection") && (
-                        <div className="space-y-3">
+                        <div className="mb-3">
                           {userInspectionRegistration?.selected ? (
                             <Badge className="w-full justify-center py-2 font-semibold text-sm bg-green-100 text-green-700">
                               Selected for Inspection
@@ -1020,22 +1078,92 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             <Badge className="w-full justify-center py-2 font-semibold text-sm bg-yellow-100 text-yellow-700">
                               Inspection Joined
                             </Badge>
-                          ) : (
-                            <Button
-                              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base py-5 rounded"
-                              onClick={() => openDialogFor(products[0], "inspect")}
-                            >
-                              {t("buyer.joinInspection")}
-                            </Button>
-                          )}
+                          ) : null}
                         </div>
                       )}
 
-                      {/* Divider */}
-                      <div className="border-t border-border" />
+                      {/* Add to Watchlist */}
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full font-semibold text-base py-5 rounded-lg border-2 mb-3 py-4",
+                          watchlistActive ? "border-primary text-primary bg-primary/5" : "border-border text-foreground"
+                        )}
+                        onClick={() => setWatchlistActive((v) => !v)}
+                      >
+                        <Heart className={cn("w-4 h-4 mr-2", watchlistActive && "fill-primary text-primary")} />
+                        {watchlistActive ? "Saved to Watchlist" : "Add to Watchlist"}
+                      </Button>
 
-                      {/* Quick Actions Row */}
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Watchers / Visitors stats */}
+                      <div className="grid grid-cols-2 gap-3 mb-4 py-4">
+                        <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-background">
+                          <Eye className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">WATCHERS</p>
+                            <p className="text-lg font-bold text-foreground leading-none">
+                              {product.watchers_count || data?.data?.batch?.watchers_count || "—"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-background">
+                          <Users className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">VISITORS</p>
+                            <p className="text-lg font-bold text-foreground leading-none">
+                              {product.visitors_count || data?.data?.batch?.visitors_count || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Meta rows: Taxes, Buyer's Premium, Seller's Terms, Seller's Other Items, Event */}
+                      <div className="divide-y divide-border border border-border rounded-lg overflow-hidden mb-4">
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                          <span className="text-foreground font-medium">Taxes</span>
+                          <span className="text-primary text-xs font-medium">To be added at payment</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                          <span className="text-foreground font-medium">Buyer's Premium</span>
+                          <span className="text-foreground font-semibold">
+                            {product.buyer_premium || data?.data?.batch?.buyer_premium
+                              ? `${product.buyer_premium || data?.data?.batch?.buyer_premium}%`
+                              : "—"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                          <span className="text-foreground font-medium">Seller's Terms &amp; Conditions</span>
+                          <button
+                            onClick={() => {
+                              const el = document.getElementById("sale-terms-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }}
+                            className="text-primary hover:underline text-xs font-medium"
+                          >
+                            View
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                          <span className="text-foreground font-medium">Seller's Other Items</span>
+                          <button
+                            onClick={() => navigate(hideLayout ? '/buyer-marketplace' : '/dashboard/marketplace')}
+                            className="text-primary hover:underline text-xs font-medium"
+                          >
+                            View
+                          </button>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
+                          <span className="text-foreground font-medium">Event</span>
+                          <span className="text-primary font-medium text-xs">
+                            {product.event_id || data?.data?.batch?.batch_number
+                              ? `Event-${product.event_id || data?.data?.batch?.batch_number}`
+                              : "—"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Quick Actions */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
                         <button
                           onClick={() => {
                             if (!localStorage.getItem("userId")) {
@@ -1058,76 +1186,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </button>
                       </div>
 
-                      {/* Location + Logistics Info Box */}
-                      <div className="border border-border rounded bg-muted/30 divide-y divide-border">
-                        <div className="flex items-start gap-3 px-3 py-2.5">
-                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{t("listingDetail.location")}</p>
-                            <p className="text-sm font-medium text-foreground">
-                              {parsePhpArray(product.location)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {batchCountry && (
-                          <div className="flex items-center gap-3 px-3 py-2.5">
-                            {getCountryIso(batchCountry) ? (
-                              <img
-                                src={`https://flagcdn.com/24x18/${getCountryIso(batchCountry)}.png`}
-                                alt={batchCountry}
-                                className="w-6 h-4 object-cover rounded-sm flex-shrink-0"
-                              />
-                            ) : (
-                              <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            )}
-                            <div>
-                              <p className="text-xs text-muted-foreground">{t("buyer.country") || "Country"}</p>
-                              <p className="text-sm font-medium text-foreground">{batchCountry}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {bidDetail && (
-                          <div className="flex items-start gap-3 px-3 py-2.5">
-                            <Gavel className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">{t("biddingStep.bidType")}</p>
-                              <p className="text-sm font-medium text-foreground capitalize">
-                                {t(bidTypeMap[bidDetail?.type])}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Seller Info Compact */}
-                      <div className="border border-border rounded p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-primary">
-                              {sellerData?.display_name?.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                            </div>
-                            <p className="font-semibold text-sm text-foreground truncate">{maskName(sellerData?.display_name)}</p>
-                            {(product?.sellerVisible === undefined ||
-                              product?.sellerVisible === "1" ||
-                              product?.sellerVisible === true) && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {Array.isArray(sellerData?.meta) && maskName(sellerData?.meta[0]?.meta_value)}
-                                </p>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bid History (Live Bidding) */}
+                      {/* Bid History (Live Auction) */}
                       {bidDetail && bidDetail?.isAuction && isLiveBidding && batchStep > 4 && sortedBids.length > 0 && (
-                        <div className="border border-border rounded overflow-hidden">
+                        <div className="border border-border rounded overflow-hidden mb-3">
                           <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-b border-border">
                             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                               {t("buyer.bidHistory") || "Bid History"}
@@ -1143,13 +1204,10 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                               return (
                                 <div
                                   key={bid.buyer_bid_id ?? idx}
-                                  className={`flex items-center justify-between px-3 py-2 text-xs ${isMyBid ? "bg-primary/10 border-l-2 border-l-primary" : "bg-background"
-                                    }`}
+                                  className={`flex items-center justify-between px-3 py-2 text-xs ${isMyBid ? "bg-primary/10 border-l-2 border-l-primary" : "bg-background"}`}
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${isMyBid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                      }`}>
-                                        
+                                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${isMyBid ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                                       {bidderName[0]?.toUpperCase() || "?"}
                                     </div>
                                     <div className="min-w-0">
@@ -1191,7 +1249,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                       {/* Inspection Registration Details */}
                       {batchStatus?.includes("inspection") && userInspectionRegistration?.joined && (
-                        <Card className="border border-border/50 bg-muted/30">
+                        <Card className="border border-border/50 bg-muted/30 mb-3">
                           <CardHeader className="pb-2 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-semibold">
                               {t("buyer.registrationDetails") || "Your Registration Details"}
@@ -1228,7 +1286,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                       {/* User Bid Cards */}
                       {userBid && userBid.length > 0 && userBid.map((bid) => (
-                        <Card key={bid.buyer_bid_id} className="border border-border/50 bg-muted/30">
+                        <Card key={bid.buyer_bid_id} className="border border-border/50 bg-muted/30 mb-3">
                           <CardHeader className="pb-1">
                             <CardTitle className="text-sm font-semibold">{t('buyer.bidDetails')}</CardTitle>
                           </CardHeader>
@@ -1305,100 +1363,281 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 </div>
 
                 {/* === BOTTOM SECTION: Details === */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-                  <div className="lg:col-span-2 space-y-6">
+                <div className="mt-10 space-y-10 max-w-4xl">
 
-                    {/* Key Attributes */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border border-border rounded bg-muted/20">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("listingDetail.category")}</p>
-                        <p className="text-sm font-semibold text-foreground">{product.category}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("listingDetail.quantity")}</p>
-                        <p className="text-sm font-semibold text-foreground">{product.quantity}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">{t("listingDetail.location")}</p>
-                        <p className="text-sm font-semibold text-foreground">{parsePhpArray(product.location)}</p>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">{t("buyer.description")}</h3>
+                  {/* Core Specifications */}
+                  <section>
+                    <h2 className="text-xl font-bold text-foreground mb-5">Core Specifications</h2>
+                    <div className="border border-border rounded-xl overflow-hidden">
+                      {/* Description rich content covers full spec info */}
                       {(() => {
                         const desc = getTranslatedField(product, 'description') || "";
-                        return /<[a-z][\s\S]*>/i.test(desc)
-                          ? <div className="rich-content text-sm text-muted-foreground max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
-                          : <p className="text-sm text-muted-foreground leading-relaxed">{desc || "No description available."}</p>;
+                        const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+                        return (
+                          <div className="p-5">
+                            {/* Structured meta fields if populated */}
+                            {(product.manufacturer || product.model || product.serial_number || product.dimensions || product.weight || product.condition !== "N/A" || product.category !== "N/A") && (
+                              <div className="space-y-3 mb-5">
+                                {product.manufacturer && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <Wrench className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <div className="text-sm space-y-0.5">
+                                      <p className="text-foreground"><span className="font-semibold">Manufacturer:</span> {product.manufacturer}</p>
+                                      {product.model && <p className="text-foreground"><span className="font-semibold">Model:</span>{" "}<span className="text-primary">{product.model}</span></p>}
+                                      {product.serial_number && <p className="text-foreground"><span className="font-semibold">Serial Number / VIN:</span> {product.serial_number}</p>}
+                                    </div>
+                                  </div>
+                                )}
+                                {(product.dimensions || product.weight) && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <Layers className="w-4 h-4 text-teal-600" />
+                                    </div>
+                                    <div className="text-sm space-y-0.5">
+                                      {product.dimensions && <p className="text-foreground"><span className="font-semibold">Dimensions:</span>{" "}<span className="text-primary">{product.dimensions}</span></p>}
+                                      {product.weight && <p className="text-foreground"><span className="font-semibold">Weight:</span> {product.weight}</p>}
+                                    </div>
+                                  </div>
+                                )}
+                                {product.condition && product.condition !== "N/A" && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                    </div>
+                                    <div className="text-sm">
+                                      <p className="text-foreground">
+                                        <span className="font-semibold">Condition:</span>{" "}
+                                        <span className="text-primary capitalize">{product.condition}</span>
+                                        {" "}\u2014 Item functions as originally intended, shows signs of normal wear.
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                {product.category && product.category !== "N/A" && (
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <Layers className="w-4 h-4 text-orange-600" />
+                                    </div>
+                                    <div className="text-sm">
+                                      <p className="text-foreground">
+                                        <span className="font-semibold">Category:</span>{" "}
+                                        <span className="uppercase tracking-wide text-xs font-semibold text-muted-foreground">{product.category}</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {/* Rich HTML description */}
+                            {desc && (
+                              hasHtml
+                                ? <div className="rich-content text-sm text-muted-foreground max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                                : <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+                            )}
+                          </div>
+                        );
                       })()}
                     </div>
+                  </section>
 
-                    {/* Extra Content (rich text) */}
-                    {(() => {
-                      const extra = getTranslatedField(product, 'extra_content') || "";
-                      if (!extra) return null;
-                      return (
-                        <div
-                          className="rich-content text-muted-foreground max-w-none"
-                          dangerouslySetInnerHTML={{ __html: extra }}
-                        />
-                      );
-                    })()}
-
-                    {/* Documents */}
-                    {product.documents.length > 0 && (
-                      <div>
-                        <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wide">Documents</h3>
-                        <ul className="space-y-1.5">
-                          {product.documents.map((doc) => {
-                            const urls = extractUrls(doc.url);
-                            return urls.map((fileUrl, idx) => {
-                              const rawFileName = fileUrl.split("/").pop() || `Document ${idx + 1}`;
-                              let fileName;
-                              try {
-                                fileName = decodeURIComponent(rawFileName);
-                                fileName = fileName.replace(/[^\w\u4E00-\u9FFF\.\-]/g, "_");
-                                if (!fileName || fileName === "_") fileName = `Document ${idx + 1}`;
-                              } catch (e) {
-                                fileName = `Document ${idx + 1}`;
-                              }
-                              return (
-                                <li key={fileName} className="flex items-center justify-between bg-muted/20 px-3 py-2 rounded text-sm">
-                                  <span className="text-foreground truncate">{fileName}</span>
-                                  <a href={fileUrl} target="_blank" download={fileName} className="text-primary text-xs font-medium hover:underline">
-                                    Download
-                                  </a>
-                                </li>
-                              );
-                            });
-                          })}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Inspection Details */}
-                    {product.phase === "inspection" && (product.inspectionDate || product.inspectionTime) && (
-                      <div className="border-t border-border pt-4">
-                        <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">{t("buyer.inspectionDetails")}</h3>
-                        <div className="space-y-2">
-                          {product.inspectionDate && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Calendar className="w-4 h-4 text-muted-foreground" />
-                              <p className="text-foreground">{product.inspectionDate}</p>
+                  {/* Logistics */}
+                  {(() => {
+                    const extra = getTranslatedField(product, 'extra_content') || "";
+                    const hasLogisticsMeta = product.rigging_responsibility || product.loading_responsibility || product.shipping_responsibility || product.packaging_type;
+                    if (!extra && !hasLogisticsMeta) return null;
+                    return (
+                      <section id="logistics-section">
+                        <h2 className="text-xl font-bold text-foreground mb-5">Logistics</h2>
+                        <div className="border border-border rounded-xl overflow-hidden">
+                          <div className="p-5">
+                            <div className="flex items-start gap-3 mb-4">
+                              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <Truck className="w-4 h-4 text-orange-600" />
+                              </div>
+                              <div className="text-sm space-y-2 flex-1">
+                                {product.rigging_responsibility && (
+                                  <p className="text-foreground">
+                                    <span className="font-semibold">Rigging Responsibility:</span>{" "}
+                                    <span className={cn(
+                                      "inline-block px-2 py-0.5 rounded border text-xs font-semibold",
+                                      product.rigging_responsibility.toLowerCase() === "included"
+                                        ? "border-green-500 text-green-700 bg-green-50"
+                                        : "border-border text-foreground bg-muted/40"
+                                    )}>
+                                      {product.rigging_responsibility}
+                                    </span>
+                                  </p>
+                                )}
+                                {product.loading_responsibility && (
+                                  <p className="text-foreground">
+                                    <span className="font-semibold">Loading Responsibility:</span>{" "}
+                                    <span className={cn(
+                                      "inline-block px-2 py-0.5 rounded border text-xs font-semibold",
+                                      product.loading_responsibility.toLowerCase() === "included"
+                                        ? "border-green-500 text-green-700 bg-green-50"
+                                        : "border-border text-foreground bg-muted/40"
+                                    )}>
+                                      {product.loading_responsibility}
+                                    </span>
+                                  </p>
+                                )}
+                                {product.shipping_responsibility && (
+                                  <p className="text-foreground">
+                                    <span className="font-semibold">Shipping Responsibility:</span>{" "}
+                                    <span className="text-foreground">{product.shipping_responsibility}</span>
+                                    {" "}Or{" "}
+                                    <span className="inline-flex items-center gap-1 border border-primary text-primary text-xs px-2 py-0.5 rounded font-semibold">
+                                      101Lab Delivery!{" "}
+                                      <button className="underline hover:no-underline text-primary">Get a Quote!</button>
+                                    </span>
+                                  </p>
+                                )}
+                                {product.packaging_type && (
+                                  <p className="text-foreground">
+                                    <span className="font-semibold">Packaging Type:</span> {product.packaging_type}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          )}
-                          {product.inspectionTime && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Clock className="w-4 h-4 text-muted-foreground" />
-                              <p className="text-foreground">{product.inspectionTime}</p>
-                            </div>
-                          )}
+                            {/* Rich HTML extra content */}
+                            {extra && (
+                              <div className="rich-content text-sm text-muted-foreground max-w-none mt-3 pt-3 border-t border-border/50" dangerouslySetInnerHTML={{ __html: extra }} />
+                            )}
+                          </div>
                         </div>
+                      </section>
+                    );
+                  })()}
+
+                  {/* Documents */}
+                  {product.documents.length > 0 && (
+                    <section>
+                      <h2 className="text-xl font-bold text-foreground mb-4">Documents</h2>
+                      <ul className="space-y-2">
+                        {product.documents.map((doc) => {
+                          const urls = extractUrls(doc.url);
+                          return urls.map((fileUrl, idx) => {
+                            const rawFileName = fileUrl.split("/").pop() || `Document ${idx + 1}`;
+                            let fileName;
+                            try {
+                              fileName = decodeURIComponent(rawFileName);
+                              fileName = fileName.replace(/[^\w\u4E00-\u9FFF\.\-]/g, "_");
+                              if (!fileName || fileName === "_") fileName = `Document ${idx + 1}`;
+                            } catch (e) {
+                              fileName = `Document ${idx + 1}`;
+                            }
+                            return (
+                              <li key={fileName} className="flex items-center justify-between bg-muted/20 px-4 py-3 rounded-lg border border-border text-sm">
+                                <span className="text-foreground truncate">{fileName}</span>
+                                <a href={fileUrl} target="_blank" download={fileName} className="text-primary text-xs font-medium hover:underline ml-4 flex-shrink-0">
+                                  Download
+                                </a>
+                              </li>
+                            );
+                          });
+                        })}
+                      </ul>
+                    </section>
+                  )}
+
+                  {/* Inspection Details */}
+                  {product.phase === "inspection" && (product.inspectionDate || product.inspectionTime) && (
+                    <section>
+                      <h2 className="text-xl font-bold text-foreground mb-4">{t("buyer.inspectionDetails")}</h2>
+                      <div className="border border-border rounded-xl p-5 space-y-2">
+                        {product.inspectionDate && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <p className="text-foreground">{product.inspectionDate}</p>
+                          </div>
+                        )}
+                        {product.inspectionTime && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            <p className="text-foreground">{product.inspectionTime}</p>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </section>
+                  )}
+
+                  {/* Sale Terms & Conditions */}
+                  <section id="sale-terms-section">
+                    <h2 className="text-xl font-bold text-foreground mb-4">Sale Terms &amp; Conditions</h2>
+                    <Accordion type="single" collapsible className="border border-border rounded-xl overflow-hidden divide-y divide-border">
+                      <AccordionItem value="inspection-terms" className="border-0">
+                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
+                          Inspection Terms
+                        </AccordionTrigger>
+                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
+                          All items are sold as-is, where-is. Buyers are encouraged to inspect items prior to bidding.
+                          Inspection appointments must be scheduled in advance. The seller makes no warranty, expressed
+                          or implied, regarding the condition, fitness for use, or merchantability of any item.
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="seller-terms" className="border-0">
+                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
+                          Seller Terms
+                        </AccordionTrigger>
+                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
+                          Payment is due within 3 business days of award notification. Accepted payment methods include
+                          bank transfer, escrow, and approved digital payment methods. Items not paid for within the
+                          specified timeframe may be forfeited without refund of any deposit.
+                        </AccordionContent>
+                      </AccordionItem>
+                      <AccordionItem value="removal-terms" className="border-0">
+                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
+                          Removal Terms
+                        </AccordionTrigger>
+                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
+                          All purchased items must be removed within 10 business days of payment confirmation.
+                          Buyer is responsible for all rigging, loading, and transportation costs unless otherwise stated.
+                          Items not removed by the deadline may be subject to storage fees or forfeiture.
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </section>
+
+                  {/* 101Lab Terms and Conditions */}
+                  <section>
+                    <h2 className="text-xl font-bold text-foreground mb-3">101Lab Terms and Conditions</h2>
+                    <div className="space-y-1.5">
+                      <a href="#" className="block text-primary hover:underline text-sm font-medium">
+                        101Lab Terms of Use
+                      </a>
+                      <a href="#" className="block text-primary hover:underline text-sm font-medium">
+                        Privacy Policy
+                      </a>
+                    </div>
+                  </section>
+
+                  {/* Buy with Confidence on 101Lab */}
+                  <section className="pb-6">
+                    <h2 className="text-xl font-bold text-foreground mb-2">Buy with Confidence on 101Lab</h2>
+                    <p className="text-sm text-primary mb-5">Built for industrial buyers across Asia-Pacific.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
+                      {[
+                        "Verified sellers across India, China, Japan, Korea & SEA",
+                        "GST, VAT & customs documentation handled",
+                        "Escrow-secured payments via UPI, Alipay & bank transfer",
+                        "Port-to-port & door-to-door freight across APAC",
+                        "On-site inspection available in 50+ Asian cities",
+                        "Multi-currency pricing \u2014 INR, CNY, JPY, SGD, USD",
+                        "WhatsApp, WeChat & LINE seller chat support",
+                        "Local-language support: English, Hindi, Mandarin, Japanese",
+                        "Trusted logistics partners \u2014 DHL, Maersk, ONE Line",
+                        "Compliance with India BIS, China CCC & Japan PSE standards",
+                      ].map((item) => (
+                        <div key={item} className="flex items-start gap-2 text-sm text-foreground">
+                          <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
                 </div>
 
               </div>

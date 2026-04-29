@@ -5,21 +5,15 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
-import { useLoginModal } from "@/context/LoginModalContext";
 import { useLanguageAwareCategories, LabCategory } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Store, Globe, UserPlus, Heart, ChevronRight,
+  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Globe, UserPlus, Heart, ChevronRight,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
 import { SITE_NAME } from "@/config/branding";
 import { normalizeStoredLanguage } from "@/utils/languageUtils";
 import { pushLogoutEvent, pushSearchEvent } from "@/utils/gtm";
-
-        
- 
-
-const MONDAY_FORM_URL = "https://forms.monday.com/"; 
 
 
 
@@ -41,7 +35,6 @@ const Header = () => {
   const [openMenu, setOpenMenu] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [hoveredParent, setHoveredParent] = useState<string | null>(null);
-  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const [searchVal, setSearchVal] = useState(() => {
@@ -60,7 +53,6 @@ const Header = () => {
   const [mobileExpandedParent, setMobileExpandedParent] = useState<string | null>(null);
 
   const [userId, setUserId] = useState(localStorage.getItem("userId"));
-  const { openLoginModal } = useLoginModal();
 
   useEffect(() => {
     const syncAuth = () => setUserId(localStorage.getItem("userId"));
@@ -302,46 +294,14 @@ const Header = () => {
                     <UserPlus className="h-3.5 w-3.5" />
                     {t("publicHeader.createAccount")}
                   </Button>
-                  <div
-                    className="relative"
-                    onMouseEnter={() => setIsSignInOpen(true)}
-                    onMouseLeave={() => setIsSignInOpen(false)}
+                  <Button
+                    size="sm"
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5 text-xs h-9 rounded"
+                    onClick={() => window.open("/auth?mode=signin", "_blank")}
                   >
-                    <Button
-                      size="sm"
-                      className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5 text-xs h-9 rounded"
-                    >
-                      <LogIn className="h-3.5 w-3.5" />
-                      {t("publicHeader.signIn")}
-                    </Button>
-                    {isSignInOpen && (
-                      <div className="absolute right-0 top-full pt-0.5 z-50">
-                        <div className="bg-popover border border-border rounded shadow-lg min-w-[160px] py-0.5">
-                          <button
-                            onClick={() => window.open("/auth?type=buyer&mode=signin", "_blank")}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                          >
-                            <User className="h-3.5 w-3.5 text-muted-foreground" />
-                            {t("publicHeader.buyerPortal")}
-                          </button>
-                          <button
-                            onClick={() => window.open("/auth?type=seller&mode=signin", "_blank")}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                          >
-                            <Store className="h-3.5 w-3.5 text-muted-foreground" />
-                            {t("publicHeader.sellerPortal")}
-                          </button>
-                          <button
-                            onClick={() => window.open("/auth?type=admin&mode=signin", "_blank")}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-popover-foreground hover:bg-secondary transition-colors"
-                          >
-                            <Store className="h-3.5 w-3.5 text-muted-foreground" />
-                            {t("publicHeader.adminPortal")}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <LogIn className="h-3.5 w-3.5" />
+                    {t("publicHeader.signIn")}
+                  </Button>
                 </>
               )}
             </div>
@@ -632,7 +592,7 @@ const Header = () => {
                       {t("publicHeader.createAccount")}
                     </Button>
                     <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
-                      onClick={() => { navigate("/auth?type=buyer&mode=signin"); setOpenMenu(false); }}>
+                      onClick={() => { navigate("/auth?mode=signin"); setOpenMenu(false); }}>
                       {t("publicHeader.signIn")}
                     </Button>
                   </div>
