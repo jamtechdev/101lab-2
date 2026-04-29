@@ -122,6 +122,19 @@ export default function BuyerChatTest({ batchId, sellerId, userRole = "buyer" }:
       platform: SITE_TYPE,
     });
 
+    // Notify admin via email whenever a buyer sends a message to a seller
+    axios.post(`${apiUrl}chat/notify-admin`, {
+      conversation_id: conversationId,
+      batch_id: batch_id,
+      buyer_id: buyer_id,
+      seller_id: seller_id,
+      sender_role: userRole,
+      message: trimmedMessage,
+      platform: SITE_TYPE,
+    }).catch(() => {
+      // Fire-and-forget — don't block chat if notification fails
+    });
+
     setInput("");
   };
 

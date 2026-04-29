@@ -100,6 +100,7 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
       setShowUpgradeModal(false);
       refetchStatus();
       setForm({ company_name: "", company_tax_id: "", business_type: "", phone: "", country: "", reason: "" });
+
     } catch (err: any) {
       toastError(err?.data?.message || (isZh ? "送出失敗，請稍後再試" : "Failed to submit. Please try again."));
     }

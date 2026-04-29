@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
-import { Phone } from "lucide-react";
+import { Phone, Loader2 } from "lucide-react";
 import { CountrySelectItems } from "@/components/common/CountrySelect";
 
 const quantityOptions = [
@@ -43,13 +44,43 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
     quantity: "",
     phone: "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This would integrate with existing API - keeping logic unchanged
-    alert("Thank you! Our asset specialists will contact you within 24 hours.");
-    onOpenChange(false);
-    setForm({ category: "", country: "", quantity: "", phone: "" });
+
+    if (!form.phone.trim()) {
+      toast.error("Please enter your phone number.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const base = (import.meta.env.VITE_PRODUCTION_URL || "http://localhost:4000/api/v1/").replace(/\/api\/v1\/?$/, "");
+      const endpoint = `${base}/api/v1/reseller/submit-application`;
+
+      const formData = new FormData();
+      formData.append("lead_type", "sell-with-greenbidz");
+      formData.append("category", form.category);
+      formData.append("country", form.country);
+      formData.append("quantity", form.quantity);
+      formData.append("phone", form.phone);
+
+      const res = await fetch(endpoint, { method: "POST", body: formData });
+      const result = await res.json() as { ok?: boolean; error?: string };
+
+      if (result?.ok) {
+        toast.success("Thank you! Our asset specialists will contact you within 24 hours.");
+        onOpenChange(false);
+        setForm({ category: "", country: "", quantity: "", phone: "" });
+      } else {
+        toast.error(result?.error || "Submission failed. Please try again.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -129,8 +160,13 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
             type="submit"
             className="w-full bg-primary hover:bg-primary-dark text-primary-foreground font-semibold"
             size="lg"
+            disabled={submitting}
           >
-            Request Callback
+            {submitting ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting...</>
+            ) : (
+              "Request Callback"
+            )}
           </Button>
         </form>
       </DialogContent>
