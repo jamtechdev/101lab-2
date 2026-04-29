@@ -32,7 +32,6 @@ import {
   Info,
   ExternalLink,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1611,14 +1610,101 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                   {/* 101Lab Terms and Conditions */}
                   <section>
-                    <h2 className="text-xl font-bold text-foreground mb-3">101Lab Terms and Conditions</h2>
-                    <div className="space-y-1.5">
-                      <a href="#" className="block text-primary hover:underline text-sm font-medium">
-                        101Lab Terms of Use
-                      </a>
-                      <a href="#" className="block text-primary hover:underline text-sm font-medium">
-                        Privacy Policy
-                      </a>
+                    <h2 className="text-xl font-bold text-foreground mb-4">101Lab Terms and Conditions</h2>
+                    <div className="rounded-xl border border-border divide-y divide-border">
+                      {[
+                        {
+                          key: "terms-of-use",
+                          label: "Terms of Use",
+                          content: (
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Acceptance of Terms</h4>
+                                <p>By accessing and using GIH Co. Ltd, you agree to comply with and be bound by these Terms of Use. If you do not agree, please refrain from using the Site.</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Intellectual Property</h4>
+                                <p>All content, including text, graphics, logos, and code, is the property of GIH Co. Ltd or its content suppliers and is protected by international copyright laws. You may not reproduce, distribute, or create derivative works without express written permission.</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">User Conduct</h4>
+                                <p className="mb-1">Users agree not to:</p>
+                                <ul className="list-disc list-inside space-y-1 pl-2">
+                                  <li>Use the Site for any unlawful purpose.</li>
+                                  <li>Attempt to interfere with the proper working of the Site or bypass security measures.</li>
+                                  <li>Post or transmit any software viruses or malicious code.</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Disclaimer of Warranties</h4>
+                                <p>The Site and its contents are provided on an "as-is" basis. GIH Co. Ltd makes no representations or warranties of any kind, express or implied, regarding the accuracy or availability of the Site.</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Limitation of Liability</h4>
+                                <p>In no event shall GIH Co. Ltd be liable for any damages (including, without limitation, damages for loss of data or profit) arising out of the use or inability to use the materials on the Site.</p>
+                              </div>
+                            </div>
+                          ),
+                        },
+                        {
+                          key: "privacy-policy",
+                          label: "Privacy Policy",
+                          content: (
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Information We Collect</h4>
+                                <p className="mb-1">We collect information to provide better services to our users. This may include:</p>
+                                <ul className="list-disc list-inside space-y-1 pl-2">
+                                  <li><span className="font-medium text-foreground">Personal Information:</span> Name, email address, or contact details provided voluntarily via forms.</li>
+                                  <li><span className="font-medium text-foreground">Usage Data:</span> IP addresses, browser types, and pages visited, collected automatically via cookies to improve site performance.</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">How We Use Your Information</h4>
+                                <p className="mb-1">We use the collected data to:</p>
+                                <ul className="list-disc list-inside space-y-1 pl-2">
+                                  <li>Operate and maintain the Site.</li>
+                                  <li>Respond to inquiries or provide customer support.</li>
+                                  <li>Monitor usage patterns to enhance user experience.</li>
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Cookies</h4>
+                                <p>We use cookies to track activity on our Site. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, some portions of the Site may not function properly without them.</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Data Security</h4>
+                                <p>The security of your data is important to us, but remember that no method of transmission over the Internet is 100% secure. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.</p>
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-foreground mb-1">Third-Party Links</h4>
+                                <p>Our Site may contain links to other sites that are not operated by us. We strongly advise you to review the Privacy Policy of every site you visit.</p>
+                              </div>
+                            </div>
+                          ),
+                        },
+                      ].map(({ key, label, content }) => (
+                        <div key={key}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenTerm(openTerm === key ? null : key)}
+                            className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors text-left"
+                          >
+                            <span>{label}</span>
+                            <ChevronDown
+                              className={cn(
+                                "w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0",
+                                openTerm === key && "rotate-180"
+                              )}
+                            />
+                          </button>
+                          {openTerm === key && (
+                            <div className="px-5 pb-5 text-sm text-muted-foreground">
+                              {content}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </section>
 
