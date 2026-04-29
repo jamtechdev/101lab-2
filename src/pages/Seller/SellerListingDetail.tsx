@@ -905,7 +905,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                       {/* Sales / Lot Type */}
                       <div className="flex items-baseline gap-1.5 text-sm mb-2 py-2">
-                        <span className="text-muted-foreground font-medium">Sales/Lot Type:</span>
+                        <span className="text-muted-foreground font-medium">{t("buyer.bidType")}:</span>
                         <span className="font-medium text-foreground flex items-center gap-1">
                           {bidDetail ? t(bidTypeMap[bidDetail?.type]) : (product.lot_type || "—")}
                           <Info className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
@@ -914,7 +914,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                       {/* Location */}
                       <div className="flex items-center gap-1.5 text-sm mb-2 ">
-                        <span className="text-muted-foreground font-medium">Location:</span>
+                        <span className="text-muted-foreground font-medium">{t("buyer.location")}:</span>
                         <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span className="text-primary font-medium">
                           {parsePhpArray(product.location)}{batchCountry ? `, ${batchCountry}` : ""}
@@ -1422,7 +1422,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                     </div>
                                     <div className="text-sm">
                                       <p className="text-foreground">
-                                        <span className="font-semibold">Category:</span>{" "}
+                                        <span className="font-semibold">{t("buyer.category")}:</span>{" "}
                                         <span className="uppercase tracking-wide text-xs font-semibold text-muted-foreground">{product.category}</span>
                                       </p>
                                     </div>

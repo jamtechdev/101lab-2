@@ -574,7 +574,23 @@
     "submitOffer": "Submit Offer",
     "offerAmount": "Your Offer Amount",
     "enterAmount": "Enter amount",
-    "price": "Price"
+    "price": "Price",
+    "category": "หมวดหมู่",
+    "confirmBuyNow": "ยืนยันการซื้อ",
+    "confirmBid": "ยืนยันการประมูล",
+    "yourPrice": "ราคาของคุณ",
+    "yourBid": "ราคาประมูลของคุณ",
+    "confirmBuyNowDesc": "คุณแน่ใจหรือไม่ว่าต้องการซื้อสินค้านี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+    "confirmBidDesc": "คุณแน่ใจหรือไม่ว่าต้องการเสนอราคานี้? การดำเนินการนี้ไม่สามารถยกเลิกได้",
+    "yesBuyNow": "ใช่ ซื้อเลย",
+    "yesPlaceBid": "ใช่ เสนอราคา",
+    "goBack": "ย้อนกลับ",
+    "offerSuccessTitle": "ส่งข้อเสนอสำเร็จ!",
+    "offerSuccessMessage": "ข้อเสนอของคุณถูกส่งแล้ว ผู้ขายจะตรวจสอบและแจ้งให้คุณทราบ",
+    "bidSuccessTitle": "เสนอราคาสำเร็จ!",
+    "bidSuccessMessage": "ราคาประมูลของคุณถูกส่งแล้ว ผู้ขายจะตรวจสอบและแจ้งให้คุณทราบ",
+    "buyNowSuccessTitle": "ยืนยันการซื้อสำเร็จ!",
+    "buyNowSuccessMessage": "การซื้อของคุณได้รับการยืนยันแล้ว ผู้ขายจะติดต่อคุณเพื่อดำเนินการต่อไป"
   },
   "factories": {
     "hero": {
@@ -2975,5 +2991,31 @@
     "badge1": "ไม่ต้องใช้บัตรเครดิต",
     "badge2": "ฟรีตลอดไป",
     "badge3": "สมัครใน 30 วินาที"
+  },
+  "makeOfferModal": {
+    "title": "เสนอราคา",
+    "confirmTitle": "ยืนยันข้อเสนอของคุณ",
+    "successTitle": "ส่งข้อเสนอสำเร็จ!",
+    "subtitle": "ส่งราคาของคุณสำหรับสินค้านี้",
+    "confirmSubtitle": "กรุณาตรวจสอบอีกครั้งก่อนส่ง การดำเนินการนี้ไม่สามารถยกเลิกได้",
+    "company": "บริษัท",
+    "companyPlaceholder": "ชื่อบริษัทของคุณ",
+    "contactPerson": "ผู้ติดต่อ",
+    "contactPersonPlaceholder": "ชื่อผู้ติดต่อ",
+    "offerPrice": "ราคาที่เสนอ",
+    "offerPricePlaceholder": "กรอกราคาที่เสนอ",
+    "offerQuantity": "จำนวนที่เสนอ",
+    "offerQuantityPlaceholder": "กรอกจำนวน",
+    "yourOffer": "ข้อเสนอของคุณ",
+    "quantity": "จำนวน",
+    "confirmQuestion": "คุณแน่ใจหรือไม่ว่าต้องการส่งข้อเสนอนี้?",
+    "goBack": "ย้อนกลับ",
+    "submitOffer": "ใช่ ส่งข้อเสนอ",
+    "submitting": "กำลังส่ง...",
+    "successMessage": "ส่งข้อเสนอของคุณถึงผู้ขายแล้ว",
+    "viewOffers": "ดูข้อเสนอของฉัน",
+    "browseMore": "เรียกดูสินค้าเพิ่มเติม",
+    "cancel": "ยกเลิก",
+    "reviewOffer": "ตรวจสอบข้อเสนอ"
   }
 }
