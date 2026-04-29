@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -117,6 +117,8 @@ const SellerLandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [openStep, setOpenStep] = useState<number | null>(0);
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const [form, setForm] = useState({
     companyName: "",
@@ -545,7 +547,7 @@ const SellerLandingPage = () => {
             What our sellers say
           </p>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center mb-10">
-            Why you should sell with 101Machines
+            Why you should sell with 101Lab
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((t, i) => (

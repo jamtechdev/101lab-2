@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/common/Header";
@@ -75,6 +75,8 @@ const SELLER_COUNTRIES = ["China", "Indonesia", "India", "Malaysia", "Taiwan", "
 const DirectSalesPage = () => {
   const { t } = useTranslation();
   const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const [submitting, setSubmitting] = useState(false);
   const { data: categories = [] } = useLanguageAwareCategories();
 

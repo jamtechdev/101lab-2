@@ -1409,6 +1409,8 @@ const Landing = () => {
   const { t } = useTranslation();
   const [sellModalOpen, setSellModalOpen] = useState(false);
 
+  useEffect(() => { window.scrollTo(0, 0); }, []);
+
   const seoData = getSEO('home');
 
   return (
@@ -1527,12 +1529,12 @@ const Landing = () => {
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">
                 {t("landing.sellCardDesc")}
               </p>
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded"
-                onClick={() => setSellModalOpen(true)}
+              <Link
+                to="/sell-with-greenbidz"
+                className="flex items-center justify-center w-full py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded transition-colors"
               >
                 {t("landing.sellCardCta")} <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+              </Link>
             </div>
 
             {/* Direct Sales */}
@@ -1545,7 +1547,7 @@ const Landing = () => {
                 {t("landing.directSalesCardDesc")}
               </p>
               <Link
-                to="/buyer-marketplace?type=direct"
+                to="/direct-sales"
                 className="flex items-center justify-center w-full py-2 border border-primary text-primary text-sm font-semibold rounded hover:bg-primary hover:text-primary-foreground transition-colors"
               >
                 {t("landing.directSaleCta")} <ArrowRight className="h-4 w-4 ml-2" />
