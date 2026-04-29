@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, BarChart3,
     Settings, ChevronLeft, ChevronRight, LogOut, X,
     MessageCircle, User, Zap, Percent, Gavel, UserCheck,
-    ClipboardList, Shield, Tag, Handshake,
+    ClipboardList, Shield, Tag, Handshake, Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
@@ -52,7 +52,7 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
             items: [
                 { icon: Zap,           label: t("admin.sidebar.autoApproval", "Auto-approval"),            path: "/admin/auto-approval" },
                 { icon: UserCheck,     label: t("admin.sidebar.sellerUpgradeRequests", "Seller Requests"), path: "/admin/seller-upgrade-requests" },
-                { icon: ClipboardList, label: t("admin.sidebar.productRequests", "Product Requests"),      path: "/admin/product-requests" },
+                { icon: Megaphone,     label: t("admin.sidebar.productRequests", "Wanted Board"),          path: "/admin/product-requests" },
             ],
         },
         {
