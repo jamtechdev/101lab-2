@@ -16,6 +16,9 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   const location = useLocation();
   const { data, isLoading, isError } = useVerifyUserQuery();
 
+  console.log("data is",data);
+  
+
   if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -34,7 +37,12 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   
   // If no role restrictions, allow access
   if (!allowedRoles || allowedRoles.length === 0) {
+  
     return <Outlet />;
+  }
+
+  if(data?.success  && data?.user?.role === "admin"){
+    return  <Navigate to="/admin" replace />;
   }
   
   // If route allows both seller and buyer
