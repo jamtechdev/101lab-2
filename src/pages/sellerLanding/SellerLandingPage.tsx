@@ -201,7 +201,7 @@ const SellerLandingPage = () => {
     {
       title: "Full service",
       description:
-        "No matter what, how much or how you sell — 101Machines does all the work for you! We clean the machines, create product catalogues, organize inspections, and optimize every detail. After the sale we handle disassembly, transport, and customs.",
+        "No matter what, how much or how you sell — 101LAB does all the work for you! We clean the machines, create product catalogues, organize inspections, and optimize every detail. After the sale we handle disassembly, transport, and customs.",
     },
     {
       title: "Fastest possible payout",
@@ -216,21 +216,21 @@ const SellerLandingPage = () => {
       company: "Pacific Metal Works, Taiwan",
       industry: "Sheet metal processing",
       quote:
-        "We noticed how competent and pleasant working with 101Machines is, even after the first project. Their large network means the right buyer is always found, even for complex systems.",
+        "We noticed how competent and pleasant working with 101LAB is, even after the first project. Their large network means the right buyer is always found, even for complex systems.",
     },
     {
       name: "Marcus Weber",
       company: "Weber Industrietechnik, Germany",
       industry: "Used machinery trade",
       quote:
-        "I have been working with 101Machines for years. With them, I have a reliable and consistently fair partner. Projects are managed with extreme competence and professionalism.",
+        "I have been working with 101LAB for years. With them, I have a reliable and consistently fair partner. Projects are managed with extreme competence and professionalism.",
     },
     {
       name: "Sarah Thompson",
       company: "Precision Engineering Ltd, UK",
       industry: "Precision mechanics",
       quote:
-        "101Machines is a reliable and professional partner that offers a smooth and hassle-free service. Their support and guidance throughout the process were invaluable and exceeded my expectations.",
+        "101LAB is a reliable and professional partner that offers a smooth and hassle-free service. Their support and guidance throughout the process were invaluable and exceeded my expectations.",
     },
   ];
 
@@ -393,7 +393,7 @@ const SellerLandingPage = () => {
                 Value Beyond Use
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-3">
-                Leave the search for the right buyer to the experts from 101Machines.
+                Leave the search for the right buyer to the experts from 101LAB.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Our experienced team will ensure that your machine achieves the best price.
@@ -492,7 +492,7 @@ const SellerLandingPage = () => {
             <div className="rounded-lg overflow-hidden shadow-medium">
               <img
                 src={officeImg}
-                alt="101Machines office"
+                alt="101LAB office"
                 className="w-full h-[280px] md:h-[380px] object-cover"
               />
             </div>
@@ -501,7 +501,7 @@ const SellerLandingPage = () => {
                 To sell used machines at first-class conditions, you need first-rate partners.
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                101Machines has a wealth of experience in the used machinery market and can create
+                101LAB has a wealth of experience in the used machinery market and can create
                 the optimum solution for you. Whether you are looking for individual machines or
                 complete plants, you will receive the best price currently available on the market
                 through our auction platform.

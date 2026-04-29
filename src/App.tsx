@@ -208,7 +208,7 @@ const App = () => {
               {/* PUBLIC */}
               <Route path="/" element={<Landing />} />
               <Route path="/factories" element={<Factories />} />
-               <Route path="/resellers" element={<Resellers />} />
+               <Route path="/resellers" element={<Resellers />} />direct-sales
                <Route path="/sell-with-greenbidz" element={<SellerLandingPage/>} />
                <Route path="/direct-sales" element={<DirectSalesPage/>} />
                <Route path="/contact-inquiry-test" element={<ContactInquiryTest />} />
