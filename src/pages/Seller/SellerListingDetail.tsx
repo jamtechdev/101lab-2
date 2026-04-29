@@ -1097,7 +1097,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </Button>
 
                       {/* Watchers / Visitors stats */}
-                      <div className="grid grid-cols-2 gap-3 mb-4 py-4">
+                      {/* <div className="grid grid-cols-2 gap-3 mb-4 py-4">
                         <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-background">
                           <Eye className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                           <div>
@@ -1116,7 +1116,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Meta rows: Taxes, Buyer's Premium, Seller's Terms, Seller's Other Items, Event */}
                       <div className="divide-y divide-border border border-border rounded-lg overflow-hidden mb-4">
