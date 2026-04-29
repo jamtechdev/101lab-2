@@ -711,6 +711,26 @@ export interface TagTranslations {
   content_th: string;
 }
 
+export interface BlogItem {
+  id: number;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content?: string | null;
+  cover_image: string | null;
+  author: string;
+  tags: string[];
+  category: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  is_featured: boolean;
+  status: "draft" | "published";
+  view_count: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SalesLead {
   id: number;
   lead_type: "direct-sales" | "sell-with-greenbidz";
@@ -741,6 +761,7 @@ export const adminApi = createApi({
     "AdminAuctionGroups",
     "ProductRequests",
     "SalesLeads",
+    "Blogs",
   ],
 
   endpoints: (builder) => ({
@@ -1422,6 +1443,85 @@ export const adminApi = createApi({
       invalidatesTags: ["ProductRequests"],
     }),
 
+    /* ─────────────── BLOGS ─────────────── */
+    getAdminBlogs: builder.query<
+      {
+        success: boolean;
+        data: BlogItem[];
+        pagination: { total: number; page: number; limit: number; pages: number };
+      },
+      { page?: number; limit?: number; status?: string; category?: string; search?: string }
+    >({
+      query: (params = {}) => {
+        const p = new URLSearchParams();
+        if (params.page)     p.append("page",     String(params.page));
+        if (params.limit)    p.append("limit",    String(params.limit));
+        if (params.status)   p.append("status",   params.status);
+        if (params.category) p.append("category", params.category);
+        if (params.search)   p.append("search",   params.search);
+        return { url: `/blog/admin?${p.toString()}`, method: "GET" };
+      },
+      providesTags: ["Blogs"],
+    }),
+
+    getAdminBlog: builder.query<{ success: boolean; data: BlogItem }, number>({
+      query: (id) => ({ url: `/blog/admin/${id}`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "Blogs", id }],
+    }),
+
+    createBlog: builder.mutation<{ success: boolean; data: BlogItem }, Partial<BlogItem>>({
+      query: (body) => ({ url: "/blog/admin", method: "POST", data: body }),
+      invalidatesTags: ["Blogs"],
+    }),
+
+    updateBlog: builder.mutation<{ success: boolean; data: BlogItem }, { id: number } & Partial<BlogItem>>({
+      query: ({ id, ...body }) => ({ url: `/blog/admin/${id}`, method: "PUT", data: body }),
+      invalidatesTags: (_r, _e, { id }) => ["Blogs", { type: "Blogs", id }],
+    }),
+
+    toggleBlogStatus: builder.mutation<{ success: boolean; data: { id: number; status: string } }, number>({
+      query: (id) => ({ url: `/blog/admin/${id}/status`, method: "PUT" }),
+      invalidatesTags: ["Blogs"],
+    }),
+
+    toggleBlogFeatured: builder.mutation<{ success: boolean; data: { id: number; is_featured: boolean } }, number>({
+      query: (id) => ({ url: `/blog/admin/${id}/featured`, method: "PUT" }),
+      invalidatesTags: ["Blogs"],
+    }),
+
+    deleteBlog: builder.mutation<{ success: boolean; message: string }, number>({
+      query: (id) => ({ url: `/blog/admin/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Blogs"],
+    }),
+
+    getPublicBlogs: builder.query<
+      {
+        success: boolean;
+        data: BlogItem[];
+        pagination: { total: number; page: number; limit: number; pages: number };
+      },
+      { page?: number; limit?: number; category?: string; tag?: string; featured?: string; search?: string }
+    >({
+      query: (params = {}) => {
+        const p = new URLSearchParams();
+        if (params.page)     p.append("page",     String(params.page));
+        if (params.limit)    p.append("limit",    String(params.limit));
+        if (params.category) p.append("category", params.category);
+        if (params.tag)      p.append("tag",      params.tag);
+        if (params.featured) p.append("featured", params.featured);
+        if (params.search)   p.append("search",   params.search);
+        return { url: `/blog/public?${p.toString()}`, method: "GET" };
+      },
+    }),
+
+    getPublicBlogBySlug: builder.query<{ success: boolean; data: BlogItem; related: BlogItem[] }, string>({
+      query: (slug) => ({ url: `/blog/public/${slug}`, method: "GET" }),
+    }),
+
+    getPublicBlogCategories: builder.query<{ success: boolean; data: string[] }, void>({
+      query: () => ({ url: "/blog/public/categories", method: "GET" }),
+    }),
+
     getSalesLeads: builder.query<
       {
         success: boolean;
@@ -1547,4 +1647,16 @@ export const {
 
   /* ---------- SALES LEADS ---------- */
   useGetSalesLeadsQuery,
+
+  /* ---------- BLOGS ---------- */
+  useGetAdminBlogsQuery,
+  useGetAdminBlogQuery,
+  useCreateBlogMutation,
+  useUpdateBlogMutation,
+  useToggleBlogStatusMutation,
+  useToggleBlogFeaturedMutation,
+  useDeleteBlogMutation,
+  useGetPublicBlogsQuery,
+  useGetPublicBlogBySlugQuery,
+  useGetPublicBlogCategoriesQuery,
 } = adminApi;

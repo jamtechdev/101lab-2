@@ -72,6 +72,7 @@
     "moreCategories": "更多類別",
     "sellWithGreenBidz": "與 GreenBidz 出售",
     "directSales": "直售",
+    "blog": "部落格",
     "wantedBoard": "採購需求",
     "postWanted": "發布需求",
     "language": "語言",
@@ -2475,8 +2476,10 @@
         "approvals": "審核",
         "sales": "銷售",
         "finance": "財務",
+        "content": "內容",
         "system": "系統"
       },
+      "blogs": "部落格",
       "adminBadge": "管理員",
       "auctionGroups": "拍賣組",
       "bids": "競標",

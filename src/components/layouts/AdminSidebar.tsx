@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Package, ShoppingCart, Store, BarChart3,
     Settings, ChevronLeft, ChevronRight, LogOut, X,
     MessageCircle, User, Zap, Percent, Gavel, UserCheck,
-    ClipboardList, Shield, Tag, Handshake, Megaphone,
+    ClipboardList, Shield, Tag, Handshake, Megaphone, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
@@ -65,6 +65,12 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
             label: t("admin.sidebar.group.finance", "Finance"),
             items: [
                 { icon: Percent, label: t("admin.sidebar.commission", "Commission"), path: "/admin/commission" },
+            ],
+        },
+        {
+            label: t("admin.sidebar.group.content", "Content"),
+            items: [
+                { icon: BookOpen, label: t("admin.sidebar.blogs", "Blog"), path: "/admin/blogs" },
             ],
         },
         {

@@ -440,6 +440,15 @@ const Header = () => {
 
             {/* Right-side action buttons */}
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+              {/* <Link to="/blog">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-foreground hover:bg-secondary text-xs h-7 rounded px-3 font-medium"
+                >
+                  {t("publicHeader.blog", "Blog")}
+                </Button>
+              </Link> */}
               <Link to="/wanted">
                 <Button
                   size="sm"
@@ -575,6 +584,11 @@ const Header = () => {
 
               {/* Actions */}
               <div className="space-y-2">
+                <Link to="/blog" onClick={() => setOpenMenu(false)}>
+                  <Button size="sm" variant="outline" className="w-full border-border text-foreground h-9 text-xs">
+                    {t("publicHeader.blog", "Blog")}
+                  </Button>
+                </Link>
                 <Link to="/wanted" onClick={() => setOpenMenu(false)}>
                   <Button size="sm" variant="outline" className="w-full border-border text-foreground h-9 text-xs">
                     {t("publicHeader.wantedBoard")}

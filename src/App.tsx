@@ -66,6 +66,10 @@ import AdminAuctionGroups from "./pages/Admin/AdminAuctionGroups";
 import AdminBidManagement from "./pages/Admin/AdminBidManagement";
 import AdminOffersOrders from "./pages/Admin/AdminOffersOrders";
 import AdminSalesLeads from "./pages/Admin/AdminSalesLeads";
+import AdminBlogs from "./pages/Admin/AdminBlogs";
+import AdminBlogEditor from "./pages/Admin/AdminBlogEditor";
+import BlogPage from "./pages/blog/BlogPage";
+import BlogDetail from "./pages/blog/BlogDetail";
 
 import AIChat from "./pages/buyer/AiChat";
 import SmoothnessDemo from "./pages/SmoothnessDemo";
@@ -224,6 +228,10 @@ const App = () => {
               <Route path="/email/verify" element={<VerifyEmailPage />} />
               <Route path="/seo-analytics" element={<SEOAnalytics />} />
 
+              {/* BLOG */}
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogDetail />} />
+
               {/* PUBLIC MARKETPLACE */}
               <Route path="/wanted" element={<WantedPage />} />
               <Route path="/buyer-marketplace" element={<Marketplace />} />
@@ -364,6 +372,9 @@ const App = () => {
                 <Route path="/admin/bids" element={<AdminBidManagement />} />
                 <Route path="/admin/offers" element={<AdminOffersOrders />} />
                 <Route path="/admin/sales-leads" element={<AdminSalesLeads />} />
+                <Route path="/admin/blogs" element={<AdminBlogs />} />
+                <Route path="/admin/blogs/new" element={<AdminBlogEditor />} />
+                <Route path="/admin/blogs/:id/edit" element={<AdminBlogEditor />} />
                 <Route path="/admin/settings/email" element={<EmailTypesPage />} />
                 <Route path="/admin/email-types/:typeId" element={<TypeDetailsModal />} />
               </Route>

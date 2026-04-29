@@ -69,6 +69,7 @@
     "moreCategories": "その他のカテゴリ",
     "sellWithGreenBidz": "GreenBidzで売却",
     "directSales": "ダイレクトセール",
+    "blog": "ブログ",
     "wantedBoard": "ウォンテッド",
     "postWanted": "求品掲載",
     "language": "言語",
@@ -2156,7 +2157,18 @@
       "analytics": "分析",
       "users": "ユーザー",
       "autoApproval": "Auto-approval",
-      "settings": "設定"
+      "settings": "設定",
+      "blogs": "ブログ",
+      "group": {
+        "overview": "概要",
+        "listings": "リスティング",
+        "users": "ユーザー",
+        "approvals": "承認",
+        "sales": "営業",
+        "finance": "財務",
+        "content": "コンテンツ",
+        "system": "システム"
+      }
     },
     "dashboard": {
       "title": "Admin Dashboard",

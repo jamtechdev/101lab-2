@@ -69,6 +69,7 @@
     "moreCategories": "หมวดหมู่เพิ่มเติม",
     "sellWithGreenBidz": "เป็นผู้ขายประมูลผ่าน GreenBidz ",
     "directSales": "ขายตรง",
+    "blog": "บล็อก",
     "wantedBoard": "สินค้าที่ต้องการ",
     "postWanted": "ลงประกาศต้องการ",
     "language": "ภาษา",
@@ -2184,7 +2185,18 @@
       "analytics": "การวิเคราะห์",
       "users": "ผู้ใช้",
       "autoApproval": "Auto-approval",
-      "settings": "การตั้งค่า"
+      "settings": "การตั้งค่า",
+      "blogs": "บล็อก",
+      "group": {
+        "overview": "ภาพรวม",
+        "listings": "รายการ",
+        "users": "ผู้ใช้",
+        "approvals": "การอนุมัติ",
+        "sales": "การขาย",
+        "finance": "การเงิน",
+        "content": "เนื้อหา",
+        "system": "ระบบ"
+      }
     },
     "dashboard": {
       "title": "Admin Dashboard",

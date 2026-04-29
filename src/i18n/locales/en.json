@@ -72,6 +72,7 @@
     "moreCategories": "More categories",
     "sellWithGreenBidz": "Sell with GreenBidz",
     "directSales": "Direct sales",
+    "blog": "Blog",
     "wantedBoard": "Wanted",
     "postWanted": "Post a Wanted",
     "language": "Language",
@@ -2422,8 +2423,10 @@
         "approvals": "Approvals",
         "sales": "Sales",
         "finance": "Finance",
+        "content": "Content",
         "system": "System"
       },
+      "blogs": "Blog",
       "adminBadge": "Admin",
       "auctionGroups": "Auction Groups",
       "bids": "Bids",
