@@ -312,6 +312,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [bidDialogMode, setBidDialogMode] = useState<"place_bid" | "make_offer" | "buy_now">("place_bid");
   const [makeOfferStep, setMakeOfferStep] = useState<"form" | "review">("form");
+  const [openTerm, setOpenTerm] = useState<string | null>(null);
   const [offerQuantity, setOfferQuantity] = useState<number>(1);
   // ── NEW: confirmation step for place bid ──
   const [placeBidStep, setPlaceBidStep] = useState<"form" | "review">("form");
@@ -1566,38 +1567,46 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   {/* Sale Terms & Conditions */}
                   <section id="sale-terms-section">
                     <h2 className="text-xl font-bold text-foreground mb-4">Sale Terms &amp; Conditions</h2>
-                    <Accordion type="single" collapsible className="border border-border rounded-xl overflow-hidden divide-y divide-border">
-                      <AccordionItem value="inspection-terms" className="border-0">
-                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
-                          Inspection Terms
-                        </AccordionTrigger>
-                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
-                          All items are sold as-is, where-is. Buyers are encouraged to inspect items prior to bidding.
-                          Inspection appointments must be scheduled in advance. The seller makes no warranty, expressed
-                          or implied, regarding the condition, fitness for use, or merchantability of any item.
-                        </AccordionContent>
-                      </AccordionItem>
-                      <AccordionItem value="seller-terms" className="border-0">
-                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
-                          Seller Terms
-                        </AccordionTrigger>
-                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
-                          Payment is due within 3 business days of award notification. Accepted payment methods include
-                          bank transfer, escrow, and approved digital payment methods. Items not paid for within the
-                          specified timeframe may be forfeited without refund of any deposit.
-                        </AccordionContent>
-                      </AccordionItem>
-                      <AccordionItem value="removal-terms" className="border-0">
-                        <AccordionTrigger className="px-5 py-4 text-sm font-medium text-foreground hover:no-underline hover:bg-muted/30">
-                          Removal Terms
-                        </AccordionTrigger>
-                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground">
-                          All purchased items must be removed within 10 business days of payment confirmation.
-                          Buyer is responsible for all rigging, loading, and transportation costs unless otherwise stated.
-                          Items not removed by the deadline may be subject to storage fees or forfeiture.
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                    <div className="rounded-xl border border-border divide-y divide-border">
+                      {[
+                        {
+                          key: "inspection",
+                          label: "Inspection Terms",
+                          content: "All items are sold as-is, where-is. Buyers are encouraged to inspect items prior to bidding. Inspection appointments must be scheduled in advance. The seller makes no warranty, expressed or implied, regarding the condition, fitness for use, or merchantability of any item.",
+                        },
+                        {
+                          key: "seller",
+                          label: "Seller Terms",
+                          content: "Payment is due within 3 business days of award notification. Accepted payment methods include bank transfer, escrow, and approved digital payment methods. Items not paid for within the specified timeframe may be forfeited without refund of any deposit.",
+                        },
+                        {
+                          key: "removal",
+                          label: "Removal Terms",
+                          content: "All purchased items must be removed within 10 business days of payment confirmation. Buyer is responsible for all rigging, loading, and transportation costs unless otherwise stated. Items not removed by the deadline may be subject to storage fees or forfeiture.",
+                        },
+                      ].map(({ key, label, content }) => (
+                        <div key={key}>
+                          <button
+                            type="button"
+                            onClick={() => setOpenTerm(openTerm === key ? null : key)}
+                            className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors text-left"
+                          >
+                            <span>{label}</span>
+                            <ChevronDown
+                              className={cn(
+                                "w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0",
+                                openTerm === key && "rotate-180"
+                              )}
+                            />
+                          </button>
+                          {openTerm === key && (
+                            <div className="px-5 pb-4 text-sm text-muted-foreground">
+                              {content}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </section>
 
                   {/* 101Lab Terms and Conditions */}
