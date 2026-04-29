@@ -2411,7 +2411,46 @@
       "analytics": "Analytics",
       "users": "Users",
       "autoApproval": "Auto-approval",
-      "settings": "Settings"
+      "settings": "Settings",
+      "salesLeads": "Sales Leads",
+      "group": {
+        "overview": "Overview",
+        "listings": "Listings",
+        "users": "Users",
+        "approvals": "Approvals",
+        "sales": "Sales",
+        "finance": "Finance",
+        "system": "System"
+      },
+      "adminBadge": "Admin",
+      "auctionGroups": "Auction Groups",
+      "bids": "Bids",
+      "offersOrders": "Offers & Orders",
+      "commission": "Commission",
+      "sellerUpgradeRequests": "Seller Requests",
+      "productRequests": "Product Requests"
+    },
+    "salesLeads": {
+      "title": "Sales Leads",
+      "totalLeads": "Total Leads",
+      "directSales": "Direct Sales",
+      "sellWithGreenbidz": "Sell with GreenBidz",
+      "searchPlaceholder": "Search name, company, email, phone...",
+      "search": "Search",
+      "all": "All",
+      "newestFirst": "Newest First",
+      "oldestFirst": "Oldest First",
+      "to": "to",
+      "noLeads": "No sales leads found",
+      "table": {
+        "no": "#",
+        "name": "Name",
+        "company": "Company",
+        "email": "Email",
+        "phone": "Phone",
+        "type": "Type",
+        "date": "Date"
+      }
     },
     "dashboard": {
       "title": "Admin Dashboard",

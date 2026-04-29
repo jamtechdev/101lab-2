@@ -1,4 +1,4 @@
-// src/rtk/slices/adminApiSlice.ts
+  // src/rtk/slices/adminApiSlice.ts
 import { createApi } from "@reduxjs/toolkit/query/react";
 import axiosBaseQuery from "../api/baseQuery";
 import { SITE_TYPE } from "@/config/site";
@@ -711,6 +711,19 @@ export interface TagTranslations {
   content_th: string;
 }
 
+export interface SalesLead {
+  id: number;
+  lead_type: "direct-sales" | "sell-with-greenbidz";
+  full_name: string;
+  company_name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: "new" | "synced" | "sync_failed";
+  monday_item_id: string | null;
+  created_at: string;
+}
+
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: axiosBaseQuery,
@@ -727,6 +740,7 @@ export const adminApi = createApi({
     "CommissionRules",
     "AdminAuctionGroups",
     "ProductRequests",
+    "SalesLeads",
   ],
 
   endpoints: (builder) => ({
@@ -1373,6 +1387,41 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["ProductRequests"],
     }),
+
+    getSalesLeads: builder.query<
+      {
+        success: boolean;
+        total: number;
+        page: number;
+        totalPages: number;
+        summary: { direct_sales: number; sell_with_greenbidz: number };
+        data: SalesLead[];
+      },
+      {
+        page?: number;
+        limit?: number;
+        lead_type?: string;
+        status?: string;
+        search?: string;
+        sort?: string;
+        start_date?: string;
+        end_date?: string;
+      }
+    >({
+      query: (params = {}) => {
+        const p = new URLSearchParams();
+        if (params.page)       p.append("page",       String(params.page));
+        if (params.limit)      p.append("limit",      String(params.limit));
+        if (params.lead_type)  p.append("lead_type",  params.lead_type);
+        if (params.status)     p.append("status",     params.status);
+        if (params.search)     p.append("search",     params.search);
+        if (params.sort)       p.append("sort",       params.sort);
+        if (params.start_date) p.append("start_date", params.start_date);
+        if (params.end_date)   p.append("end_date",   params.end_date);
+        return { url: `/admin/sales-leads?${p.toString()}`, method: "GET" };
+      },
+      providesTags: ["SalesLeads"],
+    }),
   }),
 });
 
@@ -1458,4 +1507,7 @@ export const {
 
   /* ---------- ADMIN CHECKOUTS / BUY NOW ---------- */
   useGetAdminAllCheckoutsQuery,
+
+  /* ---------- SALES LEADS ---------- */
+  useGetSalesLeadsQuery,
 } = adminApi;
