@@ -144,6 +144,10 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setDescriptionTh(p.description_th || "");
       setExtraContentTh(p.extra_content_th || "");
       setDataLoadKey((k) => k + 1);
+
+      if (p.condition) setCondition(p.condition);
+      if (p.operation_status) setOperationStatus(p.operation_status);
+      if (p.quantity) setQuantity(String(p.quantity));
     }
     const b = data.data?.bidding;
     if (b) {

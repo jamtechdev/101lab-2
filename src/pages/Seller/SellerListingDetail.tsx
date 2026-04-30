@@ -1492,13 +1492,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     if (!extra && !hasLogisticsMeta) return null;
                     return (
                       <section id="logistics-section">
-                        <h2 className="text-xl font-bold text-foreground mb-5">Logistics</h2>
-                        <div className="border border-border rounded-xl overflow-hidden">
-                          <div className="p-5">
+                        {/* <h2 className="text-xl font-bold text-foreground mb-5">Logistics122</h2> */}
+                        <div className=" rounded-xl overflow-hidden">
+                          <div className="px-5">
                             <div className="flex items-start gap-3 mb-4">
-                              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              {/* <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                                 <Truck className="w-4 h-4 text-orange-600" />
-                              </div>
+                              </div> */}
                               <div className="text-sm space-y-2 flex-1">
                                 {product.rigging_responsibility && (
                                   <p className="text-foreground">

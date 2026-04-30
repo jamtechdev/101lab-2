@@ -151,6 +151,9 @@ export interface BatchProduct {
   images: string[];
   category: string;
   post_date?: string;
+  condition?: string | null;
+  operation_status?: string | null;
+  quantity?: string | null;
 }
 
 export interface BatchSellerMeta {
@@ -279,6 +282,9 @@ export interface BatchDetailsProduct {
   images: BatchDetailsProductImage[];
   category: string;
   category_ids: number[];
+  condition?: string | null;
+  operation_status?: string | null;
+  quantity?: string | null;
 }
 
 export interface ProductTranslations {

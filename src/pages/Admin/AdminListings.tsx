@@ -994,9 +994,26 @@ const AdminListings = () => {
                                     <p className="font-semibold text-sm mb-2 line-clamp-2 group-hover/product:text-primary transition-colors">
                                       {product.title}
                                     </p>
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className="text-xs mb-2">
                                       {product.category}
                                     </Badge>
+                                    <div className="mt-2 space-y-1">
+                                      {product.condition && (
+                                        <p className="text-xs text-muted-foreground">
+                                          <span className="font-medium text-foreground">Condition:</span> {product.condition}
+                                        </p>
+                                      )}
+                                      {product.operation_status && (
+                                        <p className="text-xs text-muted-foreground">
+                                          <span className="font-medium text-foreground">Operation:</span> {product.operation_status}
+                                        </p>
+                                      )}
+                                      {product.quantity && (
+                                        <p className="text-xs text-muted-foreground">
+                                          <span className="font-medium text-foreground">Qty:</span> {product.quantity}
+                                        </p>
+                                      )}
+                                    </div>
                                   </CardContent>
                                 </Card>
                               ))}
