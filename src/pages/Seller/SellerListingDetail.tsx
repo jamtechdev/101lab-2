@@ -1451,8 +1451,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                     <div className="text-sm">
                                       <p className="text-foreground">
                                         <span className="font-semibold">Condition:</span>{" "}
-                                        <span className="text-primary capitalize">{product.condition}</span>
-                                        {" "}\u2014 Item functions as originally intended, shows signs of normal wear.
+                                        <span className="text-primary capitalize">
+                                          {parsePhpArray(product.condition).join(", ") || product.condition}
+                                        </span>
                                       </p>
                                     </div>
                                   </div>
