@@ -717,6 +717,38 @@ export interface TagTranslations {
   content_th: string;
 }
 
+export interface ContentItem {
+  id: number;
+  group_id: number;
+  label: string;
+  content: string | null;
+  label_zh?: string | null;
+  label_ja?: string | null;
+  label_th?: string | null;
+  content_zh?: string | null;
+  content_ja?: string | null;
+  content_th?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ContentGroup {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  name_zh?: string | null;
+  name_ja?: string | null;
+  name_th?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  items?: ContentItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface BlogTranslations {
   title_en: string;
   excerpt_en: string;
@@ -796,6 +828,7 @@ export const adminApi = createApi({
     "ProductRequests",
     "SalesLeads",
     "Blogs",
+    "SiteContent",
   ],
 
   endpoints: (builder) => ({
@@ -1420,10 +1453,10 @@ export const adminApi = createApi({
 
     getPublicWantedRequests: builder.query<
       { success: boolean; data: { id: number; category: string; title: string; description: string; is_verified: boolean; createdAt: string }[]; total: number; page: number; totalPages: number },
-      { search?: string; category?: string; page?: number; limit?: number }
+      { search?: string; category?: string; page?: number; limit?: number; lang?: string }
     >({
-      query: ({ search, category, page = 1, limit = 12 } = {}) => {
-        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      query: ({ search, category, page = 1, limit = 12, lang = "en" } = {}) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit), lang });
         if (search) params.append("search", search);
         if (category && category !== "all") params.append("category", category);
         return { url: `/product-request/public?${params.toString()}`, method: "GET" };
@@ -1445,11 +1478,34 @@ export const adminApi = createApi({
 
     adminPostWanted: builder.mutation<
       { success: boolean; message: string; data: any },
-      { category?: string; search_query?: string; message?: string }
+      {
+        category?: string; search_query?: string; message?: string;
+        category_zh?: string; search_query_zh?: string; message_zh?: string;
+        category_ja?: string; search_query_ja?: string; message_ja?: string;
+        category_th?: string; search_query_th?: string; message_th?: string;
+      }
     >({
       query: (body) => ({
         url: "/product-request/admin/post",
         method: "POST",
+        data: body,
+      }),
+      invalidatesTags: ["ProductRequests"],
+    }),
+
+    editProductRequest: builder.mutation<
+      { success: boolean; message: string; data: any },
+      {
+        id: number;
+        category?: string; search_query?: string; message?: string;
+        category_zh?: string; search_query_zh?: string; message_zh?: string;
+        category_ja?: string; search_query_ja?: string; message_ja?: string;
+        category_th?: string; search_query_th?: string; message_th?: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/product-request/${id}`,
+        method: "PUT",
         data: body,
       }),
       invalidatesTags: ["ProductRequests"],
@@ -1563,6 +1619,44 @@ export const adminApi = createApi({
       query: () => ({ url: "/blog/public/categories", method: "GET" }),
     }),
 
+    // ── SITE CONTENT (Terms / Buy-with-confidence groups) ────────────────
+    getPublicSiteContent: builder.query<{ success: boolean; data: ContentGroup[] }, void>({
+      query: () => ({ url: "/site-content/public", method: "GET" }),
+      providesTags: ["SiteContent"],
+    }),
+    getAdminSiteContentGroups: builder.query<{ success: boolean; data: ContentGroup[] }, void>({
+      query: () => ({ url: "/site-content/admin/groups", method: "GET" }),
+      providesTags: ["SiteContent"],
+    }),
+    createContentGroup: builder.mutation<{ success: boolean; data: ContentGroup }, Partial<ContentGroup>>({
+      query: (body) => ({ url: "/site-content/admin/groups", method: "POST", data: body }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    updateContentGroup: builder.mutation<{ success: boolean; data: ContentGroup }, { id: number } & Partial<ContentGroup>>({
+      query: ({ id, ...body }) => ({ url: `/site-content/admin/groups/${id}`, method: "PUT", data: body }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    deleteContentGroup: builder.mutation<{ success: boolean }, number>({
+      query: (id) => ({ url: `/site-content/admin/groups/${id}`, method: "DELETE" }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    createContentItem: builder.mutation<{ success: boolean; data: ContentItem }, { groupId: number; label: string; content?: string; sort_order?: number; label_zh?: string; label_ja?: string; label_th?: string; content_zh?: string; content_ja?: string; content_th?: string }>({
+      query: ({ groupId, ...body }) => ({ url: `/site-content/admin/groups/${groupId}/items`, method: "POST", data: body }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    updateContentItem: builder.mutation<{ success: boolean; data: ContentItem }, { id: number; label?: string; content?: string; sort_order?: number; is_active?: boolean; label_zh?: string; label_ja?: string; label_th?: string; content_zh?: string; content_ja?: string; content_th?: string }>({
+      query: ({ id, ...body }) => ({ url: `/site-content/admin/items/${id}`, method: "PUT", data: body }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    deleteContentItem: builder.mutation<{ success: boolean }, number>({
+      query: (id) => ({ url: `/site-content/admin/items/${id}`, method: "DELETE" }),
+      invalidatesTags: ["SiteContent"],
+    }),
+    seedSiteContent: builder.mutation<{ success: boolean; message: string }, void>({
+      query: () => ({ url: "/site-content/admin/seed", method: "POST" }),
+      invalidatesTags: ["SiteContent"],
+    }),
+
     getSalesLeads: builder.query<
       {
         success: boolean;
@@ -1674,6 +1768,7 @@ export const {
   useUpdateProductRequestStatusMutation,
   useGetPublicWantedRequestsQuery,
   useAdminPostWantedMutation,
+  useEditProductRequestMutation,
   useTogglePublishProductRequestMutation,
   useDeleteProductRequestMutation,
 
@@ -1701,4 +1796,15 @@ export const {
   useGetPublicBlogsQuery,
   useGetPublicBlogBySlugQuery,
   useGetPublicBlogCategoriesQuery,
+
+  /* ---------- SITE CONTENT ---------- */
+  useGetPublicSiteContentQuery,
+  useGetAdminSiteContentGroupsQuery,
+  useCreateContentGroupMutation,
+  useUpdateContentGroupMutation,
+  useDeleteContentGroupMutation,
+  useCreateContentItemMutation,
+  useUpdateContentItemMutation,
+  useDeleteContentItemMutation,
+  useSeedSiteContentMutation,
 } = adminApi;

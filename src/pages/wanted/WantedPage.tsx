@@ -19,7 +19,7 @@ function RequestModal({
   onClose,
   prefillCategory = "",
   prefillMessage = "",
-  mode = "post", // "post" | "contact"
+  mode = "post",
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,8 +27,7 @@ function RequestModal({
   prefillMessage?: string;
   mode?: "post" | "contact";
 }) {
-  const { i18n } = useTranslation();
-  const isZh = i18n.language === "zh" || i18n.language === "zh-TW";
+  const { t } = useTranslation();
   const userId = localStorage.getItem("userId");
   const { data: profileData } = useGetUserProfileQuery(userId!, { skip: !userId });
   const [submitRequest, { isLoading }] = useSubmitProductRequestMutation();
@@ -43,7 +42,6 @@ function RequestModal({
     message: prefillMessage,
   });
 
-  // Pre-fill from profile
   useEffect(() => {
     if (!profileData?.data) return;
     const u = profileData.data;
@@ -59,7 +57,6 @@ function RequestModal({
     }));
   }, [profileData]);
 
-  // Reset when re-opened
   useEffect(() => {
     if (open) {
       setSubmitted(false);
@@ -77,7 +74,7 @@ function RequestModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email) {
-      toastError(isZh ? "姓名和電子郵件為必填" : "Name and email are required");
+      toastError(t("wanted.postModal.nameEmailRequired"));
       return;
     }
     try {
@@ -90,17 +87,15 @@ function RequestModal({
         user_id: userId || null,
       }).unwrap();
       setSubmitted(true);
-      toastSuccess(isZh ? "需求已提交！" : "Request submitted!");
+      toastSuccess(t("wanted.postModal.successToast"));
     } catch (err: any) {
-      toastError(err?.data?.message || (isZh ? "提交失敗" : "Failed to submit"));
+      toastError(err?.data?.message || t("wanted.postModal.nameEmailRequired"));
     }
   };
 
   if (!open) return null;
 
-  const title = mode === "contact"
-    ? (isZh ? "聯絡供應方" : "I can supply this")
-    : (isZh ? "發布採購需求" : "Post a Wanted Request");
+  const title = mode === "contact" ? t("wanted.postModal.contactTitle") : t("wanted.postModal.title");
 
   return (
     <div
@@ -123,26 +118,24 @@ function RequestModal({
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
-                {isZh ? "需求已提交！" : "Request Submitted!"}
+                {t("wanted.postModal.submitted")}
               </h3>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                {isZh ? "感謝您！我們的團隊將在24小時內與您聯繫。" : "Thank you! Our team will contact you within 24 hours."}
+                {t("wanted.postModal.submittedMsg")}
               </p>
-              <Button variant="outline" size="sm" onClick={onClose}>{isZh ? "關閉" : "Close"}</Button>
+              <Button variant="outline" size="sm" onClick={onClose}>{t("wanted.postModal.close")}</Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1">
                 <label className="block text-xs font-semibold text-foreground">
-                  {mode === "contact"
-                    ? (isZh ? "您提供的設備說明" : "Equipment you can supply")
-                    : (isZh ? "您在尋找什麼？" : "What are you looking for?")}
-                  <span className="text-muted-foreground font-normal ml-1">{isZh ? "（選填）" : "(optional)"}</span>
+                  {mode === "contact" ? t("wanted.postModal.canSupply") : t("wanted.postModal.whatLooking")}
+                  <span className="text-muted-foreground font-normal ml-1">{t("wanted.postModal.optional")}</span>
                 </label>
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-                  placeholder={isZh ? "例如：品牌、型號、數量、預算範圍..." : "e.g. brand, model, quantity, condition..."}
+                  placeholder={t("wanted.postModal.messagePlaceholder")}
                   rows={4}
                   className="text-sm resize-none w-full border border-input rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
@@ -150,36 +143,36 @@ function RequestModal({
 
               <div className="space-y-1">
                 <label className="block text-xs font-semibold text-foreground">
-                  {isZh ? "類別" : "Category"}
-                  <span className="text-muted-foreground font-normal ml-1">{isZh ? "（選填）" : "(optional)"}</span>
+                  {t("wanted.postModal.category")}
+                  <span className="text-muted-foreground font-normal ml-1">{t("wanted.postModal.optional")}</span>
                 </label>
                 <Input
                   value={form.category}
                   onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                  placeholder={isZh ? "例如：CNC 設備、測試儀器..." : "e.g. CNC Equipment, Test Instruments..."}
+                  placeholder={t("wanted.postModal.categoryPlaceholder")}
                   className="h-9 text-sm"
                 />
               </div>
 
               <div className="border-t border-border" />
-              <p className="text-xs font-semibold text-foreground">{isZh ? "您的聯絡資訊" : "Your contact details"}</p>
+              <p className="text-xs font-semibold text-foreground">{t("wanted.postModal.contactDetails")}</p>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-muted-foreground">
-                    {isZh ? "姓名" : "Name"} <span className="text-red-500">*</span>
+                    {t("wanted.postModal.name")} <span className="text-red-500">*</span>
                   </label>
                   <Input
                     value={form.name}
                     onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder={isZh ? "您的姓名" : "Your name"}
+                    placeholder={t("wanted.postModal.namePlaceholder")}
                     className="h-9 text-sm"
                     required
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="block text-xs font-medium text-muted-foreground">
-                    {isZh ? "電子郵件" : "Email"} <span className="text-red-500">*</span>
+                    {t("wanted.postModal.email")} <span className="text-red-500">*</span>
                   </label>
                   <Input
                     type="email"
@@ -194,13 +187,14 @@ function RequestModal({
 
               <div className="space-y-1">
                 <label className="block text-xs font-medium text-muted-foreground">
-                  {isZh ? "電話號碼" : "Phone"}<span className="ml-1 font-normal text-muted-foreground">{isZh ? "（選填）" : "(optional)"}</span>
+                  {t("wanted.postModal.phone")}
+                  <span className="ml-1 font-normal text-muted-foreground">{t("wanted.postModal.optional")}</span>
                 </label>
                 <Input
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder={isZh ? "您的電話" : "+886 or your number"}
+                  placeholder={t("wanted.postModal.phonePlaceholder")}
                   className="h-9 text-sm"
                 />
               </div>
@@ -208,14 +202,14 @@ function RequestModal({
               {!!userId && (
                 <div className="flex items-center gap-1.5 text-[11px] text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg">
                   <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  {isZh ? "聯絡資訊已從您的帳戶自動填入" : "Contact info auto-filled from your account"}
+                  {t("wanted.postModal.autofilled")}
                 </div>
               )}
 
               <Button type="submit" disabled={isLoading} className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-medium">
                 {isLoading
-                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{isZh ? "提交中..." : "Submitting..."}</>
-                  : <><Send className="w-4 h-4 mr-2" />{isZh ? "提交需求" : "Submit Request"}</>
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("wanted.postModal.submitting")}</>
+                  : <><Send className="w-4 h-4 mr-2" />{t("wanted.postModal.submit")}</>
                 }
               </Button>
             </form>
@@ -228,8 +222,7 @@ function RequestModal({
 
 // ── Detail modal ──────────────────────────────────────────────────────────────
 function DetailModal({ item, onClose, onContact }: { item: any; onClose: () => void; onContact: () => void }) {
-  const { i18n } = useTranslation();
-  const isZh = i18n.language === "zh" || i18n.language === "zh-TW";
+  const { t } = useTranslation();
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -273,13 +266,13 @@ function DetailModal({ item, onClose, onContact }: { item: any; onClose: () => v
           <div className="pt-2 border-t border-border flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               {item.posted_by === "admin" ? (
-                <><BadgeCheck className="w-4 h-4 text-primary" /><span className="text-primary font-medium">Posted by 101Lab</span></>
+                <><BadgeCheck className="w-4 h-4 text-primary" /><span className="text-primary font-medium">{t("wanted.postedBy101Lab")}</span></>
               ) : item.is_verified ? (
-                <><BadgeCheck className="w-4 h-4 text-green-600" /><span className="text-green-700 font-medium">Buyer verified</span></>
+                <><BadgeCheck className="w-4 h-4 text-green-600" /><span className="text-green-700 font-medium">{t("wanted.buyerVerified")}</span></>
               ) : null}
             </div>
             <Button onClick={onContact} className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-5 h-9">
-              Contact
+              {t("wanted.contact")}
             </Button>
           </div>
         </div>
@@ -311,8 +304,7 @@ function WantedCardSkeleton() {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function WantedPage() {
-  const { i18n } = useTranslation();
-  const isZh = i18n.language === "zh" || i18n.language === "zh-TW";
+  const { t, i18n } = useTranslation();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
@@ -320,9 +312,8 @@ export default function WantedPage() {
   const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get("search") || "");
   const [activeCategory, setActiveCategory] = useState(searchParams.get("category") || "all");
 
-  // Debounce search → URL
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       if (searchInput === debouncedSearch) return;
       setDebouncedSearch(searchInput);
       const p = new URLSearchParams(searchParams);
@@ -330,7 +321,7 @@ export default function WantedPage() {
       p.delete("page");
       setSearchParams(p);
     }, 400);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   const handleCategoryClick = (cat: string) => {
@@ -355,20 +346,27 @@ export default function WantedPage() {
     limit: 12,
   });
 
+  // Pick translated field based on current language, fall back to EN
+  const pickLang = (item: any, field: string) => {
+    const lang = i18n.language;
+    if (lang === "zh" || lang === "zh-TW") return item[`${field}_zh`] || item[field];
+    if (lang === "ja") return item[`${field}_ja`] || item[field];
+    if (lang === "th") return item[`${field}_th`] || item[field];
+    return item[field];
+  };
+
   const items = data?.data ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  // Derive category pills from the full unfiltered list
   const [allCategories, setAllCategories] = useState<string[]>([]);
   const { data: allData } = useGetPublicWantedRequestsQuery({ limit: 100 });
   useEffect(() => {
     if (!allData?.data) return;
-    const cats = [...new Set(allData.data.map((r) => r.category).filter(Boolean))];
+    const cats = [...new Set(allData.data.map((r) => pickLang(r, "category")).filter(Boolean))];
     setAllCategories(cats);
-  }, [allData]);
+  }, [allData, i18n.language]);
 
-  // Modals
   const [postOpen, setPostOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<any>(null);
   const [contactItem, setContactItem] = useState<any>(null);
@@ -403,25 +401,22 @@ export default function WantedPage() {
         <div className="container mx-auto max-w-3xl text-center space-y-4">
           <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary uppercase tracking-widest">
             <Star className="w-3.5 h-3.5 fill-primary" />
-            {isZh ? "公開採購需求" : "Public Buyer Requests"}
+            {t("wanted.badge")}
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight">
-            {isZh ? "採購需求" : "Wanted Equipment"}
+            {t("wanted.heading")}
           </h1>
           <p className="text-muted-foreground text-base max-w-xl mx-auto">
-            {isZh
-              ? "瀏覽來自 101Lab 認證買家的公開採購需求。有他們需要的設備？直接聯絡。"
-              : "Browse open requests from verified buyers across the 101 Lab network. Have what they need? Reach out directly."}
+            {t("wanted.subheading")}
           </p>
 
-          {/* Search + Post button */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2 max-w-xl mx-auto">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={isZh ? "搜尋關鍵字、品牌或規格..." : "Search by keyword, brand, or specification..."}
+                placeholder={t("wanted.searchPlaceholder")}
                 className="pl-10 h-11 bg-white shadow-sm border-border"
               />
             </div>
@@ -429,11 +424,10 @@ export default function WantedPage() {
               onClick={() => setPostOpen(true)}
               className="h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 flex-shrink-0"
             >
-              {isZh ? "發布需求" : "Post a Wanted"} →
+              {t("wanted.postButton")} →
             </Button>
           </div>
 
-          {/* Category pills */}
           {allCategories.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <button
@@ -444,7 +438,7 @@ export default function WantedPage() {
                     : "bg-white text-foreground border-border hover:border-primary hover:text-primary"
                 }`}
               >
-                {isZh ? "全部" : "ALL"}
+                {t("wanted.all")}
               </button>
               {allCategories.map((cat) => (
                 <button
@@ -468,32 +462,29 @@ export default function WantedPage() {
       <div className="container mx-auto px-4 py-10 max-w-6xl">
         <div className="flex items-center gap-2 mb-6">
           <Star className="w-4 h-4 text-primary fill-primary" />
-          <h2 className="text-xl font-bold text-foreground">{isZh ? "公開需求" : "Open Requests"}</h2>
+          <h2 className="text-xl font-bold text-foreground">{t("wanted.openRequests")}</h2>
           {!isLoading && (
             <span className="text-sm text-muted-foreground ml-1">
-              {total} {isZh ? "筆需求" : "listings found"}
+              {total} {t("wanted.listingsFound")}
             </span>
           )}
         </div>
 
-        {/* Skeleton */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => <WantedCardSkeleton key={i} />)}
           </div>
         )}
 
-        {/* Empty */}
         {!isLoading && items.length === 0 && (
           <div className="text-center py-20 space-y-3">
-            <p className="text-muted-foreground">{isZh ? "目前沒有符合的需求" : "No requests found."}</p>
+            <p className="text-muted-foreground">{t("wanted.noRequests")}</p>
             <Button variant="outline" onClick={() => setPostOpen(true)}>
-              {isZh ? "成為第一個發布需求的人" : "Be the first to post a wanted"}
+              {t("wanted.beFirst")}
             </Button>
           </div>
         )}
 
-        {/* Cards */}
         {!isLoading && items.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -505,38 +496,49 @@ export default function WantedPage() {
                   <div
                     key={item.id}
                     className="border border-border rounded-xl p-5 bg-card hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-3"
-                    onClick={() => setDetailItem(item)}
+                    onClick={() => setDetailItem({
+                      ...item,
+                      category: pickLang(item, "category") || "General",
+                      title: pickLang(item, "search_query") || (item.message ? item.message.substring(0, 80) : "Equipment Wanted"),
+                      description: pickLang(item, "message") || "",
+                    })}
                   >
                     <div className="flex items-center justify-between">
                       <Badge variant="secondary" className="text-[11px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border-0">
-                        {item.category}
+                        {pickLang(item, "category") || "General"}
                       </Badge>
                       <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Clock className="w-3 h-3" />{timeAgo}
                       </span>
                     </div>
 
-                    <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2">{item.title}</h3>
+                    <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2">
+                      {pickLang(item, "search_query") || (item.message ? item.message.substring(0, 80) : "Equipment Wanted")}
+                    </h3>
 
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{item.description}</p>
+                    {(pickLang(item, "message") || item.message) && (
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{pickLang(item, "message")}</p>
                     )}
 
                     <div className="mt-auto border-t border-border pt-3 flex items-center justify-between">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         {item.posted_by === "admin" ? (
-                          <><BadgeCheck className="w-3.5 h-3.5 text-primary" /><span className="text-primary font-medium">101Lab</span></>
+                          <><BadgeCheck className="w-3.5 h-3.5 text-primary" /><span className="text-primary font-medium">{t("wanted.postedBy101Lab")}</span></>
                         ) : item.is_verified ? (
-                          <><BadgeCheck className="w-3.5 h-3.5 text-green-600" /><span className="text-green-700">Buyer verified</span></>
+                          <><BadgeCheck className="w-3.5 h-3.5 text-green-600" /><span className="text-green-700">{t("wanted.buyerVerified")}</span></>
                         ) : null}
                       </div>
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-8 px-4 text-xs border-primary text-primary hover:bg-primary hover:text-white transition-colors"
-                        onClick={(e) => { e.stopPropagation(); handleContact(item); }}
+                        onClick={(e) => { e.stopPropagation(); handleContact({
+                          ...item,
+                          category: pickLang(item, "category") || "General",
+                          title: pickLang(item, "search_query") || "",
+                        }); }}
                       >
-                        Contact
+                        {t("wanted.contact")}
                       </Button>
                     </div>
                   </div>
@@ -544,11 +546,10 @@ export default function WantedPage() {
               })}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between py-8 mt-4">
                 <div className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages} ({total} requests)
+                  {t("wanted.page")} {currentPage} {t("wanted.of")} {totalPages} ({total} {t("wanted.requests")})
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => handlePageChange(currentPage - 1)} className="h-9 w-9 p-0">
@@ -573,14 +574,8 @@ export default function WantedPage() {
         )}
       </div>
 
-      {/* Post a Wanted modal */}
-      <RequestModal
-        open={postOpen}
-        onClose={() => setPostOpen(false)}
-        mode="post"
-      />
+      <RequestModal open={postOpen} onClose={() => setPostOpen(false)} mode="post" />
 
-      {/* Detail modal */}
       {detailItem && (
         <DetailModal
           item={detailItem}
@@ -589,7 +584,6 @@ export default function WantedPage() {
         />
       )}
 
-      {/* Contact modal */}
       {contactItem && (
         <RequestModal
           open={!!contactItem}
@@ -599,9 +593,8 @@ export default function WantedPage() {
           mode="contact"
         />
       )}
-    
-      <Footer/>
 
+      <Footer />
     </div>
   );
 }

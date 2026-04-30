@@ -68,6 +68,7 @@ import { formatDate } from "@/utils/formatDate";
 import i18n from "@/i18n/config";
 import { pushViewListingEvent, pushAddToWishlistEvent } from "@/utils/gtm";
 import axiosInstance from "@/rtk/api/axiosInstance";
+import { useGetPublicSiteContentQuery, type ContentGroup } from "@/rtk/slices/adminApiSlice";
 
 
 // Country name → ISO 3166-1 alpha-2 code → flag emoji
@@ -244,7 +245,7 @@ const SimilarBatchCard = ({ batch, lang, onClick }: { batch: any; lang: string; 
 const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const { openLoginModal } = useLoginModal();
 
@@ -313,6 +314,15 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [bidDialogMode, setBidDialogMode] = useState<"place_bid" | "make_offer" | "buy_now">("place_bid");
   const [makeOfferStep, setMakeOfferStep] = useState<"form" | "review">("form");
   const [openTerm, setOpenTerm] = useState<string | null>(null);
+  const { data: siteContentData } = useGetPublicSiteContentQuery();
+  const siteContentGroups: ContentGroup[] = siteContentData?.data ?? [];
+  const pickLangField = (obj: any, field: string) => {
+    const lang = i18n.language;
+    if (lang === "zh" || lang === "zh-TW") return obj[`${field}_zh`] || obj[field];
+    if (lang === "ja") return obj[`${field}_ja`] || obj[field];
+    if (lang === "th") return obj[`${field}_th`] || obj[field];
+    return obj[field];
+  };
   const [offerQuantity, setOfferQuantity] = useState<number>(1);
   // ── NEW: confirmation step for place bid ──
   const [placeBidStep, setPlaceBidStep] = useState<"form" | "review">("form");
@@ -395,7 +405,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
   const handleWishlistToggle = useCallback(
     async (productId: number, productTitle?: string) => {
-      if (!userId) { toast.error("Please login to add to wishlist"); return; }
+      if (!userId) { toast.error("Please login to add to favourites"); return; }
       if (wishlistLoading[productId]) return;
       const prev = wishlistMap[productId] ?? false;
       setWishlistMap((m) => ({ ...m, [productId]: !prev }));
@@ -405,16 +415,16 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
         const action = res.data?.data?.action;
         if (action === "added") {
           setWishlistMap((m) => ({ ...m, [productId]: true }));
-          toast.success("Added to wishlist");
+          toast.success("Added to favourites");
           try { pushAddToWishlistEvent({ listing_id: productId, listing_title: productTitle ?? "" }); } catch { }
         } else if (action === "removed") {
           setWishlistMap((m) => ({ ...m, [productId]: false }));
-          toast.success("Removed from wishlist");
+          toast.success("Removed from favourites");
         }
         window.dispatchEvent(new Event("wishlist-changed"));
       } catch {
         setWishlistMap((m) => ({ ...m, [productId]: prev }));
-        toast.error("Failed to update wishlist");
+        toast.error("Failed to update favourites");
       } finally {
         setWishlistLoading((m) => ({ ...m, [productId]: false }));
       }
@@ -978,23 +988,6 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </span>
                       </div>
 
-                      {/* Removal & Shipping */}
-                      <div className="flex items-baseline gap-1.5 text-sm mb-6 py-4">
-                        <span className="text-muted-foreground font-medium">Removal &amp; Shipping:</span>
-                        <span className="text-foreground">
-                          {product.removal_shipping || "Buyer Must Arrange."}
-                          {" "}
-                          <button
-                            onClick={() => {
-                              const el = document.getElementById("logistics-section");
-                              if (el) el.scrollIntoView({ behavior: "smooth" });
-                            }}
-                            className="text-primary hover:underline text-xs font-medium"
-                          >
-                            See details.
-                          </button>
-                        </span>
-                      </div>
 
                       {/* Countdown / Bid Status */}
                       {bidDetail && isLiveBidding && batchStep > 4 && (
@@ -1150,7 +1143,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         onClick={() => handleWishlistToggle(product.id, product.title)}
                       >
                         <Heart className={cn("w-4 h-4 mr-2", wishlistMap[product.id] && "fill-primary text-primary")} />
-                        {wishlistMap[product.id] ? "Saved to Wishlist" : "Add to Wishlist"}
+                        {wishlistMap[product.id] ? t("buyer.savedToFavourite") || "Saved to Favourites" : t("buyer.addToFavourite") || "Add to Favourites"}
                       </Button>
 
                       {/* Watchers / Visitors stats */}
@@ -1450,7 +1443,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                     </div>
                                     <div className="text-sm">
                                       <p className="text-foreground">
-                                        <span className="font-semibold">Condition:</span>{" "}
+                                        <span className="font-semibold">{t("buyer.condition")}:</span>{" "}
                                         <span className="text-primary capitalize">
                                           {parsePhpArray(product.condition).join(", ") || product.condition}
                                         </span>
@@ -1466,7 +1459,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                     <div className="text-sm">
                                       <p className="text-foreground">
                                         <span className="font-semibold">{t("buyer.category")}:</span>{" "}
-                                        <span className="uppercase tracking-wide text-xs font-semibold text-muted-foreground">{product.category}</span>
+                                        <span className="uppercase tracking-wide text-xs font-semibold text-muted-foreground">{translateCategoryName(product.category, i18n.language as 'en' | 'zh')}</span>
                                       </p>
                                     </div>
                                   </div>
@@ -1606,175 +1599,64 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                     </section>
                   )}
 
-                  {/* Sale Terms & Conditions */}
-                  <section id="sale-terms-section">
-                    <h2 className="text-xl font-bold text-foreground mb-4">Sale Terms &amp; Conditions</h2>
-                    <div className="rounded-xl border border-border divide-y divide-border">
-                      {[
-                        {
-                          key: "inspection",
-                          label: "Inspection Terms",
-                          content: "All items are sold as-is, where-is. Buyers are encouraged to inspect items prior to bidding. Inspection appointments must be scheduled in advance. The seller makes no warranty, expressed or implied, regarding the condition, fitness for use, or merchantability of any item.",
-                        },
-                        {
-                          key: "seller",
-                          label: "Seller Terms",
-                          content: "Payment is due within 3 business days of award notification. Accepted payment methods include bank transfer, escrow, and approved digital payment methods. Items not paid for within the specified timeframe may be forfeited without refund of any deposit.",
-                        },
-                        {
-                          key: "removal",
-                          label: "Removal Terms",
-                          content: "All purchased items must be removed within 10 business days of payment confirmation. Buyer is responsible for all rigging, loading, and transportation costs unless otherwise stated. Items not removed by the deadline may be subject to storage fees or forfeiture.",
-                        },
-                      ].map(({ key, label, content }) => (
-                        <div key={key}>
-                          <button
-                            type="button"
-                            onClick={() => setOpenTerm(openTerm === key ? null : key)}
-                            className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors text-left"
-                          >
-                            <span>{label}</span>
-                            <ChevronDown
-                              className={cn(
-                                "w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0",
-                                openTerm === key && "rotate-180"
-                              )}
-                            />
-                          </button>
-                          {openTerm === key && (
-                            <div className="px-5 pb-4 text-sm text-muted-foreground">
-                              {content}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                  {/* Dynamic site content groups — all language-aware */}
+                  {siteContentGroups.map((group) => {
+                    const isBulletGroup = group.slug === "buy-confidence";
+                    const items = (group.items ?? []).filter((it) => it.is_active);
+                    if (items.length === 0) return null;
+                    const groupName = pickLangField(group, "name");
 
-                  {/* 101Lab Terms and Conditions */}
-                  <section>
-                    <h2 className="text-xl font-bold text-foreground mb-4">101Lab Terms and Conditions</h2>
-                    <div className="rounded-xl border border-border divide-y divide-border">
-                      {[
-                        {
-                          key: "terms-of-use",
-                          label: "Terms of Use",
-                          content: (
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Acceptance of Terms</h4>
-                                <p>By accessing and using GIH Co. Ltd, you agree to comply with and be bound by these Terms of Use. If you do not agree, please refrain from using the Site.</p>
+                    if (isBulletGroup) {
+                      return (
+                        <section key={group.id} className="pb-6">
+                          <h2 className="text-xl font-bold text-foreground mb-2">{groupName}</h2>
+                          <p className="text-sm text-primary mb-5">Built for industrial buyers across Asia-Pacific.</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
+                            {items.map((item) => (
+                              <div key={item.id} className="flex items-start gap-2 text-sm text-foreground">
+                                <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                                <span>{pickLangField(item, "label")}</span>
                               </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Intellectual Property</h4>
-                                <p>All content, including text, graphics, logos, and code, is the property of GIH Co. Ltd or its content suppliers and is protected by international copyright laws. You may not reproduce, distribute, or create derivative works without express written permission.</p>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">User Conduct</h4>
-                                <p className="mb-1">Users agree not to:</p>
-                                <ul className="list-disc list-inside space-y-1 pl-2">
-                                  <li>Use the Site for any unlawful purpose.</li>
-                                  <li>Attempt to interfere with the proper working of the Site or bypass security measures.</li>
-                                  <li>Post or transmit any software viruses or malicious code.</li>
-                                </ul>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Disclaimer of Warranties</h4>
-                                <p>The Site and its contents are provided on an "as-is" basis. GIH Co. Ltd makes no representations or warranties of any kind, express or implied, regarding the accuracy or availability of the Site.</p>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Limitation of Liability</h4>
-                                <p>In no event shall GIH Co. Ltd be liable for any damages (including, without limitation, damages for loss of data or profit) arising out of the use or inability to use the materials on the Site.</p>
-                              </div>
-                            </div>
-                          ),
-                        },
-                        {
-                          key: "privacy-policy",
-                          label: "Privacy Policy",
-                          content: (
-                            <div className="space-y-4">
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Information We Collect</h4>
-                                <p className="mb-1">We collect information to provide better services to our users. This may include:</p>
-                                <ul className="list-disc list-inside space-y-1 pl-2">
-                                  <li><span className="font-medium text-foreground">Personal Information:</span> Name, email address, or contact details provided voluntarily via forms.</li>
-                                  <li><span className="font-medium text-foreground">Usage Data:</span> IP addresses, browser types, and pages visited, collected automatically via cookies to improve site performance.</li>
-                                </ul>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">How We Use Your Information</h4>
-                                <p className="mb-1">We use the collected data to:</p>
-                                <ul className="list-disc list-inside space-y-1 pl-2">
-                                  <li>Operate and maintain the Site.</li>
-                                  <li>Respond to inquiries or provide customer support.</li>
-                                  <li>Monitor usage patterns to enhance user experience.</li>
-                                </ul>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Cookies</h4>
-                                <p>We use cookies to track activity on our Site. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. However, some portions of the Site may not function properly without them.</p>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Data Security</h4>
-                                <p>The security of your data is important to us, but remember that no method of transmission over the Internet is 100% secure. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.</p>
-                              </div>
-                              <div>
-                                <h4 className="font-semibold text-foreground mb-1">Third-Party Links</h4>
-                                <p>Our Site may contain links to other sites that are not operated by us. We strongly advise you to review the Privacy Policy of every site you visit.</p>
-                              </div>
-                            </div>
-                          ),
-                        },
-                      ].map(({ key, label, content }) => (
-                        <div key={key}>
-                          <button
-                            type="button"
-                            onClick={() => setOpenTerm(openTerm === key ? null : key)}
-                            className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors text-left"
-                          >
-                            <span>{label}</span>
-                            <ChevronDown
-                              className={cn(
-                                "w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0",
-                                openTerm === key && "rotate-180"
-                              )}
-                            />
-                          </button>
-                          {openTerm === key && (
-                            <div className="px-5 pb-5 text-sm text-muted-foreground">
-                              {content}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                            ))}
+                          </div>
+                        </section>
+                      );
+                    }
 
-                  {/* Buy with Confidence on 101Lab */}
-                  <section className="pb-6">
-                    <h2 className="text-xl font-bold text-foreground mb-2">Buy with Confidence on 101Lab</h2>
-                    <p className="text-sm text-primary mb-5">Built for industrial buyers across Asia-Pacific.</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
-                      {[
-                        "Verified sellers across India, China, Japan, Korea & SEA",
-                        "GST, VAT & customs documentation handled",
-                        "Escrow-secured payments via UPI, Alipay & bank transfer",
-                        "Port-to-port & door-to-door freight across APAC",
-                        "On-site inspection available in 50+ Asian cities",
-                        "Multi-currency pricing \u2014 INR, CNY, JPY, SGD, USD",
-                        "WhatsApp, WeChat & LINE seller chat support",
-                        "Local-language support: English, Hindi, Mandarin, Japanese",
-                        "Trusted logistics partners \u2014 DHL, Maersk, ONE Line",
-                        "Compliance with India BIS, China CCC & Japan PSE standards",
-                      ].map((item) => (
-                        <div key={item} className="flex items-start gap-2 text-sm text-foreground">
-                          <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span>{item}</span>
+                    return (
+                      <section key={group.id} id={`section-${group.slug}`}>
+                        <h2 className="text-xl font-bold text-foreground mb-4">{groupName}</h2>
+                        <div className="rounded-xl border border-border divide-y divide-border">
+                          {items.map((item) => {
+                            const termKey = `${group.slug}-${item.id}`;
+                            const itemLabel   = pickLangField(item, "label");
+                            const itemContent = pickLangField(item, "content");
+                            return (
+                              <div key={item.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenTerm(openTerm === termKey ? null : termKey)}
+                                  className="w-full flex items-center justify-between px-5 py-4 text-sm font-medium text-foreground hover:bg-muted/30 transition-colors text-left"
+                                >
+                                  <span>{itemLabel}</span>
+                                  <ChevronDown
+                                    className={cn(
+                                      "w-4 h-4 text-muted-foreground transition-transform duration-200 flex-shrink-0",
+                                      openTerm === termKey && "rotate-180"
+                                    )}
+                                  />
+                                </button>
+                                {openTerm === termKey && itemContent && (
+                                  <div className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed sun-editor-editable"
+                                    dangerouslySetInnerHTML={{ __html: itemContent }} />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  </section>
+                      </section>
+                    );
+                  })}
 
                 </div>
 

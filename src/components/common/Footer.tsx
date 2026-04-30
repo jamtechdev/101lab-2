@@ -38,7 +38,7 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-card">
       {/* CTA banner */}
-      <div className="border-b border-card/10">
+      {/* <div className="border-b border-card/10">
         <div className="container mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logo} alt="GreenBidz" className="h-6 w-auto brightness-200" />
@@ -52,7 +52,7 @@ const Footer = () => {
             </Button>
           </a>
         </div>
-      </div>
+      </div> */}
 
       <div className="container mx-auto px-4 py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10">

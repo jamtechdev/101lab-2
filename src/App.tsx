@@ -68,6 +68,7 @@ import AdminOffersOrders from "./pages/Admin/AdminOffersOrders";
 import AdminSalesLeads from "./pages/Admin/AdminSalesLeads";
 import AdminBlogs from "./pages/Admin/AdminBlogs";
 import AdminBlogEditor from "./pages/Admin/AdminBlogEditor";
+import AdminSiteContent from "./pages/Admin/AdminSiteContent";
 import BlogPage from "./pages/blog/BlogPage";
 import BlogDetail from "./pages/blog/BlogDetail";
 
@@ -375,6 +376,7 @@ const App = () => {
                 <Route path="/admin/blogs" element={<AdminBlogs />} />
                 <Route path="/admin/blogs/new" element={<AdminBlogEditor />} />
                 <Route path="/admin/blogs/:id/edit" element={<AdminBlogEditor />} />
+                <Route path="/admin/site-content" element={<AdminSiteContent />} />
                 <Route path="/admin/settings/email" element={<EmailTypesPage />} />
                 <Route path="/admin/email-types/:typeId" element={<TypeDetailsModal />} />
               </Route>

@@ -4,6 +4,7 @@ import {
   Search, X, ChevronLeft, ChevronRight, MessageSquare, Globe, EyeOff,
   Trash2, Plus, Send, Loader2, CheckCircle2, Reply, Clock, BadgeCheck,
   Tag, Mail, Phone, StickyNote, ChevronDown, ChevronUp, Users, ShieldCheck,
+  Languages, Pencil, Save,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ import {
   useAdminPostWantedMutation,
   useTogglePublishProductRequestMutation,
   useDeleteProductRequestMutation,
+  useTranslateBlogContentMutation,
+  useEditProductRequestMutation,
 } from "@/rtk/slices/adminApiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
@@ -88,7 +91,41 @@ export default function AdminProductRequests() {
   const [noteInputs, setNoteInputs]     = useState<Record<number, string>>({});
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [showPostForm, setShowPostForm] = useState(false);
-  const [postForm, setPostForm]         = useState({ category: "", search_query: "", message: "" });
+  const [postLangTab, setPostLangTab]   = useState<"en" | "zh" | "ja" | "th">("en");
+
+  // Edit dialog state
+  const [editItem, setEditItem]         = useState<any>(null);
+  const [editLangTab, setEditLangTab]   = useState<"en" | "zh" | "ja" | "th">("en");
+  const [editCategory, setEditCategory] = useState("");
+  const [editTitle, setEditTitle]       = useState("");
+  const [editMessage, setEditMessage]   = useState("");
+  const [editCategoryZh, setEditCategoryZh] = useState("");
+  const [editTitleZh, setEditTitleZh]       = useState("");
+  const [editMessageZh, setEditMessageZh]   = useState("");
+  const [editCategoryJa, setEditCategoryJa] = useState("");
+  const [editTitleJa, setEditTitleJa]       = useState("");
+  const [editMessageJa, setEditMessageJa]   = useState("");
+  const [editCategoryTh, setEditCategoryTh] = useState("");
+  const [editTitleTh, setEditTitleTh]       = useState("");
+  const [editMessageTh, setEditMessageTh]   = useState("");
+  const [editTranslatingLang, setEditTranslatingLang] = useState<"zh"|"ja"|"th"|null>(null);
+
+  // Post form — EN (primary)
+  const [postCategory, setPostCategory]   = useState("");
+  const [postTitle, setPostTitle]         = useState("");
+  const [postMessage, setPostMessage]     = useState("");
+  // ZH
+  const [postCategoryZh, setPostCategoryZh] = useState("");
+  const [postTitleZh, setPostTitleZh]       = useState("");
+  const [postMessageZh, setPostMessageZh]   = useState("");
+  // JA
+  const [postCategoryJa, setPostCategoryJa] = useState("");
+  const [postTitleJa, setPostTitleJa]       = useState("");
+  const [postMessageJa, setPostMessageJa]   = useState("");
+  // TH
+  const [postCategoryTh, setPostCategoryTh] = useState("");
+  const [postTitleTh, setPostTitleTh]       = useState("");
+  const [postMessageTh, setPostMessageTh]   = useState("");
 
   const { data, isLoading, isFetching, refetch } = useGetAdminProductRequestsQuery({
     status: statusFilter !== "all" ? statusFilter : undefined,
@@ -100,6 +137,9 @@ export default function AdminProductRequests() {
   const [adminPostWanted, { isLoading: isPosting }] = useAdminPostWantedMutation();
   const [togglePublish] = useTogglePublishProductRequestMutation();
   const [deleteRequest] = useDeleteProductRequestMutation();
+  const [translateBlog, { isLoading: translating }] = useTranslateBlogContentMutation();
+  const [editProductRequest, { isLoading: isSaving }] = useEditProductRequestMutation();
+  const [translatingLang, setTranslatingLang] = useState<"zh" | "ja" | "th" | null>(null);
 
   const loading = isLoading || isFetching;
 
@@ -162,21 +202,184 @@ export default function AdminProductRequests() {
     }
   };
 
+  const handleTranslateLang = async (lang: "zh" | "ja" | "th") => {
+    if (!postTitle.trim()) { toastError("Enter a title first"); return; }
+    setTranslatingLang(lang);
+    try {
+      const res = await translateBlog({ title: `${postCategory ? postCategory + "\n" : ""}${postTitle}`, content: postMessage }).unwrap();
+      const d = res.data;
+      if (lang === "zh") {
+        const lines = d.title_zh.split("\n");
+        if (postCategory) { setPostCategoryZh(lines[0] ?? ""); setPostTitleZh(lines.slice(1).join(" ") || d.title_zh); } else setPostTitleZh(d.title_zh);
+        setPostMessageZh(d.content_zh ?? "");
+      }
+      if (lang === "ja") {
+        const lines = d.title_ja.split("\n");
+        if (postCategory) { setPostCategoryJa(lines[0] ?? ""); setPostTitleJa(lines.slice(1).join(" ") || d.title_ja); } else setPostTitleJa(d.title_ja);
+        setPostMessageJa(d.content_ja ?? "");
+      }
+      if (lang === "th") {
+        const lines = d.title_th.split("\n");
+        if (postCategory) { setPostCategoryTh(lines[0] ?? ""); setPostTitleTh(lines.slice(1).join(" ") || d.title_th); } else setPostTitleTh(d.title_th);
+        setPostMessageTh(d.content_th ?? "");
+      }
+      toastSuccess(`Translated to ${lang.toUpperCase()}`);
+    } catch (err: any) {
+      toastError(err?.data?.message ?? "Translation failed");
+    } finally {
+      setTranslatingLang(null);
+    }
+  };
+
+  const handleTranslateAll = async () => {
+    if (!postTitle.trim()) { toastError("Enter a title first"); return; }
+    try {
+      const res = await translateBlog({ title: `${postCategory ? postCategory + "\n" : ""}${postTitle}`, content: postMessage }).unwrap();
+      const d = res.data;
+      const extractParts = (raw: string) => {
+        const lines = raw.split("\n");
+        return postCategory ? { cat: lines[0] ?? "", title: lines.slice(1).join(" ") || raw } : { cat: "", title: raw };
+      };
+      const zh = extractParts(d.title_zh); setPostCategoryZh(zh.cat); setPostTitleZh(zh.title); setPostMessageZh(d.content_zh ?? "");
+      const ja = extractParts(d.title_ja); setPostCategoryJa(ja.cat); setPostTitleJa(ja.title); setPostMessageJa(d.content_ja ?? "");
+      const th = extractParts(d.title_th); setPostCategoryTh(th.cat); setPostTitleTh(th.title); setPostMessageTh(d.content_th ?? "");
+      toastSuccess("Translated into Chinese, Japanese and Thai");
+    } catch (err: any) {
+      toastError(err?.data?.message ?? "Translation failed");
+    }
+  };
+
+  const resetPostForm = () => {
+    setPostCategory(""); setPostTitle(""); setPostMessage("");
+    setPostCategoryZh(""); setPostTitleZh(""); setPostMessageZh("");
+    setPostCategoryJa(""); setPostTitleJa(""); setPostMessageJa("");
+    setPostCategoryTh(""); setPostTitleTh(""); setPostMessageTh("");
+    setPostLangTab("en");
+  };
+
+  const openEditDialog = (req: any) => {
+    setEditItem(req);
+    setEditLangTab("en");
+    setEditCategory(req.category || "");
+    setEditTitle(req.search_query || "");
+    setEditMessage(req.message || "");
+    setEditCategoryZh(req.category_zh || "");
+    setEditTitleZh(req.search_query_zh || "");
+    setEditMessageZh(req.message_zh || "");
+    setEditCategoryJa(req.category_ja || "");
+    setEditTitleJa(req.search_query_ja || "");
+    setEditMessageJa(req.message_ja || "");
+    setEditCategoryTh(req.category_th || "");
+    setEditTitleTh(req.search_query_th || "");
+    setEditMessageTh(req.message_th || "");
+  };
+
+  const handleEditTranslateLang = async (lang: "zh" | "ja" | "th") => {
+    if (!editTitle.trim()) { toastError("Enter a title first"); return; }
+    setEditTranslatingLang(lang);
+    try {
+      const res = await translateBlog({ title: `${editCategory ? editCategory + "\n" : ""}${editTitle}`, content: editMessage }).unwrap();
+      const d = res.data;
+      const extractParts = (raw: string) => {
+        const lines = raw.split("\n");
+        return editCategory ? { cat: lines[0] ?? "", title: lines.slice(1).join(" ") || raw } : { cat: "", title: raw };
+      };
+      if (lang === "zh") { const p = extractParts(d.title_zh); setEditCategoryZh(p.cat); setEditTitleZh(p.title); setEditMessageZh(d.content_zh ?? ""); }
+      if (lang === "ja") { const p = extractParts(d.title_ja); setEditCategoryJa(p.cat); setEditTitleJa(p.title); setEditMessageJa(d.content_ja ?? ""); }
+      if (lang === "th") { const p = extractParts(d.title_th); setEditCategoryTh(p.cat); setEditTitleTh(p.title); setEditMessageTh(d.content_th ?? ""); }
+      toastSuccess(`Translated to ${lang.toUpperCase()}`);
+    } catch (err: any) {
+      toastError(err?.data?.message ?? "Translation failed");
+    } finally {
+      setEditTranslatingLang(null);
+    }
+  };
+
+  const handleEditTranslateAll = async () => {
+    if (!editTitle.trim()) { toastError("Enter a title first"); return; }
+    try {
+      const res = await translateBlog({ title: `${editCategory ? editCategory + "\n" : ""}${editTitle}`, content: editMessage }).unwrap();
+      const d = res.data;
+      const extractParts = (raw: string) => {
+        const lines = raw.split("\n");
+        return editCategory ? { cat: lines[0] ?? "", title: lines.slice(1).join(" ") || raw } : { cat: "", title: raw };
+      };
+      const zh = extractParts(d.title_zh); setEditCategoryZh(zh.cat); setEditTitleZh(zh.title); setEditMessageZh(d.content_zh ?? "");
+      const ja = extractParts(d.title_ja); setEditCategoryJa(ja.cat); setEditTitleJa(ja.title); setEditMessageJa(d.content_ja ?? "");
+      const th = extractParts(d.title_th); setEditCategoryTh(th.cat); setEditTitleTh(th.title); setEditMessageTh(d.content_th ?? "");
+      toastSuccess("Translated into Chinese, Japanese and Thai");
+    } catch (err: any) {
+      toastError(err?.data?.message ?? "Translation failed");
+    }
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTitle.trim()) { toastError("Title is required"); return; }
+    try {
+      await editProductRequest({
+        id: editItem.id,
+        category:        editCategory   || undefined,
+        search_query:    editTitle,
+        message:         editMessage    || undefined,
+        category_zh:     editCategoryZh || undefined,
+        search_query_zh: editTitleZh    || undefined,
+        message_zh:      editMessageZh  || undefined,
+        category_ja:     editCategoryJa || undefined,
+        search_query_ja: editTitleJa    || undefined,
+        message_ja:      editMessageJa  || undefined,
+        category_th:     editCategoryTh || undefined,
+        search_query_th: editTitleTh    || undefined,
+        message_th:      editMessageTh  || undefined,
+      }).unwrap();
+      toastSuccess("Saved");
+      setEditItem(null);
+      refetch();
+    } catch (err: any) {
+      toastError(err?.data?.message || "Failed to save");
+    }
+  };
+
   const handlePostWanted = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postForm.search_query && !postForm.message) {
-      toastError("Title or description is required");
-      return;
+    if (!postTitle.trim()) { toastError("Title is required"); return; }
+
+    let cZh = postCategoryZh, tZh = postTitleZh, mZh = postMessageZh;
+    let cJa = postCategoryJa, tJa = postTitleJa, mJa = postMessageJa;
+    let cTh = postCategoryTh, tTh = postTitleTh, mTh = postMessageTh;
+
+    if (!tZh.trim() || !tJa.trim() || !tTh.trim()) {
+      try {
+        const res = await translateBlog({ title: `${postCategory ? postCategory + "\n" : ""}${postTitle}`, content: postMessage }).unwrap();
+        const d = res.data;
+        const extractParts = (raw: string) => {
+          const lines = raw.split("\n");
+          return postCategory ? { cat: lines[0] ?? "", title: lines.slice(1).join(" ") || raw } : { cat: "", title: raw };
+        };
+        if (!tZh.trim()) { const p = extractParts(d.title_zh); cZh = p.cat; tZh = p.title; mZh = d.content_zh ?? ""; }
+        if (!tJa.trim()) { const p = extractParts(d.title_ja); cJa = p.cat; tJa = p.title; mJa = d.content_ja ?? ""; }
+        if (!tTh.trim()) { const p = extractParts(d.title_th); cTh = p.cat; tTh = p.title; mTh = d.content_th ?? ""; }
+      } catch { /* save anyway */ }
     }
+
     try {
       await adminPostWanted({
-        category:     postForm.category     || undefined,
-        search_query: postForm.search_query || undefined,
-        message:      postForm.message      || undefined,
+        category:        postCategory || undefined,
+        search_query:    postTitle,
+        message:         postMessage || undefined,
+        category_zh:     cZh || undefined,
+        search_query_zh: tZh || undefined,
+        message_zh:      mZh || undefined,
+        category_ja:     cJa || undefined,
+        search_query_ja: tJa || undefined,
+        message_ja:      mJa || undefined,
+        category_th:     cTh || undefined,
+        search_query_th: tTh || undefined,
+        message_th:      mTh || undefined,
       }).unwrap();
       toastSuccess("Published to public wanted board");
       setShowPostForm(false);
-      setPostForm({ category: "", search_query: "", message: "" });
+      resetPostForm();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to post");
     }
@@ -227,8 +430,8 @@ export default function AdminProductRequests() {
           </div>
 
           {/* ── Admin Post Wanted Modal ── */}
-          <Dialog open={showPostForm} onOpenChange={setShowPostForm}>
-            <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden">
+          <Dialog open={showPostForm} onOpenChange={(open) => { setShowPostForm(open); if (!open) resetPostForm(); }}>
+            <DialogContent className="sm:max-w-[580px] p-0 gap-0 overflow-hidden">
               <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-1">
                   <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -246,38 +449,135 @@ export default function AdminProductRequests() {
               </DialogHeader>
 
               <form onSubmit={handlePostWanted} className="px-6 py-5 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      Title <span className="text-red-500 normal-case font-normal">*</span>
-                    </label>
-                    <Input
-                      value={postForm.search_query}
-                      onChange={(e) => setPostForm((p) => ({ ...p, search_query: e.target.value }))}
-                      placeholder="e.g. CNC Machine Fanuc 0i..."
-                      className="h-10"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Category</label>
-                    <Input
-                      value={postForm.category}
-                      onChange={(e) => setPostForm((p) => ({ ...p, category: e.target.value }))}
-                      placeholder="e.g. CNC Equipment..."
-                      className="h-10"
-                    />
-                  </div>
-                </div>
+                {/* Language tabs */}
+                <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Description</label>
-                  <textarea
-                    value={postForm.message}
-                    onChange={(e) => setPostForm((p) => ({ ...p, message: e.target.value }))}
-                    placeholder="Brand, model, quantity, condition, specs, budget range..."
-                    rows={4}
-                    className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
-                  />
+                  {/* Translate All — above tabs, always visible */}
+                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                    <p className="text-xs text-gray-400">Write in English, then auto-translate to all languages.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTranslateAll}
+                      disabled={translating || !postTitle.trim()}
+                      className="gap-1.5 h-7 text-xs shrink-0 ml-3 border-primary/30 text-primary hover:bg-primary/5"
+                    >
+                      {translating && !translatingLang
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> Translating…</>
+                        : <><Languages className="w-3 h-3" /> Translate All with AI</>
+                      }
+                    </Button>
+                  </div>
+
+                  <Tabs value={postLangTab} onValueChange={(v) => setPostLangTab(v as any)}>
+                    <TabsList className="w-full rounded-none border-b bg-muted/20 h-9">
+                      <TabsTrigger value="en" className="flex-1 text-xs h-8">🇺🇸 English</TabsTrigger>
+                      <TabsTrigger value="zh" className="flex-1 text-xs h-8">
+                        🇹🇼 中文 {postTitleZh && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                      <TabsTrigger value="ja" className="flex-1 text-xs h-8">
+                        🇯🇵 日本語 {postTitleJa && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                      <TabsTrigger value="th" className="flex-1 text-xs h-8">
+                        🇹🇭 ไทย {postTitleTh && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* English */}
+                    <div className="p-4 space-y-3">
+                      {postLangTab === "en" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Category</label>
+                            <Input value={postCategory} onChange={(e) => setPostCategory(e.target.value)} placeholder="e.g. CNC Equipment..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Title <span className="text-red-500 normal-case font-normal">*</span>
+                            </label>
+                            <Input value={postTitle} onChange={(e) => setPostTitle(e.target.value)} placeholder="e.g. CNC Machine Fanuc 0i..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Description</label>
+                            <textarea value={postMessage} onChange={(e) => setPostMessage(e.target.value)} placeholder="Brand, model, quantity, condition, specs, budget range..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Chinese */}
+                      {postLangTab === "zh" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Chinese content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleTranslateLang("zh")} disabled={translating || !postTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {translatingLang === "zh" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">類別 (Category)</label>
+                            <Input value={postCategoryZh} onChange={(e) => setPostCategoryZh(e.target.value)} placeholder="例：CNC設備..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">標題 (Title)</label>
+                            <Input value={postTitleZh} onChange={(e) => setPostTitleZh(e.target.value)} placeholder="中文標題..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">描述 (Description)</label>
+                            <textarea value={postMessageZh} onChange={(e) => setPostMessageZh(e.target.value)} placeholder="中文描述..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Japanese */}
+                      {postLangTab === "ja" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Japanese content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleTranslateLang("ja")} disabled={translating || !postTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {translatingLang === "ja" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">カテゴリー (Category)</label>
+                            <Input value={postCategoryJa} onChange={(e) => setPostCategoryJa(e.target.value)} placeholder="例：CNC機器..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">タイトル (Title)</label>
+                            <Input value={postTitleJa} onChange={(e) => setPostTitleJa(e.target.value)} placeholder="日本語タイトル..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">説明 (Description)</label>
+                            <textarea value={postMessageJa} onChange={(e) => setPostMessageJa(e.target.value)} placeholder="日本語の説明..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Thai */}
+                      {postLangTab === "th" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Thai content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleTranslateLang("th")} disabled={translating || !postTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {translatingLang === "th" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">หมวดหมู่ (Category)</label>
+                            <Input value={postCategoryTh} onChange={(e) => setPostCategoryTh(e.target.value)} placeholder="เช่น อุปกรณ์ CNC..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">หัวข้อ (Title)</label>
+                            <Input value={postTitleTh} onChange={(e) => setPostTitleTh(e.target.value)} placeholder="ชื่อเรื่องภาษาไทย..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">คำอธิบาย (Description)</label>
+                            <textarea value={postMessageTh} onChange={(e) => setPostMessageTh(e.target.value)} placeholder="คำอธิบายภาษาไทย..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Tabs>
                 </div>
 
                 <div className="flex gap-3 pt-1 border-t border-gray-100">
@@ -285,18 +585,192 @@ export default function AdminProductRequests() {
                     type="button"
                     variant="outline"
                     className="flex-1 h-10"
-                    onClick={() => setShowPostForm(false)}
+                    onClick={() => { setShowPostForm(false); resetPostForm(); }}
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isPosting}
+                    disabled={isPosting || translating}
                     className="flex-1 h-10 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                   >
                     {isPosting
                       ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Publishing...</>
                       : <><Send className="w-3.5 h-3.5" /> Publish to Board</>
+                    }
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Edit Wanted Dialog ── */}
+          <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+            <DialogContent className="sm:max-w-[580px] p-0 gap-0 overflow-hidden">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="h-9 w-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                    <Pencil className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-base font-bold text-gray-900 leading-tight">
+                      Edit Wanted Post
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-gray-500 mt-0.5">
+                      Update the content in all languages. Changes save immediately.
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <form onSubmit={handleEditSave} className="px-6 py-5 space-y-4">
+                <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+
+                  {/* Translate All — above tabs */}
+                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                    <p className="text-xs text-gray-400">Edit in English, then auto-translate to all languages.</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEditTranslateAll}
+                      disabled={translating || !editTitle.trim()}
+                      className="gap-1.5 h-7 text-xs shrink-0 ml-3 border-primary/30 text-primary hover:bg-primary/5"
+                    >
+                      {translating && !editTranslatingLang
+                        ? <><Loader2 className="w-3 h-3 animate-spin" /> Translating…</>
+                        : <><Languages className="w-3 h-3" /> Translate All with AI</>
+                      }
+                    </Button>
+                  </div>
+
+                  <Tabs value={editLangTab} onValueChange={(v) => setEditLangTab(v as any)}>
+                    <TabsList className="w-full rounded-none border-b bg-muted/20 h-9">
+                      <TabsTrigger value="en" className="flex-1 text-xs h-8">🇺🇸 English</TabsTrigger>
+                      <TabsTrigger value="zh" className="flex-1 text-xs h-8">
+                        🇹🇼 中文 {editTitleZh && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                      <TabsTrigger value="ja" className="flex-1 text-xs h-8">
+                        🇯🇵 日本語 {editTitleJa && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                      <TabsTrigger value="th" className="flex-1 text-xs h-8">
+                        🇹🇭 ไทย {editTitleTh && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <div className="p-4 space-y-3">
+                      {/* English */}
+                      {editLangTab === "en" && (
+                        <>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Category</label>
+                            <Input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} placeholder="e.g. CNC Equipment..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Title <span className="text-red-500 normal-case font-normal">*</span>
+                            </label>
+                            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="e.g. CNC Machine Fanuc 0i..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Description</label>
+                            <textarea value={editMessage} onChange={(e) => setEditMessage(e.target.value)} placeholder="Brand, model, quantity, condition, specs, budget range..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Chinese */}
+                      {editLangTab === "zh" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Chinese content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleEditTranslateLang("zh")} disabled={translating || !editTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {editTranslatingLang === "zh" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">類別 (Category)</label>
+                            <Input value={editCategoryZh} onChange={(e) => setEditCategoryZh(e.target.value)} placeholder="例：CNC設備..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">標題 (Title)</label>
+                            <Input value={editTitleZh} onChange={(e) => setEditTitleZh(e.target.value)} placeholder="中文標題..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">描述 (Description)</label>
+                            <textarea value={editMessageZh} onChange={(e) => setEditMessageZh(e.target.value)} placeholder="中文描述..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Japanese */}
+                      {editLangTab === "ja" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Japanese content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleEditTranslateLang("ja")} disabled={translating || !editTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {editTranslatingLang === "ja" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">カテゴリー (Category)</label>
+                            <Input value={editCategoryJa} onChange={(e) => setEditCategoryJa(e.target.value)} placeholder="例：CNC機器..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">タイトル (Title)</label>
+                            <Input value={editTitleJa} onChange={(e) => setEditTitleJa(e.target.value)} placeholder="日本語タイトル..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">説明 (Description)</label>
+                            <textarea value={editMessageJa} onChange={(e) => setEditMessageJa(e.target.value)} placeholder="日本語の説明..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Thai */}
+                      {editLangTab === "th" && (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs text-muted-foreground">Edit Thai content directly, or generate from English.</p>
+                            <Button type="button" variant="outline" size="sm" onClick={() => handleEditTranslateLang("th")} disabled={translating || !editTitle.trim()} className="gap-1.5 h-7 text-xs shrink-0 ml-2 border-primary/30 text-primary hover:bg-primary/5">
+                              {editTranslatingLang === "th" ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</> : <><Languages className="w-3 h-3" /> Generate from English</>}
+                            </Button>
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">หมวดหมู่ (Category)</label>
+                            <Input value={editCategoryTh} onChange={(e) => setEditCategoryTh(e.target.value)} placeholder="เช่น อุปกรณ์ CNC..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">หัวข้อ (Title)</label>
+                            <Input value={editTitleTh} onChange={(e) => setEditTitleTh(e.target.value)} placeholder="ชื่อเรื่องภาษาไทย..." className="h-10" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">คำอธิบาย (Description)</label>
+                            <textarea value={editMessageTh} onChange={(e) => setEditMessageTh(e.target.value)} placeholder="คำอธิบายภาษาไทย..." rows={3} className="w-full text-sm border border-input rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </Tabs>
+                </div>
+
+                <div className="flex gap-3 pt-1 border-t border-gray-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 h-10"
+                    onClick={() => setEditItem(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSaving || translating}
+                    className="flex-1 h-10 gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  >
+                    {isSaving
+                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...</>
+                      : <><Save className="w-3.5 h-3.5" /> Save Changes</>
                     }
                   </Button>
                 </div>
@@ -497,6 +971,17 @@ export default function AdminProductRequests() {
                                 ? <><EyeOff className="w-3 h-3" />Unpublish</>
                                 : <><Globe className="w-3 h-3" />Publish</>
                             }
+                          </Button>
+
+                          {/* Edit */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() => openEditDialog(req)}
+                            title="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
                           </Button>
 
                           {/* Expand toggle */}

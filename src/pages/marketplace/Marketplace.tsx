@@ -17,6 +17,7 @@ import { useCategoryCache } from "@/hooks/useCategoryCache";
 import SEOMeta from "@/components/common/SEOMeta";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import ProductRequestForm from "@/components/common/ProductRequestForm";
+import Footer from "@/components/common/Footer";
 import "suneditor/dist/css/suneditor.min.css";
 
 // ✨ Smoothness - skeleton loaders
@@ -597,6 +598,7 @@ const Marketplace = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
