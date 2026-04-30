@@ -199,7 +199,7 @@ const Header = () => {
                           onClick={() => changeLanguage(l.code)}
                           className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${lang === l.code
                             ? "text-primary bg-primary/5 font-medium"
-                            : "text-popover-foreground hover:bg-secondary"
+                            : "text-popover-foreground hover:bg-foreground hover:text-background"
                             }`}
                         >
                           <span>{l.flag}</span>
@@ -268,7 +268,7 @@ const Header = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-foreground hover:bg-secondary text-xs h-9 gap-1.5"
+                    className="text-foreground hover:bg-foreground hover:text-background text-xs h-9 gap-1.5"
                     onClick={() => window.open("/dashboard", "_blank")}
                   >
                     <User className="h-3.5 w-3.5" />
@@ -277,7 +277,7 @@ const Header = () => {
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="text-muted-foreground hover:text-foreground text-xs h-9"
+                    className="text-muted-foreground hover:bg-primary hover:text-primary-foreground text-xs h-9"
                     onClick={handleLogout}
                   >
                     {t("publicHeader.logout")}
@@ -288,7 +288,7 @@ const Header = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-destructive hover:text-destructive-foreground hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
+                    className="text-destructive hover:text-black hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
                     onClick={() => window.open("/auth?type=buyer&mode=signup", "_blank")}
                   >
                     <UserPlus className="h-3.5 w-3.5" />
@@ -296,7 +296,7 @@ const Header = () => {
                   </Button>
                   <Button
                     size="sm"
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground gap-1.5 text-xs h-9 rounded"
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground hover:text-black gap-1.5 text-xs h-9 rounded"
                     onClick={() => window.open("/auth?mode=signin", "_blank")}
                   >
                     <LogIn className="h-3.5 w-3.5" />
@@ -323,7 +323,7 @@ const Header = () => {
             {/* All auctions */}
             <Link
               to="/buyer-marketplace"
-              className="flex-shrink-0 px-3 h-full flex items-center text-sm font-semibold text-foreground border-b-2 border-foreground hover:bg-secondary/60 transition-colors"
+              className="flex-shrink-0 px-3 h-full flex items-center text-sm font-semibold text-foreground border-b-2 border-foreground hover:bg-foreground hover:text-background transition-colors"
             >
               {t("publicHeader.allAuctions")}
             </Link>
@@ -356,8 +356,8 @@ const Header = () => {
                         }}
                         className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
                           hoveredParent === cat.slug
-                            ? "bg-secondary text-foreground font-medium"
-                            : "text-popover-foreground hover:bg-secondary/60"
+                            ? "bg-foreground text-background font-medium"
+                            : "text-popover-foreground hover:bg-foreground hover:text-background"
                         }`}
                       >
                         <span className="truncate text-left">
@@ -423,7 +423,7 @@ const Header = () => {
                 <Link
                   key={cat.slug}
                   to={`/buyer-marketplace?category=${cat.slug}`}
-                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap flex-shrink-0"
+                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:bg-foreground hover:text-background transition-colors whitespace-nowrap flex-shrink-0"
                 >
                      {formatCategoryName(cat.name)}
                 </Link>
@@ -431,7 +431,7 @@ const Header = () => {
               {categories.length > visibleCatCount && (
                 <button
                   onMouseEnter={handleCategoryMouseEnter}
-                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors whitespace-nowrap flex-shrink-0"
+                  className="px-3 h-full flex items-center text-sm text-muted-foreground hover:bg-foreground hover:text-background transition-colors whitespace-nowrap flex-shrink-0"
                 >
                   {t("publicHeader.moreCategories")}
                 </button>
@@ -444,7 +444,7 @@ const Header = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-foreground hover:bg-secondary text-xs h-7 rounded px-3 font-medium"
+                  className="text-foreground hover:bg-foreground hover:text-background text-xs h-7 rounded px-3 font-medium"
                 >
                   {t("publicHeader.blog", "Blog")}
                 </Button>
@@ -453,7 +453,7 @@ const Header = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-foreground hover:bg-secondary text-xs h-7 rounded px-3 font-medium"
+                  className="text-foreground hover:bg-foreground hover:text-background text-xs h-7 rounded px-3 font-medium"
                 >
                   {t("publicHeader.wantedBoard")}
                 </Button>
@@ -469,7 +469,7 @@ const Header = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-border text-foreground hover:bg-secondary text-xs h-7 rounded px-3"
+                  className="border-border text-foreground hover:bg-foreground hover:text-background text-xs h-7 rounded px-3"
                 >
                   {t("publicHeader.directSales")}
                 </Button>
@@ -513,7 +513,7 @@ const Header = () => {
                       onClick={() => changeLanguage(l.code)}
                       className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded border transition-colors ${lang === l.code
                         ? "border-primary text-primary bg-primary/5 font-medium"
-                        : "border-border text-foreground hover:bg-secondary"
+                        : "border-border text-foreground hover:bg-foreground hover:text-background"
                         }`}
                     >
                       <span>{l.flag}</span>
@@ -529,7 +529,7 @@ const Header = () => {
                 <Link
                   to="/buyer-marketplace"
                   onClick={() => setOpenMenu(false)}
-                  className="block px-2 py-1.5 text-sm font-medium text-foreground hover:bg-secondary rounded mb-1"
+                  className="block px-2 py-1.5 text-sm font-medium text-foreground hover:bg-foreground hover:text-background rounded mb-1"
                 >
                   {t("publicHeader.allAuctions")}
                 </Link>
@@ -537,7 +537,7 @@ const Header = () => {
                   {categories.map((cat) => (
                     <div key={cat.slug}>
                       <button
-                        className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium text-foreground hover:bg-secondary rounded"
+                        className="w-full flex items-center justify-between px-2 py-1.5 text-sm font-medium text-foreground hover:bg-foreground hover:text-background rounded"
                         onClick={() => {
                           if (cat.subcategories?.length > 0) {
                             setMobileExpandedParent(mobileExpandedParent === cat.slug ? null : cat.slug);
@@ -570,7 +570,7 @@ const Header = () => {
                               key={sub.slug}
                               to={`/buyer-marketplace?category=${sub.slug}`}
                               onClick={() => setOpenMenu(false)}
-                              className="block px-1 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 rounded truncate"
+                              className="block px-1 py-1.5 text-sm text-muted-foreground hover:bg-foreground hover:text-background rounded truncate"
                             >
                               {sub.name}
                             </Link>
@@ -604,11 +604,11 @@ const Header = () => {
 
                 {userId ? (
                   <>
-                    <Button variant="outline" size="sm" className="w-full border-border text-foreground h-9"
+                    <Button variant="outline" size="sm" className="w-full border-border text-foreground hover:bg-foreground hover:text-background h-9"
                       onClick={() => { window.open("/dashboard", "_blank"); setOpenMenu(false); }}>
                       {t("publicHeader.dashboard")}
                     </Button>
-                    <Button size="sm" variant="ghost" className="w-full text-muted-foreground h-9"
+                    <Button size="sm" variant="ghost" className="w-full text-muted-foreground hover:bg-primary hover:text-primary-foreground h-9"
                       onClick={handleLogout}>
                       {t("publicHeader.logout")}
                     </Button>
