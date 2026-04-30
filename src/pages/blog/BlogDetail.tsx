@@ -48,8 +48,8 @@ function RelatedCard({ blog, lang }: { blog: BlogItem; lang: string }) {
 export default function BlogDetail() {
   const { slug }   = useParams<{ slug: string }>();
   const navigate   = useNavigate();
-  const { i18n }   = useTranslation();
-  const lang       = normalizeStoredLanguage(i18n.language);
+  const { i18n, t } = useTranslation();
+  const lang        = normalizeStoredLanguage(i18n.language);
 
   const { data, isLoading, isError } = useGetPublicBlogBySlugQuery(slug ?? "", { skip: !slug });
 
@@ -130,7 +130,7 @@ export default function BlogDetail() {
           <nav className="flex items-center gap-1.5 text-sm text-white/70">
             <Link to="/" className="hover:text-white transition-colors">Home</Link>
             <span>/</span>
-            <Link to="/blog" className="hover:text-white transition-colors text-primary">Lab</Link>
+            <Link to="/blog" className="hover:text-white transition-colors text-primary">{t("footer.blogs")}</Link>
             <span>/</span>
             <span className="text-white/90 truncate max-w-[220px]">{localTitle}</span>
           </nav>

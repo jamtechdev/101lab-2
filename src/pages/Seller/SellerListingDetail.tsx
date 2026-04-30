@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "suneditor/dist/css/suneditor.min.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { useLoginModal } from "@/context/LoginModalContext";
@@ -66,7 +66,8 @@ import { useUpdateBuyerBidMutation } from "@/rtk/slices/buyerApiSlice";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { formatDate } from "@/utils/formatDate";
 import i18n from "@/i18n/config";
-import { pushViewListingEvent } from "@/utils/gtm";
+import { pushViewListingEvent, pushAddToWishlistEvent } from "@/utils/gtm";
+import axiosInstance from "@/rtk/api/axiosInstance";
 
 
 // Country name → ISO 3166-1 alpha-2 code → flag emoji
@@ -347,7 +348,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [editAmount, setEditAmount] = useState(userBid?.amount || "");
   const [updateBuyerBid, { isLoading: isBuyerBidDetail }] = useUpdateBuyerBidMutation();
   const [selectedBid, setSelectedBid] = useState(null);
-  const [watchlistActive, setWatchlistActive] = useState(false);
+  const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
+  const [wishlistLoading, setWishlistLoading] = useState<Record<number, boolean>>({});
 
   const [useWholePrice, setUseWholePrice] = useState(true);
   const [useWeightPrice, setUseWeightPrice] = useState(false);
@@ -374,6 +376,51 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     "Malaysia", "Thailand", "Vietnam", "Indonesia", "Philippines",
     "Bangladesh", "Sri Lanka", "Nepal", "Pakistan", "Hong Kong", "Macau",
   ];
+
+  // ---------------- Wishlist helpers ----------------
+  const userId = localStorage.getItem("userId");
+
+  useEffect(() => {
+    if (!userId || !products.length) return;
+    products.forEach((p) => {
+      axiosInstance
+        .get(`/wishlist/${userId}/${p.id}`)
+        .then((res) => {
+          if (res.data?.data?.inWishlist !== undefined)
+            setWishlistMap((prev) => ({ ...prev, [p.id]: res.data.data.inWishlist }));
+        })
+        .catch(() => {});
+    });
+  }, [userId, products]);
+
+  const handleWishlistToggle = useCallback(
+    async (productId: number, productTitle?: string) => {
+      if (!userId) { toast.error("Please login to add to wishlist"); return; }
+      if (wishlistLoading[productId]) return;
+      const prev = wishlistMap[productId] ?? false;
+      setWishlistMap((m) => ({ ...m, [productId]: !prev }));
+      setWishlistLoading((m) => ({ ...m, [productId]: true }));
+      try {
+        const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
+        const action = res.data?.data?.action;
+        if (action === "added") {
+          setWishlistMap((m) => ({ ...m, [productId]: true }));
+          toast.success("Added to wishlist");
+          try { pushAddToWishlistEvent({ listing_id: productId, listing_title: productTitle ?? "" }); } catch { }
+        } else if (action === "removed") {
+          setWishlistMap((m) => ({ ...m, [productId]: false }));
+          toast.success("Removed from wishlist");
+        }
+        window.dispatchEvent(new Event("wishlist-changed"));
+      } catch {
+        setWishlistMap((m) => ({ ...m, [productId]: prev }));
+        toast.error("Failed to update wishlist");
+      } finally {
+        setWishlistLoading((m) => ({ ...m, [productId]: false }));
+      }
+    },
+    [userId, wishlistMap, wishlistLoading]
+  );
 
   // ---------------- Helper refresh functions ----------------
   const refreshBidStatus = async () => {
@@ -1082,17 +1129,18 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </div>
                       )}
 
-                      {/* Add to Watchlist */}
+                      {/* Add to Wishlist */}
                       <Button
                         variant="outline"
                         className={cn(
                           "w-full font-semibold text-base py-5 rounded-lg border-2 mb-3 py-4",
-                          watchlistActive ? "border-primary text-primary bg-primary/5" : "border-border text-foreground"
+                          wishlistMap[product.id] ? "border-primary text-primary bg-primary/5" : "border-border text-foreground"
                         )}
-                        onClick={() => setWatchlistActive((v) => !v)}
+                        disabled={!!wishlistLoading[product.id]}
+                        onClick={() => handleWishlistToggle(product.id, product.title)}
                       >
-                        <Heart className={cn("w-4 h-4 mr-2", watchlistActive && "fill-primary text-primary")} />
-                        {watchlistActive ? "Saved to Watchlist" : "Add to Watchlist"}
+                        <Heart className={cn("w-4 h-4 mr-2", wishlistMap[product.id] && "fill-primary text-primary")} />
+                        {wishlistMap[product.id] ? "Saved to Wishlist" : "Add to Wishlist"}
                       </Button>
 
                       {/* Watchers / Visitors stats */}
