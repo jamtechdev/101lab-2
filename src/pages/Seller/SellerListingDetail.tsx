@@ -959,6 +959,16 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </span>
                       </div>
 
+                      {/* Price — shown only for fixed price / buy now */}
+                      {bidDetail?.type === "fixed_price" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
+                        <div className="flex items-baseline gap-1.5 text-sm mb-2">
+                          <span className="text-muted-foreground font-medium">{t("buyer.price") || "Price"}:</span>
+                          <span className="text-xl font-bold text-foreground">
+                            {bidDetail.currency || "USD"} {Number(bidDetail.target_price).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Location */}
                       <div className="flex items-center gap-1.5 text-sm mb-2 ">
                         <span className="text-muted-foreground font-medium">{t("buyer.location")}:</span>
@@ -1165,19 +1175,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </div>
                       </div> */}
 
-                      {/* Meta rows: Taxes, Buyer's Premium, Seller's Terms, Seller's Other Items, Event */}
+                      {/* Meta rows: Taxes, Seller's Terms, Seller's Other Items */}
                       <div className="divide-y divide-border border border-border rounded-lg overflow-hidden mb-4">
                         <div className="flex items-center justify-between px-4 py-2.5 text-sm">
                           <span className="text-foreground font-medium">Taxes</span>
                           <span className="text-primary text-xs font-medium">To be added at payment</span>
-                        </div>
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="text-foreground font-medium">Buyer's Premium</span>
-                          <span className="text-foreground font-semibold">
-                            {product.buyer_premium || data?.data?.batch?.buyer_premium
-                              ? `${product.buyer_premium || data?.data?.batch?.buyer_premium}%`
-                              : "—"}
-                          </span>
                         </div>
                         <div className="flex items-center justify-between px-4 py-2.5 text-sm">
                           <span className="text-foreground font-medium">Seller's Terms &amp; Conditions</span>
@@ -1199,14 +1201,6 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           >
                             View
                           </button>
-                        </div>
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="text-foreground font-medium">Event</span>
-                          <span className="text-primary font-medium text-xs">
-                            {product.event_id || data?.data?.batch?.batch_number
-                              ? `Event-${product.event_id || data?.data?.batch?.batch_number}`
-                              : "—"}
-                          </span>
                         </div>
                       </div>
 
