@@ -711,6 +711,21 @@ export interface TagTranslations {
   content_th: string;
 }
 
+export interface BlogTranslations {
+  title_en: string;
+  excerpt_en: string;
+  content_en: string;
+  title_zh: string;
+  excerpt_zh: string;
+  content_zh: string;
+  title_ja: string;
+  excerpt_ja: string;
+  content_ja: string;
+  title_th: string;
+  excerpt_th: string;
+  content_th: string;
+}
+
 export interface BlogItem {
   id: number;
   title: string;
@@ -729,6 +744,19 @@ export interface BlogItem {
   view_count: number;
   createdAt: string;
   updatedAt: string;
+  // multi-language fields
+  title_en?: string;
+  title_zh?: string;
+  title_ja?: string;
+  title_th?: string;
+  excerpt_en?: string;
+  excerpt_zh?: string;
+  excerpt_ja?: string;
+  excerpt_th?: string;
+  content_en?: string;
+  content_zh?: string;
+  content_ja?: string;
+  content_th?: string;
 }
 
 export interface SalesLead {
@@ -1469,13 +1497,13 @@ export const adminApi = createApi({
       providesTags: (_r, _e, id) => [{ type: "Blogs", id }],
     }),
 
-    createBlog: builder.mutation<{ success: boolean; data: BlogItem }, Partial<BlogItem>>({
-      query: (body) => ({ url: "/blog/admin", method: "POST", data: body }),
+    createBlog: builder.mutation<{ success: boolean; data: BlogItem }, FormData>({
+      query: (formData) => ({ url: "/blog/admin", method: "POST", data: formData }),
       invalidatesTags: ["Blogs"],
     }),
 
-    updateBlog: builder.mutation<{ success: boolean; data: BlogItem }, { id: number } & Partial<BlogItem>>({
-      query: ({ id, ...body }) => ({ url: `/blog/admin/${id}`, method: "PUT", data: body }),
+    updateBlog: builder.mutation<{ success: boolean; data: BlogItem }, { id: number; formData: FormData }>({
+      query: ({ id, formData }) => ({ url: `/blog/admin/${id}`, method: "PUT", data: formData }),
       invalidatesTags: (_r, _e, { id }) => ["Blogs", { type: "Blogs", id }],
     }),
 
@@ -1492,6 +1520,13 @@ export const adminApi = createApi({
     deleteBlog: builder.mutation<{ success: boolean; message: string }, number>({
       query: (id) => ({ url: `/blog/admin/${id}`, method: "DELETE" }),
       invalidatesTags: ["Blogs"],
+    }),
+
+    translateBlogContent: builder.mutation<
+      { success: boolean; data: BlogTranslations },
+      { title: string; excerpt?: string; content?: string }
+    >({
+      query: (body) => ({ url: "/blog/admin/translate", method: "POST", data: body }),
     }),
 
     getPublicBlogs: builder.query<
@@ -1656,6 +1691,7 @@ export const {
   useToggleBlogStatusMutation,
   useToggleBlogFeaturedMutation,
   useDeleteBlogMutation,
+  useTranslateBlogContentMutation,
   useGetPublicBlogsQuery,
   useGetPublicBlogBySlugQuery,
   useGetPublicBlogCategoriesQuery,

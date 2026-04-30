@@ -6,7 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { Clock, Gavel, X } from "lucide-react";
 
-const DELAY_MS = 10_000;
+const DELAY_MS = 40_000;
 
 export const BuyerRegistrationPopup = () => {
   const { t } = useTranslation();

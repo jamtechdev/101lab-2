@@ -1833,7 +1833,10 @@
     "privacy": "隱私",
     "terms": "條款",
     "cookies": "Cookie",
-    "allRightsReserved": "版權所有。"
+    "allRightsReserved": "版權所有。",
+    "blogs": "部落格",
+    "wantedItems": "求購商品",
+    "readMore": "閱讀更多"
   },
   "bulkUpload": {
     "pageTitle": "批量上傳產品",

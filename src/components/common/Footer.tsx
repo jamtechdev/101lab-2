@@ -11,7 +11,7 @@ const MONDAY_FORM_URL = "https://forms.monday.com/";
 
 const Footer = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: categoriesData } = useLanguageAwareCategories();
 
   const supportLinks = [
@@ -25,6 +25,11 @@ const Footer = () => {
     { label: t("footer.aboutUs"), href: "#" },
     { label: t("footer.privacyPolicy"), href: "#" },
     { label: t("footer.termsOfService"), href: "#" },
+  ];
+
+  const labLinks = [
+    { label: t("footer.blogs"), to: "/blog" },
+    { label: t("footer.wantedItems"), to: "/wanted" },
   ];
   const categories: any[] = Array.isArray(categoriesData)
     ? categoriesData
@@ -50,7 +55,7 @@ const Footer = () => {
       </div>
 
       <div className="container mx-auto px-4 py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10">
 
           {/* Brand */}
           <div className="lg:col-span-1">
@@ -111,6 +116,20 @@ const Footer = () => {
                   <a href={link.href} className="text-sm text-card/55 hover:text-card/90 transition-colors">
                     {link.label}
                   </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Blogs */}
+          <div>
+            <h4 className="text-sm font-semibold text-card/95 mb-4 uppercase tracking-wide">{t("footer.blogs")}</h4>
+            <ul className="space-y-2">
+              {labLinks.map((link) => (
+                <li key={link.label}>
+                  <Link to={link.to} className="text-sm text-card/55 hover:text-card/90 transition-colors">
+                    {link.label}
+                  </Link>
                 </li>
               ))}
             </ul>

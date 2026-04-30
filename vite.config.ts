@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/proxy-api/, '/api/v1'),
+        timeout: 120000,
+        proxyTimeout: 120000,
       },
     },
   },

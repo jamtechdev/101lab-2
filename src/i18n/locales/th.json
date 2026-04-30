@@ -1744,7 +1744,10 @@
     "privacy": "ความเป็นส่วนตัว",
     "terms": "ข้อกำหนด",
     "cookies": "คุกกี้",
-    "allRightsReserved": "สงวนลิขสิทธิ์"
+    "allRightsReserved": "สงวนลิขสิทธิ์",
+    "blogs": "บล็อก",
+    "wantedItems": "รายการที่ต้องการ",
+    "readMore": "อ่านเพิ่มเติม"
   },
   "bulkUpload": {
     "pageTitle": "Bulk Upload Products",

@@ -1794,7 +1794,10 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "cookies": "Cookies",
-    "allRightsReserved": "All rights reserved."
+    "allRightsReserved": "All rights reserved.",
+    "blogs": "Blogs",
+    "wantedItems": "Wanted Items",
+    "readMore": "Read more"
   },
   "bulkUpload": {
     "pageTitle": "Bulk Upload Products",

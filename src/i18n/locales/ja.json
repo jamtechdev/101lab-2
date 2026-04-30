@@ -1700,7 +1700,10 @@
     "privacy": "プライバシー",
     "terms": "規約",
     "cookies": "クッキー",
-    "allRightsReserved": "全著作権所有。"
+    "allRightsReserved": "全著作権所有。",
+    "blogs": "ブログ",
+    "wantedItems": "ウォンテッド",
+    "readMore": "続きを読む"
   },
   "bulkUpload": {
     "pageTitle": "Bulk Upload Products",
