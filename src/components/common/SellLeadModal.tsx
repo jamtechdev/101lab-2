@@ -156,7 +156,7 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
                 type="tel"
                 placeholder="+66 812 345 678"
                 value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })} 
                 className="pl-10"
                 required
               />

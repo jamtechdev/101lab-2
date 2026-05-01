@@ -109,7 +109,11 @@ export default function AISupportChat() {
     try {
       const res = await fetch("https://api.101recycle.greenbidz.com/api/v1/assistant/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-platform": "LabGreenbidz",
+          "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
+        },
         body: JSON.stringify({ message })
       });
 

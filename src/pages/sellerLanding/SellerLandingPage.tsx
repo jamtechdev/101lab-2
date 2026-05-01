@@ -169,7 +169,7 @@ const SellerLandingPage = () => {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
-          "x-platform": import.meta.env.VITE_SITE_TYPE || "LabGreenbidz",
+          "x-platform": "LabGreenbidz",
           "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
         },
         body: formData,
