@@ -66,7 +66,14 @@ const SellLeadModal = ({ open, onOpenChange }: SellLeadModalProps) => {
       formData.append("quantity", form.quantity);
       formData.append("phone", form.phone);
 
-      const res = await fetch(endpoint, { method: "POST", body: formData });
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "x-platform": "LabGreenbidz",
+          "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
+        },
+        body: formData,
+      });
       const result = await res.json() as { ok?: boolean; error?: string };
 
       if (result?.ok) {

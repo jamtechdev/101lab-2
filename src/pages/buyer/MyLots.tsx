@@ -7,6 +7,7 @@ import MarketplaceCardGrid from "@/components/common/MarketplaceCardGrid";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastError } from "@/helper/toasterNotification";
 import { useTranslation } from "react-i18next";
+import Footer from "@/components/common/Footer";
 
 const MyLots = () => {
   const navigate = useNavigate();
@@ -115,6 +116,7 @@ const MyLots = () => {
           />
         )}
       </div>
+      <Footer/>
     </div>
   );
 };
