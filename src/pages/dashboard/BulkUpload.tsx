@@ -3,7 +3,9 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { format, addDays } from "date-fns";
 import { useBatchCreateMutation } from "@/rtk/slices/productSlice";
+import { useStartBidMutation } from "@/rtk/slices/bidApiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { SITE_TYPE } from "@/config/site";
 import { SITE_CATEGORIES } from "@/config/categories";
@@ -15,7 +17,7 @@ import {
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
-import { pushListingCreatedEvent } from "@/utils/gtm";
+import { pushListingCreatedEvent } from "@/utils/gtm"; 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface BulkRow {
@@ -37,6 +39,12 @@ interface BulkRow {
   /** From spreadsheet "images" column; converted to File at upload (browser fetch) */
   imageUrls?: string[];
   auctionGroupId: number | null;  // optional auction group to assign batch to
+  // Bidding config
+  bidType: "make-offer" | "fixed-price";
+  bidPrice: string;
+  bidCurrency: string;
+  bidStartDate: string;   // ISO date string yyyy-MM-dd
+  bidEndDate: string;     // ISO date string yyyy-MM-dd
 }
 
 type RowStatus = "pending" | "uploading" | "success" | "error";
@@ -369,6 +377,7 @@ export default function BulkUpload() {
   const userId = localStorage.getItem("userId");
   const baseURL = import.meta.env.VITE_PRODUCTION_URL;
   const [batchCreate] = useBatchCreateMutation();
+  const [createBid] = useStartBidMutation();
 
   // Load API categories (LabCategory[] with subcategories) — needed to resolve id for backend
   const { data: catData } = useLanguageAwareCategories();
@@ -447,12 +456,18 @@ export default function BulkUpload() {
             (c: any) => c.name?.toLowerCase() === r.categorySlugHint?.toLowerCase()
           );
           const matched = bySlugHint ?? byName ?? allSubcats[0];
+          const today = new Date();
           const { categorySlugHint: _hint, imageUrls, ...rest } = r;
           return {
             ...rest,
             categoryId: matched?.slug ?? "",
             categoryName: matched?.name ?? "",
             imageUrls: imageUrls?.length ? imageUrls : undefined,
+            bidType: rest.priceFormat === "buyNow" ? "fixed-price" : "make-offer",
+            bidPrice: rest.priceFormat === "buyNow" ? rest.pricePerUnit : "",
+            bidCurrency: rest.priceCurrency || "USD",
+            bidStartDate: format(today, "yyyy-MM-dd"),
+            bidEndDate: format(addDays(today, 90), "yyyy-MM-dd"),
           } as BulkRow;
         })
       );
@@ -582,7 +597,14 @@ export default function BulkUpload() {
         const response = await axios.post(
           `${baseURL}wp/create-product?lang=${lang}&type=${SITE_TYPE}`,
           formData,
-          { headers: { "Content-Type": "multipart/form-data" }, timeout: 120000 }
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "x-platform": "LabGreenbidz",
+              "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
+            },
+            timeout: 120000,
+          }
         );
 
         const result = response.data;
@@ -603,7 +625,33 @@ export default function BulkUpload() {
             groupId: row.auctionGroupId || undefined,
           }).unwrap();
           rowBatchId = batchResult?.data?.batch_id ?? undefined;
-          if (rowBatchId) totalBatches++;
+          if (rowBatchId) {
+            totalBatches++;
+            // Auto-create bidding config
+            try {
+              const startDate = row.bidStartDate || format(new Date(), "yyyy-MM-dd");
+              const endDate = row.bidEndDate || format(addDays(new Date(), 90), "yyyy-MM-dd");
+              await createBid({
+                batch_id: rowBatchId,
+                type: row.bidType === "fixed-price" ? "fixed_price" : "make_offer",
+                start_date: `${startDate} 00:00:00`,
+                end_date: `${endDate} 23:59:59`,
+                target_price: Number(row.bidPrice) || 0,
+                location: row.location || "",
+                currency: row.bidCurrency || "USD",
+                isHidden: false,
+                allowWholePrice: true,
+                allowWeightPrice: false,
+                taxInclusive: true,
+                isAuction: false,
+                notes: { required_docs: "", inspection_needed: false },
+                language: "en",
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              } as any).unwrap();
+            } catch {
+              /* bid creation failure is non-blocking */
+            }
+          }
 
           // GA4 tracking — listing_created (once per row after batchCreate success)
           try {
@@ -747,6 +795,7 @@ export default function BulkUpload() {
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPrice')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colCountry')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">Group ID</th>
+                        <th className="px-3 py-2 text-left text-muted-foreground font-medium">Bid Config</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium">{t('bulkUpload.colPhotos')}</th>
                         <th className="px-3 py-2 text-left text-muted-foreground font-medium w-16">{t('bulkUpload.colActions')}</th>
                       </tr>
@@ -795,6 +844,18 @@ export default function BulkUpload() {
                             ) : (
                               <span className="text-muted-foreground/40 text-[10px]">—</span>
                             )}
+                          </td>
+                          {/* Bid config cell */}
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${r.bidType === "fixed-price" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}`}>
+                                {r.bidType === "fixed-price" ? "Fixed" : "Make Offer"}
+                              </span>
+                              {r.bidType === "fixed-price" && r.bidPrice && (
+                                <span className="text-[10px] text-foreground">{r.bidCurrency} {r.bidPrice}</span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground/60">{r.bidStartDate} → {r.bidEndDate}</span>
+                            </div>
                           </td>
                           {/* Inline photo upload cell */}
                           <td className="px-3 py-2">
@@ -1093,6 +1154,11 @@ export default function BulkUpload() {
                   { key: "priceCurrency",   label: t('bulkUpload.fieldCurrency'),          type: "select", options: ["USD", "TWD", "JPY", "THB"] },
                   { key: "weightPerUnit",   label: t('bulkUpload.fieldWeight'),            type: "text" },
                   { key: "replacementCost", label: t('bulkUpload.fieldReplacementCost'),  type: "text" },
+                  { key: "bidType",         label: "Bid Type",                             type: "select", options: ["make-offer", "fixed-price"] },
+                  { key: "bidPrice",        label: "Bid Price (required if Fixed)",        type: "text", hint: "Leave blank for make-offer" },
+                  { key: "bidCurrency",     label: "Bid Currency",                         type: "select", options: ["USD", "TWD", "JPY", "THB"] },
+                  { key: "bidStartDate",    label: "Bid Start Date",                       type: "date" },
+                  { key: "bidEndDate",      label: "Bid End Date",                         type: "date", hint: "Default: start + 90 days" },
                 ] as const
               ).map(({ key, label, type, hint, options }: any) => (
                 <div key={key}>
@@ -1112,6 +1178,13 @@ export default function BulkUpload() {
                     >
                       {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
                     </select>
+                  ) : type === "date" ? (
+                    <input
+                      type="date"
+                      value={(editingRow as any)[key]}
+                      onChange={(e) => setEditingRow({ ...editingRow, [key]: e.target.value })}
+                      className="w-full text-xs border border-border rounded px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
                   ) : (
                     <input
                       type="text"

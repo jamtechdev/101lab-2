@@ -778,8 +778,10 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           {
             headers: {
               "Content-Type": "multipart/form-data",
+              "x-platform": "LabGreenbidz",
+              "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
             },
-            timeout: 120000, // optional: increase timeout for large files
+            timeout: 120000,
           }
         );
 
@@ -917,7 +919,11 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
           `${baseURL}wp/analyze-process-images`,
           formData,
           {
-            headers: { "Content-Type": "multipart/form-data" },
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "x-platform": "LabGreenbidz",
+              "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
+            },
             timeout: 120000,
           }
         );
