@@ -6,7 +6,8 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { Clock, Gavel, X } from "lucide-react";
 
-const DELAY_MS = 40_000;
+const DELAY_MS = 20_000;
+const DISMISSED_KEY = "buyerPopupDismissed";
 
 export const BuyerRegistrationPopup = () => {
   const { t } = useTranslation();
@@ -16,22 +17,17 @@ export const BuyerRegistrationPopup = () => {
 
   useEffect(() => {
     if (localStorage.getItem("userId")) return;
+    if (sessionStorage.getItem(DISMISSED_KEY)) return;
     if (location.pathname.startsWith("/auth")) return;
 
     const timer = setTimeout(() => setOpen(true), DELAY_MS);
     return () => clearTimeout(timer);
   }, [location.pathname]);
 
-  useEffect(() => {
-    if (open) return;
-    if (localStorage.getItem("userId")) return;
-    if (location.pathname.startsWith("/auth")) return;
-
-    const timer = setTimeout(() => setOpen(true), DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [open]);
-
-  const dismiss = () => setOpen(false);
+  const dismiss = () => {
+    sessionStorage.setItem(DISMISSED_KEY, "1");
+    setOpen(false);
+  };
   const goRegister = () => { setOpen(false); navigate("/auth?mode=signin"); };
 
   const badges = [

@@ -214,6 +214,12 @@ function BatchRow({ batch, onView, onChat, onHighlight, onDeactivate, language =
               {t("submissions.approved")}
             </span>
           )}
+          {batch.commission_percent != null && Number(batch.commission_percent) > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-xs font-medium text-amber-900 dark:text-amber-100">
+              <Percent className="w-3 h-3" />
+              {Number(batch.commission_percent)}%
+            </span>
+          )}
         </div>
         <p className="text-sm font-medium text-foreground truncate">{localizedTitle}</p>
       </div>
@@ -339,8 +345,8 @@ function BatchCard({ batch, onView, onChat, onHighlight, onDeactivate, language 
               {batch.bids ?? 0} {t("submissions.bids")}
             </span>
           </div>
-          {batch.commission_percent != null && Number(batch.commission_percent) >= 0 && (
-            <span className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+          {batch.commission_percent != null && Number(batch.commission_percent) > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-xs font-medium text-amber-900 dark:text-amber-100">
               <Percent className="w-3 h-3" />
               {Number(batch.commission_percent)}%
             </span>
