@@ -102,7 +102,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
       items: [
         { name: t('nav.dealReports'), href: "/dashboard/reports", icon: ClipboardList, permission: "reports.view" },
         { name: t('nav.chat'), href: "/dashboard/submission/message", icon: MessageCircle, permission: "chat.view" },
-        { name: "Monday.com Data", href: "/dashboard/sales-sync", icon: BarChart3, permission: null },
+        // { name: "Monday.com Data", href: "/dashboard/sales-sync", icon: BarChart3, permission: null },
       ]
     },
     {
