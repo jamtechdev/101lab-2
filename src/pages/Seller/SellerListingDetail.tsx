@@ -728,7 +728,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const isAuctionLive = isLiveBidding;
 
   const { data: bidsData, refetch: refetchBids } = useGetBuyerBidsQuery(String(id), {
-    pollingInterval: isAuctionLive ? 10000 : 0,
+    pollingInterval: 0,
   });
   const allBids: any[] = bidsData?.data?.buyer_bids ?? [];
   const sortedBids = [...allBids].sort((a, b) => Number(b.amount) - Number(a.amount));

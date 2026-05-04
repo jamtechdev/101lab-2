@@ -97,7 +97,7 @@ export const BuyerRegistrationPopup = () => {
           </div>
         </div>
         </DialogPrimitive.Content>
-      </DialogPortal>
+      </DialogPortal> 
     </Dialog>
   );
 };
