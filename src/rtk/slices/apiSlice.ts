@@ -124,6 +124,8 @@ export interface UpdateUserSettingsRequest {
   experience?: string;
   companyDetail?: string;
   companyTaxIdNumber?: string;
+  industry?: string;
+  interests?: string[];
 }
 
 export interface UpdateUserSettingsResponse {

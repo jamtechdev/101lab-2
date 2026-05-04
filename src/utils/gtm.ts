@@ -1,4 +1,4 @@
-// GTM / GA4 dataLayer utility — 101lab
+// GTM / GA4 dataLayer utility — 101IT
 // Only update this file when adding/changing tracking fields.
 
 declare global {
@@ -7,7 +7,7 @@ declare global {
   }
 }
 
-const SITE_TYPE = "101lab" as const;
+const SITE_TYPE = "101IT" as const;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

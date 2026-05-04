@@ -132,7 +132,7 @@
       }
     },
     "auctionsClosingSoon": "การประมูลที่กำลังจะปิด",
-    "highlightLots": "ไฮไลท์ล็อตที่ 101lab",
+    "highlightLots": "ไฮไลท์ล็อตที่ 101IT",
     "newAuctions": "สินค้าลงประมูลล่าสุด",
     "popularAuctions": "การประมูลยอดนิยม",
     "topPick": "แนะนำเด่น",
@@ -366,7 +366,7 @@
     "pricePerUnit": "Price per unit",
     "allowedSites": "Publishing Sites",
     "publishingSiteLabels": {
-      "101lab.co": "101lab – Global Laboratory & Pharma Marketplace",
+      "101it.co": "101IT – Global Laboratory & Pharma Marketplace",
       "greenbidz.com": "GreenBidz – International Industrial Equipment Marketplace"
     },
     "replacementCost": "Replacement Cost:",

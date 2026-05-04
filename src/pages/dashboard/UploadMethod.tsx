@@ -228,7 +228,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
   const [updateBatchVisibility] = useUpdateBatchVisibilityMutation();
 
   const ALLOWED_SITES_OPTIONS = [
-    { value: "101lab.co" },
+    { value: "101it.co" },
     { value: "greenbidz.com" },
   ];
 

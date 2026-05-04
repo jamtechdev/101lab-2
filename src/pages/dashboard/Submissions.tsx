@@ -503,7 +503,11 @@ const Submissions = () => {
   const handleDeactivate = async (batchId) => {
     if (!window.confirm(t("common.confirmDeactivate", "Are you sure you want to deactivate this batch?"))) return;
     try {
-      await axios.patch(`https://api.101recycle.greenbidz.com/api/v1/batch/deactivate/${batchId}`);
+      await axios.patch(
+        `${import.meta.env.VITE_PRODUCTION_URL}batch/deactivate/${batchId}`,
+        {},
+        { headers: { "x-platform": "LabGreenbidz", "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "" } }
+      );
       toast.success(t("common.deactivateSuccess", "Batch deactivated!"));
       refetch();
     } catch (err) {

@@ -103,7 +103,7 @@ const DirectSalesPage = () => {
       const endpoint = `${productionUrl.replace("/api/v1/", "")}/api/v1/reseller/submit-application`;
 
       const formData = new FormData();
-      formData.append("lead_type", "direct-sales-101lab");
+      formData.append("lead_type", "direct-sales-101it");
       formData.append("companyName", form.companyName);
       formData.append("fullName", form.fullName);
       formData.append("phoneCode", form.phoneCode);

@@ -32,10 +32,10 @@ const BRANDING_MAP: Record<string, {
     description: 'Turn your used machinery, tools, and surplus inventory into capital.',
   },
 
-  // 101lab - env value is "LabGreenbidz"
+  // 101IT - env value is "LabGreenbidz"
   'labgreenbidz': {
-    siteName: '101lab',
-    fullName: '101lab by Greenbidz',
+    siteName: '101IT',
+    fullName: '101IT by Greenbidz',
     tagline: 'Laboratory Equipment Marketplace',
     description: 'Buy and sell quality laboratory equipment and instruments.',
   },
@@ -58,7 +58,7 @@ const detectBrandingFromDomain = (): string => {
 
   const hostname = window.location.hostname.toLowerCase();
 
-  if (hostname.includes('101lab')) return 'labgreenbidz';
+  if (hostname.includes('101it')) return 'labgreenbidz';
   if (hostname.includes('101machines')) return 'machines';
   if (hostname.includes('recycle')) return 'recycle';
 

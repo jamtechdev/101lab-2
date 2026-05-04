@@ -132,7 +132,7 @@
       }
     },
     "auctionsClosingSoon": "もうすぐ終了するオークション",
-    "highlightLots": "101labでハイライト",
+    "highlightLots": "101ITでハイライト",
     "newAuctions": "新しいオークション",
     "popularAuctions": "人気のオークション",
     "topPick": "おすすめ",
@@ -344,7 +344,7 @@
     "pricePerUnit": "Price per unit",
     "allowedSites": "Publishing Sites",
     "publishingSiteLabels": {
-      "101lab.co": "101lab – Global Laboratory & Pharma Marketplace",
+      "101it.co": "101IT – Global Laboratory & Pharma Marketplace",
       "greenbidz.com": "GreenBidz – International Industrial Equipment Marketplace"
     },
     "replacementCost": "Replacement Cost:",

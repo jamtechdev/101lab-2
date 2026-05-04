@@ -133,7 +133,7 @@
       }
     },
     "auctionsClosingSoon": "Auctions closing soon",
-    "highlightLots": "Highlight lots at 101lab",
+    "highlightLots": "Highlight lots at 101IT",
     "newAuctions": "New Auctions",
     "popularAuctions": "Popular Auctions",
     "topPick": "Top Pick",
@@ -152,7 +152,7 @@
     "countryJapan": "Japan",
     "countryVietnam": "Vietnam",
     "expandYourReach": "Expand Your Reach",
-    "sellIndustrialAssetsTitle": "Sell Your Industrial Assets with 101lab",
+    "sellIndustrialAssetsTitle": "Sell Your Industrial Assets with 101IT",
     "sellCardTitle": "Sell with GreenBidz",
     "sellCardDesc": "Turn your used machinery, tools, and surplus inventory into capital. From individual items to entire production plants, 101LAB ensures you get maximum value through expert auctions and strategic marketing.",
     "sellCardCta": "Sell with GreenBidz",
@@ -419,7 +419,7 @@
     "pricePerUnit": "Price per unit",
     "allowedSites": "Publishing Sites",
     "publishingSiteLabels": {
-      "101lab.co": "101lab – Global Laboratory & Pharma Marketplace",
+      "101it.co": "101IT – Global Laboratory & Pharma Marketplace",
       "greenbidz.com": "GreenBidz – International Industrial Equipment Marketplace"
     },
     "replacementCost": "Replacement Cost:",

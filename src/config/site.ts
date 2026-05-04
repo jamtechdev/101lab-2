@@ -5,7 +5,7 @@ const fromEnv = (import.meta.env.VITE_SITE_TYPE ?? "").trim();
 const detectFromDomain = (): string => {
   if (typeof window === "undefined") return "machines";
   const host = window.location.hostname.toLowerCase();
-  if (host.includes("101lab")) return "LabGreenbidz";
+  if (host.includes("101it")) return "LabGreenbidz";
   if (host.includes("101machines")) return "machines";
   return "machines"; // default
 };

@@ -136,7 +136,7 @@
       }
     },
     "auctionsClosingSoon": "即將結束的拍賣",
-    "highlightLots": "101lab 精選拍品",
+    "highlightLots": "101IT 精選拍品",
     "newAuctions": "最新拍賣",
     "popularAuctions": "熱門拍賣",
     "topPick": "精選推薦",
@@ -2061,7 +2061,7 @@
     "pricePerUnit": "每單位價格",
     "allowedSites": "發佈站點",
     "publishingSiteLabels": {
-      "101lab.co": "101lab – 全球實驗室與製藥市場",
+      "101it.co": "101IT – 全球實驗室與製藥市場",
       "greenbidz.com": "GreenBidz – 國際工業設備市場"
     },
     "replacementCost": "替換成本：",

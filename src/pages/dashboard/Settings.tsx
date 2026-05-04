@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,35 @@ import {
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
-import { User, Bell, Lock, Globe, CreditCard, FileText, Save, Shield, Settings as SettingsIcon, MapPin } from "lucide-react";
+import { User, Bell, Lock, Globe, CreditCard, FileText, Save, Shield, Settings as SettingsIcon, MapPin, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
 import {
   useUpdateUserSettingsMutation,
   useGetUserProfileQuery
 } from "@/rtk/slices/apiSlice";
+
+const INDUSTRY_OPTIONS = [
+  "Academic / University",
+  "Research Institute",
+  "Biotechnology",
+  "Pharmaceutical",
+  "Healthcare / Hospital",
+  "Clinical Diagnostics Lab",
+  "Environmental Testing",
+  "Food & Beverage Testing",
+  "Chemical Industry",
+  "Agriculture / AgriTech",
+  "Oil & Gas / Energy",
+  "Semiconductor / Electronics",
+  "Contract Research Organization (CRO)",
+  "Government / Regulatory",
+  "Manufacturing / Industrial Lab",
+  "Distributor / Reseller",
+  "Startup / Small Business",
+  "Other",
+];
 
 const Settings = () => {
   const { t } = useTranslation();
@@ -56,6 +78,14 @@ const Settings = () => {
   const [currency, setCurrency] = useState("TWD");
 
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [industry, setIndustry] = useState("");
+  const [industryOther, setIndustryOther] = useState("");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [interestDropdownOpen, setInterestDropdownOpen] = useState(false);
+  const [expandedParents, setExpandedParents] = useState<string[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { data: labCategories = [] } = useLanguageAwareCategories();
 
   const [updateUserSettings] = useUpdateUserSettingsMutation();
 
@@ -96,8 +126,43 @@ const Settings = () => {
       } else {
         setDocuments({});
       }
+      const rawIndustry = data.personalInfo?.industry || "";
+      if (rawIndustry.startsWith("Other: ")) {
+        setIndustry("Other");
+        setIndustryOther(rawIndustry.replace("Other: ", ""));
+      } else {
+        setIndustry(rawIndustry);
+        setIndustryOther("");
+      }
+      setSelectedInterests(data.personalInfo?.interests || []);
     }
   }, [profileData]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setInterestDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleInterest = (slug: string) => {
+    setSelectedInterests(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    );
+  };
+
+  const getInterestLabel = (slug: string): string => {
+    for (const cat of labCategories) {
+      if (cat.slug === slug) return cat.name;
+      for (const sub of (cat.subcategories || [])) {
+        if (sub.slug === slug) return sub.name;
+      }
+    }
+    return slug;
+  };
 
   // -------------------- Save Handlers --------------------
   const handleSavePersonalInfo = async () => {
@@ -148,7 +213,9 @@ const Settings = () => {
         phone,
         company,
         userId,
-        companyTaxIdNumber
+        companyTaxIdNumber,
+        industry: industry === "Other" ? `Other: ${industryOther}` : industry,
+        interests: selectedInterests,
       }).unwrap();
 
       if (response.success) {
@@ -368,6 +435,114 @@ const Settings = () => {
                 className="bg-muted/50 border-border/50 cursor-not-allowed"
               />
             </div>
+            {/* Customer Industry */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{t("auth.customerIndustry")}</Label>
+              <select
+                value={industry}
+                onChange={(e) => { setIndustry(e.target.value); setIndustryOther(""); }}
+                className="w-full h-10 px-3 rounded-md border border-border/50 bg-background text-sm text-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+              >
+                <option value="">{t("auth.selectYourIndustry")}</option>
+                {INDUSTRY_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              {industry === "Other" && (
+                <Input
+                  placeholder={t("auth.specifyIndustryPlaceholder")}
+                  value={industryOther}
+                  onChange={(e) => setIndustryOther(e.target.value)}
+                  className="border-border/50 focus:border-accent mt-2"
+                />
+              )}
+            </div>
+
+            {/* Equipment Interests */}
+            {labCategories.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {t("auth.equipmentInterests")}
+                  <span className="text-xs font-normal text-muted-foreground ml-1">({t("auth.optional")})</span>
+                </Label>
+                <div ref={dropdownRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setInterestDropdownOpen(v => !v)}
+                    className={cn(
+                      "w-full h-10 px-3 rounded-md border text-sm flex items-center justify-between bg-background transition-all",
+                      interestDropdownOpen ? "border-accent ring-2 ring-accent/20" : "border-border/50 hover:border-accent/50"
+                    )}
+                  >
+                    <span className="flex items-center gap-2 text-muted-foreground truncate">
+                      {selectedInterests.length === 0
+                        ? t("auth.selectCategoriesInterested")
+                        : <span className="text-foreground font-medium">{t("auth.categoriesSelected", { count: selectedInterests.length })}</span>
+                      }
+                    </span>
+                    <ChevronDown className={cn("w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
+                  </button>
+
+                  {interestDropdownOpen && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
+                      {labCategories.map((cat) => {
+                        const parentSel = selectedInterests.includes(cat.slug);
+                        const isExp = expandedParents.includes(cat.slug);
+                        const hasSubs = cat.subcategories?.length > 0;
+                        return (
+                          <div key={cat.slug} className="border-b border-border/60 last:border-0">
+                            <div className="flex items-stretch">
+                              <button type="button" onClick={() => toggleInterest(cat.slug)}
+                                className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
+                                <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-accent border-accent" : "border-border")}>
+                                  {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
+                                </div>
+                                <span className={parentSel ? "text-accent" : "text-foreground"}>{cat.name}</span>
+                              </button>
+                              {hasSubs && (
+                                <button type="button"
+                                  onClick={() => setExpandedParents(prev => prev.includes(cat.slug) ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug])}
+                                  className="px-3 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                                  <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isExp && "rotate-90")} />
+                                </button>
+                              )}
+                            </div>
+                            {hasSubs && isExp && (
+                              <div className="bg-muted/30 border-t border-border/60">
+                                {cat.subcategories.map((sub) => {
+                                  const subSel = selectedInterests.includes(sub.slug);
+                                  return (
+                                    <button key={sub.slug} type="button" onClick={() => toggleInterest(sub.slug)}
+                                      className="flex items-center gap-2 w-full px-5 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b border-border/40 last:border-0">
+                                      <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all", subSel ? "bg-accent border-accent" : "border-border")}>
+                                        {subSel && <Check className="w-2 h-2 text-white" />}
+                                      </div>
+                                      <span className={subSel ? "text-accent font-medium" : "text-muted-foreground"}>{sub.name}</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {selectedInterests.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {selectedInterests.map(slug => (
+                        <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
+                          {getInterestLabel(slug)}
+                          <button type="button" onClick={() => toggleInterest(slug)} className="hover:text-destructive ml-0.5 leading-none">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="pt-2">
               <Button
                 onClick={handleSavePersonalInfo}
