@@ -764,6 +764,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("notes", bidNotes ?? "");
     quotation_types.forEach((type) => formData.append("quotation_types[]", type));
     if (hasWholeBid) formData.append("amount", String(Number(bidAmount)));
+    if (batchCommission.scope === "seller" || batchCommission.scope === "batch") {
+      if (batchCommission.percent != null && batchCommission.percent > 0) {
+        formData.append("buyer_premium_percent", String(batchCommission.percent));
+      }
+    }
     if (hasWeightBid) {
       formData.append("weight_quotations", JSON.stringify({
         scrap_iron: Number(weightPrices.scrap_iron) || 0,
@@ -1898,11 +1903,31 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </div>
 
                       {bidDialogMode === "buy_now" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
-                        <div className="flex items-center justify-between px-3 py-2 bg-muted/50 rounded border border-border text-sm">
-                          <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
-                          <span className="font-bold text-primary text-base">
-                            {bidDetail.currency || "TWD"} {Number(bidDetail.target_price).toLocaleString()}
-                          </span>
+                        <div className="rounded border border-border overflow-hidden text-sm">
+                          <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                            <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
+                            <span className="font-semibold text-foreground">
+                              {bidDetail.currency || "USD"} {Number(bidDetail.target_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          {(batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 && (() => {
+                            const base = Number(bidDetail.target_price);
+                            const premiumAmt = Math.round(base * batchCommission.percent! / 100 * 100) / 100;
+                            const total = base + premiumAmt;
+                            const cur = bidDetail.currency || "USD";
+                            return (
+                              <>
+                                <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-amber-50/50 dark:bg-amber-900/10">
+                                  <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
+                                  <span className="font-semibold text-amber-700 dark:text-amber-400">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/50">
+                                  <span className="font-bold text-foreground">Total</span>
+                                  <span className="font-bold text-primary text-base">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
 
@@ -1949,15 +1974,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </div>
                     </div>
 
-                    <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5 text-center">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">
+                    <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2 text-center">
                         {bidDialogMode === "buy_now" ? (t("buyer.yourPrice") || "Your Price") : (t("buyer.yourBid") || "Your Bid")}
                       </p>
-                      <p className="text-3xl font-bold text-foreground">
-                        {bidDetail?.currency || "TWD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      {useWeightPrice && Object.keys(weightPrices).length > 0 && (
-                        <div className="mt-3 text-left border-t border-amber-200 pt-3 space-y-1">
+                      {useWeightPrice && Object.keys(weightPrices).length > 0 ? (
+                        <div className="space-y-1">
                           <p className="text-xs text-muted-foreground font-semibold">Weight-based quotation:</p>
                           {WEIGHT_ITEMS.map(({ key, label }) => {
                             const val = weightPrices[key];
@@ -1969,6 +1991,33 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             ) : null;
                           })}
                         </div>
+                      ) : bidDialogMode === "buy_now" && (batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 ? (
+                        (() => {
+                          const basePrice = Number(bidAmount);
+                          const premiumAmt = Math.round(basePrice * batchCommission.percent! / 100 * 100) / 100;
+                          const total = basePrice + premiumAmt;
+                          const cur = bidDetail?.currency || "USD";
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Item Price</span>
+                                <span className="font-semibold text-foreground">{cur} {basePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
+                                <span className="font-semibold text-amber-700">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex justify-between text-sm border-t border-amber-200 pt-2 mt-1">
+                                <span className="font-bold text-foreground">Total</span>
+                                <span className="font-bold text-lg text-foreground">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <p className="text-3xl font-bold text-foreground text-center">
+                          {bidDetail?.currency || "TWD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
                       )}
                     </div>
 
