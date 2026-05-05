@@ -758,7 +758,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     const formData = new FormData();
     formData.append("batch_id", String(batchId));
     formData.append("buyer_id", String(buyerId));
-    formData.append("company_name", companyBuyerName?.trim() || "");
+    formData.append("company_name", companyBuyerName?.trim() || contactPerson?.trim() || String(buyerId));
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
@@ -814,7 +814,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("batch_id", String(batchId));
     formData.append("seller_id", String(sellerId));
     formData.append("buyer_id", String(buyerId));
-    formData.append("company_name", companyBuyerName?.trim() || "");
+    formData.append("company_name", companyBuyerName?.trim() || contactPerson?.trim() || String(buyerId));
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
