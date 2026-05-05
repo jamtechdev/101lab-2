@@ -351,6 +351,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [sellerData, setSellerData] = useState();
   const [bidDetail, setBidDetail] = useState();
   const [batchCountry, setBatchCountry] = useState<string | null>(null);
+  const [batchCommission, setBatchCommission] = useState<{ percent: number | null; scope: string | null }>({ percent: null, scope: null });
 
   const [documentFile, setDocumentFile] = useState<File | null>(null);
 
@@ -579,6 +580,10 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       if (responseData.products) setProducts(responseData.products.map((p: any) => mapApiProductToUI(p)));
       if (responseData?.sellerData) setSellerData(responseData?.sellerData);
       if (responseData?.batch?.country) setBatchCountry(responseData.batch.country);
+      setBatchCommission({
+        percent: responseData?.batch?.commission_percent ?? null,
+        scope: responseData?.batch?.commission_scope ?? null,
+      });
       if (responseData?.biddingDetails) setBidDetail(responseData?.biddingDetails);
       const schedule = responseData.insepction || responseData.inspection;
       if (schedule?.schedule) {
@@ -980,7 +985,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       )}
 
                       {/* Location */}
-                      <div className="flex items-center gap-1.5 text-sm mb-2 ">
+                      <div className="flex items-center gap-1.5 text-sm pb-4">
                         <span className="text-muted-foreground font-medium">{t("buyer.location")}:</span>
                         <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span className="text-primary font-medium">
@@ -1052,7 +1057,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
                       {/* Primary Action Button */}
                       {products.length > 0 && batchStep < 6 && (
-                        <div className="space-y-2 mb-3">
+                        <div className="space-y-2 mb-3  mb-4 ">
                           {isLiveBidding && (
                             <>
                               {bidDetail?.isAuction ? (
@@ -1132,20 +1137,6 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </div>
                       )}
 
-                      {/* Add to Wishlist */}
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full font-semibold text-base py-5 rounded-lg border-2 mb-3 py-4",
-                          wishlistMap[product.id] ? "border-primary text-primary bg-primary/5" : "border-border text-foreground"
-                        )}
-                        disabled={!!wishlistLoading[product.id]}
-                        onClick={() => handleWishlistToggle(product.id, product.title)}
-                      >
-                        <Heart className={cn("w-4 h-4 mr-2", wishlistMap[product.id] && "fill-primary text-primary")} />
-                        {wishlistMap[product.id] ? t("buyer.savedToFavourite") || "Saved to Favourites" : t("buyer.addToFavourite") || "Add to Favourites"}
-                      </Button>
-
                       {/* Watchers / Visitors stats */}
                       {/* <div className="grid grid-cols-2 gap-3 mb-4 py-4">
                         <div className="flex items-center gap-3 border border-border rounded-lg px-4 py-3 bg-background">
@@ -1168,28 +1159,27 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </div>
                       </div> */}
 
-                      {/* Meta rows: Taxes, Seller's Terms, Seller's Other Items */}
-                      <div className="divide-y divide-border border border-border rounded-lg overflow-hidden mb-4">
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="text-foreground font-medium">Taxes</span>
-                          <span className="text-primary text-xs font-medium">To be added at payment</span>
+                      {/* Meta rows: Buyer Premium, Taxes, Seller's Terms */}
+                      <div className="mt-4 divide-y divide-border  rounded-lg overflow-hidden mb-4 pt-4">
+                        {(batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 && (
+                          <div className="flex items-center justify-between px-4 py-4 text-sm">
+                            <span className="text-foreground font-medium">{t("buyer.buyerPremium") || "Buyer Premium"}</span>
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-xs font-medium text-amber-900 dark:text-amber-100">
+                              {batchCommission.percent}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between px-4 py-4 text-sm">
+                          <span className="text-foreground font-medium">{t("buyer.taxes") || "Taxes"}</span>
+                          <span className="text-primary text-xs font-medium">{t("buyer.toBeAddedAtPayment") || "To be added at payment"}</span>
                         </div>
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="text-foreground font-medium">Seller's Terms &amp; Conditions</span>
+                        <div className="flex items-center justify-between px-4 py-4 text-sm">
+                          <span className="text-foreground font-medium">{t("buyer.sellerTermsConditions") || "Seller's Terms & Conditions"}</span>
                           <button
                             onClick={() => {
-                              const el = document.getElementById("sale-terms-section");
+                              const el = document.getElementById("section-sale-terms") || document.getElementById("site-content-sections");
                               if (el) el.scrollIntoView({ behavior: "smooth" });
                             }}
-                            className="text-primary hover:underline text-xs font-medium"
-                          >
-                            View
-                          </button>
-                        </div>
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm">
-                          <span className="text-foreground font-medium">Seller's Other Items</span>
-                          <button
-                            onClick={() => navigate(hideLayout ? '/buyer-marketplace' : '/dashboard/marketplace')}
                             className="text-primary hover:underline text-xs font-medium"
                           >
                             View
@@ -1198,7 +1188,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </div>
 
                       {/* Quick Actions */}
-                      <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="grid grid-cols-3 gap-2 mb-3 pt-4 ">
                         <button
                           onClick={() => {
                             if (!localStorage.getItem("userId")) {
@@ -1218,6 +1208,17 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         >
                           {copied ? <Check className="w-4 h-4 text-green-600 flex-shrink-0" /> : <Share2 className="w-4 h-4 flex-shrink-0" />}
                           {copied ? (t("buyer.linkCopied") || "Copied!") : (t("buyer.share") || "Share")}
+                        </button>
+                        <button
+                          disabled={!!wishlistLoading[product.id]}
+                          onClick={() => handleWishlistToggle(product.id, product.title)}
+                          className={cn(
+                            "flex items-center justify-center gap-2 px-3 py-2.5 rounded border transition-colors font-medium text-sm",
+                            wishlistMap[product.id] ? "border-primary/40 bg-primary/5 text-primary" : "border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                          )}
+                        >
+                          <Heart className={cn("w-4 h-4 flex-shrink-0", wishlistMap[product.id] && "fill-primary text-primary")} />
+                          {wishlistMap[product.id] ? (t("buyer.savedToFavourite") || "Saved") : (t("buyer.addToFavourite") || "Favourite")}
                         </button>
                       </div>
 
@@ -1398,7 +1399,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 </div>
 
                 {/* === BOTTOM SECTION: Details === */}
-                <div className="mt-10 space-y-10 max-w-4xl">
+                <div className="mt-10 space-y-10 max-w-4xl ">
 
                   {/* Core Specifications */}
                   <section>
@@ -1600,6 +1601,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   )}
 
                   {/* Dynamic site content groups — all language-aware */}
+                  <div id="site-content-sections" />
                   {siteContentGroups.map((group) => {
                     const isBulletGroup = group.slug === "buy-confidence";
                     const items = (group.items ?? []).filter((it) => it.is_active);

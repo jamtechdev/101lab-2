@@ -645,7 +645,11 @@
     "bidSuccessTitle": "Bid Placed Successfully!",
     "bidSuccessMessage": "Your bid has been submitted. The seller will review it and you will be notified of any updates.",
     "buyNowSuccessTitle": "Purchase Confirmed!",
-    "buyNowSuccessMessage": "Your purchase has been confirmed. The seller will be in touch to arrange the next steps."
+    "buyNowSuccessMessage": "Your purchase has been confirmed. The seller will be in touch to arrange the next steps.",
+    "buyerPremium": "Buyer Premium",
+    "taxes": "Taxes",
+    "toBeAddedAtPayment": "To be added at payment",
+    "sellerTermsConditions": "Seller's Terms & Conditions"
   },
   "factories": {
     "hero": {

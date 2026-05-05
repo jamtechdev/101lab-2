@@ -553,7 +553,11 @@
     "submitOffer": "Submit Offer",
     "offerAmount": "Your Offer Amount",
     "enterAmount": "Enter amount",
-    "price": "Price"
+    "price": "Price",
+    "buyerPremium": "バイヤープレミアム",
+    "taxes": "税金",
+    "toBeAddedAtPayment": "お支払い時に追加されます",
+    "sellerTermsConditions": "売主の利用規約"
   },
   "factories": {
     "hero": {

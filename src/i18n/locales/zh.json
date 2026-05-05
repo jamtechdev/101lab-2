@@ -578,7 +578,11 @@
     "bidSuccessTitle": "競標提交成功！",
     "bidSuccessMessage": "您的競標已提交，賣家將審核並通知您任何更新。",
     "buyNowSuccessTitle": "購買已確認！",
-    "buyNowSuccessMessage": "您的購買已確認，賣家將與您聯繫以安排後續步驟。"
+    "buyNowSuccessMessage": "您的購買已確認，賣家將與您聯繫以安排後續步驟。",
+    "buyerPremium": "買家佣金",
+    "taxes": "稅費",
+    "toBeAddedAtPayment": "於付款時另計",
+    "sellerTermsConditions": "賣家條款與條件"
   },
   "factories": {
     "hero": {
