@@ -764,10 +764,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("notes", bidNotes ?? "");
     quotation_types.forEach((type) => formData.append("quotation_types[]", type));
     if (hasWholeBid) formData.append("amount", String(Number(bidAmount)));
-    if (batchCommission.scope === "seller" || batchCommission.scope === "batch") {
-      if (batchCommission.percent != null && batchCommission.percent > 0) {
-        formData.append("buyer_premium_percent", String(batchCommission.percent));
-      }
+    if (batchCommission.percent != null && batchCommission.percent > 0) {
+      formData.append("buyer_premium_percent", String(batchCommission.percent));
     }
     if (hasWeightBid) {
       formData.append("weight_quotations", JSON.stringify({
@@ -820,6 +818,9 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("notes", bidNotes ?? "");
     formData.append("offer_quantity", String(offerQuantity || 1));
     if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
+    if (batchCommission.percent != null && batchCommission.percent > 0) {
+      formData.append("buyer_premium_percent", String(batchCommission.percent));
+    }
     if (documentFile) formData.append("document_image", documentFile);
 
     try {
@@ -1165,8 +1166,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </div> */}
 
                       {/* Meta rows: Buyer Premium, Taxes, Seller's Terms */}
-                      <div className="mt-4 divide-y divide-border  rounded-lg overflow-hidden mb-4 pt-4">
-                        {(batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 && (
+                      <div className="divide-y divide-border  rounded-lg overflow-hidden mb-4 pt-4">
+                        {batchCommission.percent != null && batchCommission.percent > 0 && (
                           <div className="flex items-center justify-between px-4 py-4 text-sm">
                             <span className="text-foreground font-medium">{t("buyer.buyerPremium") || "Buyer Premium"}</span>
                             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 text-xs font-medium text-amber-900 dark:text-amber-100">
@@ -1404,7 +1405,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 </div>
 
                 {/* === BOTTOM SECTION: Details === */}
-                <div className="mt-10 space-y-10 max-w-4xl ">
+                <div className=" space-y-10 max-w-4xl ">
 
                   {/* Core Specifications */}
                   <section>
@@ -1415,10 +1416,10 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         const desc = getTranslatedField(product, 'description') || "";
                         const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
                         return (
-                          <div className="p-5">
+                          <div className="p-2">
                             {/* Structured meta fields if populated */}
                             {(product.manufacturer || product.model || product.serial_number || product.dimensions || product.weight || product.condition !== "N/A" || product.category !== "N/A") && (
-                              <div className="space-y-3 mb-5">
+                              <div className="space-y-3">
                                 {product.manufacturer && (
                                   <div className="flex items-start gap-3">
                                     <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1475,7 +1476,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             {/* Rich HTML description */}
                             {desc && (
                               hasHtml
-                                ? <div className="rich-content text-sm text-muted-foreground max-w-none" dangerouslySetInnerHTML={{ __html: desc }} />
+                                ? <div className="rich-content text-sm text-muted-foreground " dangerouslySetInnerHTML={{ __html: desc }} />
                                 : <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
                             )}
                           </div>
@@ -1545,7 +1546,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             </div>
                             {/* Rich HTML extra content */}
                             {extra && (
-                              <div className="rich-content text-sm text-muted-foreground max-w-none mt-3 pt-3 border-t border-border/50" dangerouslySetInnerHTML={{ __html: extra }} />
+                              <div className="rich-content text-sm text-muted-foreground max-w-none pt-3 border-t border-border/50" dangerouslySetInnerHTML={{ __html: extra }} />
                             )}
                           </div>
                         </div>
@@ -1742,6 +1743,32 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         />
                       </div>
                     </div>
+                    {batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 && (
+                      <div className="rounded border border-border overflow-hidden text-sm">
+                        {(() => {
+                          const base = Number(bidAmount);
+                          const premiumAmt = Math.round(base * batchCommission.percent! / 100 * 100) / 100;
+                          const total = base + premiumAmt;
+                          const cur = bidDetail?.currency || "USD";
+                          return (
+                            <>
+                              <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                                <span className="text-muted-foreground">Offer Amount</span>
+                                <span className="font-semibold text-foreground">{cur} {base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-amber-50/50 dark:bg-amber-900/10">
+                                <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
+                                <span className="font-semibold text-amber-700 dark:text-amber-400">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/50">
+                                <span className="font-bold text-foreground">Total</span>
+                                <span className="font-bold text-primary text-base">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                     <div className="flex gap-3 pt-2">
                       <Button type="button" variant="outline" className="flex-1" onClick={() => setShowBidDialog(false)}>
                         {t("common.cancel") || "Cancel"}
@@ -1778,11 +1805,36 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       </div>
                     </div>
 
-                    <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5 text-center">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Your Offer</p>
-                      <p className="text-3xl font-bold text-foreground">
-                        {bidDetail?.currency || "USD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
+                    <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2 text-center">Your Offer</p>
+                      {batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 ? (
+                        (() => {
+                          const basePrice = Number(bidAmount);
+                          const premiumAmt = Math.round(basePrice * batchCommission.percent! / 100 * 100) / 100;
+                          const total = basePrice + premiumAmt;
+                          const cur = bidDetail?.currency || "USD";
+                          return (
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Offer Amount</span>
+                                <span className="font-semibold text-foreground">{cur} {basePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
+                                <span className="font-semibold text-amber-700">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                              <div className="flex justify-between text-sm border-t border-amber-200 pt-2 mt-1">
+                                <span className="font-bold text-foreground">Total</span>
+                                <span className="font-bold text-lg text-foreground">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              </div>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <p className="text-3xl font-bold text-foreground text-center">
+                          {bidDetail?.currency || "USD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                      )}
                     </div>
 
                     <p className="text-sm text-center text-muted-foreground">Are you sure you want to submit this offer?</p>
@@ -1902,21 +1954,19 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <Textarea rows={3} value={bidNotes} onChange={(e) => setBidNotes(e.target.value)} />
                       </div>
 
-                      {bidDialogMode === "buy_now" && bidDetail?.target_price && Number(bidDetail.target_price) > 0 && (
+                      {batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 && (
                         <div className="rounded border border-border overflow-hidden text-sm">
-                          <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
-                            <span className="text-muted-foreground">{t("buyer.price") || "Price"}</span>
-                            <span className="font-semibold text-foreground">
-                              {bidDetail.currency || "USD"} {Number(bidDetail.target_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                          {(batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 && (() => {
-                            const base = Number(bidDetail.target_price);
+                          {(() => {
+                            const base = Number(bidAmount);
                             const premiumAmt = Math.round(base * batchCommission.percent! / 100 * 100) / 100;
                             const total = base + premiumAmt;
-                            const cur = bidDetail.currency || "USD";
+                            const cur = bidDetail?.currency || "USD";
                             return (
                               <>
+                                <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
+                                  <span className="text-muted-foreground">{bidDialogMode === "buy_now" ? (t("buyer.price") || "Price") : "Bid Amount"}</span>
+                                  <span className="font-semibold text-foreground">{cur} {base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
                                 <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-amber-50/50 dark:bg-amber-900/10">
                                   <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
                                   <span className="font-semibold text-amber-700 dark:text-amber-400">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1991,7 +2041,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                             ) : null;
                           })}
                         </div>
-                      ) : bidDialogMode === "buy_now" && (batchCommission.scope === "seller" || batchCommission.scope === "batch") && batchCommission.percent != null && batchCommission.percent > 0 ? (
+                      ) : batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 ? (
                         (() => {
                           const basePrice = Number(bidAmount);
                           const premiumAmt = Math.round(basePrice * batchCommission.percent! / 100 * 100) / 100;
@@ -2000,7 +2050,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                           return (
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Item Price</span>
+                                <span className="text-muted-foreground">{bidDialogMode === "buy_now" ? (t("buyer.price") || "Item Price") : "Bid Amount"}</span>
                                 <span className="font-semibold text-foreground">{cur} {basePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                               </div>
                               <div className="flex justify-between text-sm">
