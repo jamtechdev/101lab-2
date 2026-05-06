@@ -264,14 +264,14 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       const b = (data as any)?.data?.batch;
       if (!b) return;
       pushViewListingEvent({
-        batch_id:       b.batch_id ?? currentBatchId,
-        batch_number:   b.batch_number,
+        batch_id: b.batch_id ?? currentBatchId,
+        batch_number: b.batch_number,
         batch_category: (data as any)?.data?.products?.[0]?.categories?.[0]?.term_slug,
-        batch_status:   b.status,
-        item_count:     (data as any)?.data?.products?.length ?? 0,
-        seller_id:      b.seller_id,
+        batch_status: b.status,
+        item_count: (data as any)?.data?.products?.length ?? 0,
+        seller_id: b.seller_id,
       });
-    } catch {}
+    } catch { }
   }, [(data as any)?.data?.batch?.batch_id ?? currentBatchId]);
 
   const categorySlug = (data as any)?.data?.products?.[0]?.categories?.[0]?.term_slug || "";
@@ -400,7 +400,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
           if (res.data?.data?.inWishlist !== undefined)
             setWishlistMap((prev) => ({ ...prev, [p.id]: res.data.data.inWishlist }));
         })
-        .catch(() => {});
+        .catch(() => { });
     });
   }, [userId, products]);
 
@@ -997,6 +997,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <span className="text-primary font-medium">
                           {parsePhpArray(product.location)}{batchCountry ? `, ${batchCountry}` : ""}
                         </span>
+                      </div>
+
+                      <div>
+
+                        <p>Quantity: {product.meta.find(m => m.meta_key === 'quantity')?.meta_value || "1"}</p>
                       </div>
 
 
@@ -1637,7 +1642,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <div className="rounded-xl border border-border divide-y divide-border">
                           {items.map((item) => {
                             const termKey = `${group.slug}-${item.id}`;
-                            const itemLabel   = pickLangField(item, "label");
+                            const itemLabel = pickLangField(item, "label");
                             const itemContent = pickLangField(item, "content");
                             return (
                               <div key={item.id}>
@@ -2113,16 +2118,16 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                   {bidDialogMode === "make_offer"
                     ? t("buyer.offerSuccessTitle", "Offer Submitted Successfully!")
                     : bidDialogMode === "buy_now"
-                    ? t("buyer.buyNowSuccessTitle", "Purchase Confirmed!")
-                    : t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
+                      ? t("buyer.buyNowSuccessTitle", "Purchase Confirmed!")
+                      : t("buyer.bidSuccessTitle", "Bid Placed Successfully!")}
                 </DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {bidDialogMode === "make_offer"
                   ? t("buyer.offerSuccessMessage", "Your offer has been submitted. The seller will review it and you will be notified of any updates.")
                   : bidDialogMode === "buy_now"
-                  ? t("buyer.buyNowSuccessMessage", "Your purchase has been confirmed. The seller will be in touch to arrange the next steps.")
-                  : t("buyer.bidSuccessMessage", "Your bid has been submitted. The seller will review it and you will be notified of any updates.")}
+                    ? t("buyer.buyNowSuccessMessage", "Your purchase has been confirmed. The seller will be in touch to arrange the next steps.")
+                    : t("buyer.bidSuccessMessage", "Your bid has been submitted. The seller will review it and you will be notified of any updates.")}
               </p>
               <div className="flex flex-col w-full gap-2 pt-2">
                 <Button
