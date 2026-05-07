@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 import { useLoginMutation, useSignupWithLinkMutation, useResendVerificationLinkMutation } from "@/rtk/slices/apiSlice";
+import SEOMeta from "@/components/common/SEOMeta";
+import { getSEO } from "@/config/seoConfig";
 import { CountrySelect } from "@/components/common/CountrySelect";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError, toastWarning } from "../../helper/toasterNotification";
@@ -243,6 +245,8 @@ const Auth = () => {
     labCategories.flatMap(c => [c, ...(c.subcategories || [])]).find(c => c.slug === slug)?.name || slug;
 
   return (
+    <>
+    <SEOMeta {...getSEO('auth')} />
     <div className="min-h-screen flex bg-background">
 
       {/* ── Left branding panel ── */}
@@ -805,6 +809,7 @@ const Auth = () => {
       )}
 
     </div>
+    </>
   );
 };
 

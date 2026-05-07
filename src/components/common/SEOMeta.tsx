@@ -17,7 +17,7 @@ interface SEOMetaProps {
 }
 
 const SEOMeta = ({
-  title = 'GreenBidz - Enterprise Asset Management & Marketplace',
+  title = '101lab - GreenBidz | Enterprise Asset Management & Marketplace',
   description = 'Professional B2B marketplace for buying and selling industrial equipment, machinery, and recyclable materials. Turn your surplus assets into value.',
   keywords = 'industrial equipment, machinery marketplace, asset management, buy equipment, sell surplus, recyclables, B2B marketplace',
   image = '/greenbidz_logo.png',

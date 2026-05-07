@@ -6,6 +6,7 @@ import Footer from "@/components/common/Footer";
 import { useGetPublicBlogsQuery, BlogItem } from "@/rtk/slices/adminApiSlice";
 import { useTranslation } from "react-i18next";
 import { normalizeStoredLanguage } from "@/utils/languageUtils";
+import SEOMeta from "@/components/common/SEOMeta";
 
 const useBlogLocale = () => {
   const { i18n } = useTranslation();
@@ -112,6 +113,12 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <SEOMeta
+        title="GreenBidz Blog - Industrial Equipment Insights & News"
+        description="Stay updated with the latest insights on industrial equipment, recycling trends, and marketplace news from GreenBidz."
+        keywords="industrial equipment blog, recycling news, GreenBidz insights, machinery trends, B2B marketplace"
+        type="website"
+      />
       <Header />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-8">

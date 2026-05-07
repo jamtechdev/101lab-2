@@ -69,6 +69,8 @@ import i18n from "@/i18n/config";
 import { pushViewListingEvent, pushAddToWishlistEvent } from "@/utils/gtm";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { useGetPublicSiteContentQuery, type ContentGroup } from "@/rtk/slices/adminApiSlice";
+import SEOMeta from "@/components/common/SEOMeta";
+import { useAISeoMeta } from "@/hooks/useAISeoMeta";
 
 
 // Country name → ISO 3166-1 alpha-2 code → flag emoji
@@ -364,6 +366,18 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
   const [useWholePrice, setUseWholePrice] = useState(true);
   const [useWeightPrice, setUseWeightPrice] = useState(false);
+
+  // AI-generated SEO meta — cached in localStorage per batch id + lang
+  const productTitle = products[0]?.title_en || products[0]?.title || "";
+  const productDescription = products[0]?.description_en || products[0]?.description || "";
+  const productCategory = products[0]?.category || "";
+  const { seo: aiSeo } = useAISeoMeta(
+    id ? Number(id) : undefined,
+    productTitle,
+    productDescription,
+    productCategory,
+    i18n.language
+  );
 
   const WEIGHT_ITEMS = [
     { key: "scrap_iron", label: t("buyerDashboard.material.scrapIron") },
@@ -928,6 +942,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
   return (
     <Wrapper>
+      <SEOMeta
+        title={aiSeo.seo_title || `${productTitle || 'Equipment Listing'} - GreenBidz`}
+        description={aiSeo.seo_description || productDescription}
+        keywords={aiSeo.seo_keywords || "industrial equipment, machinery, GreenBidz marketplace"}
+        type="product"
+        image={products[0]?.images?.[0] || undefined}
+      />
       <div className="min-h-screen bg-background">
 
         <div className="container mx-auto px-4 py-6 ">

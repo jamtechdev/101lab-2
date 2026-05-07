@@ -15,7 +15,7 @@ export interface PageSEO {
 export const SEO_CONFIG: Record<string, PageSEO> = {
   // Homepage
   home: {
-    title: 'GreenBidz - Enterprise Asset Management & Marketplace',
+    title: '101lab - GreenBidz | Enterprise Asset Management & Marketplace',
     description:
       'Professional B2B marketplace for buying and selling industrial equipment, machinery, and recyclable materials. Turn your surplus assets into value with our trusted platform.',
     keywords:
@@ -149,7 +149,7 @@ export const getDynamicSEO = (basePageName: string, params: Record<string, any>)
  * Global SEO Settings
  */
 export const GLOBAL_SEO = {
-  siteName: 'GreenBidz',
+  siteName: '101lab - GreenBidz',
   siteUrl: 'https://101recycle.greenbidz.com',
   logo: '/greenbidz_logo.png',
   author: 'GreenBidz',

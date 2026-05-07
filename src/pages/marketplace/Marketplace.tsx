@@ -333,19 +333,46 @@ const Marketplace = () => {
 
   const hasActiveFilter = selectedCategory || selectedCountry || selectedCondition || selectedBidFilter || selectedGroup;
 
-  const pageTitle = searchQuery
-    ? `Buy ${searchQuery} - GreenBidz Marketplace`
-    : "Industrial Equipment Marketplace - GreenBidz";
-  const pageDescription = searchQuery
-    ? `Browse and buy quality ${searchQuery} on GreenBidz. Connect with trusted sellers of industrial equipment and machinery.`
-    : "Discover industrial equipment, machinery, and recyclable materials from verified sellers worldwide on GreenBidz.";
+  const groupTitle = groupDetail ? getGroupTitle() : "";
+  const groupDescription = groupDetail ? getGroupDescription() : "";
+  const categoryLabel = selectedCategory ? selectedCategory.replace(/-/g, " ") : "";
+
+  const pageTitle = groupTitle
+    ? `${groupTitle} - 101lab GreenBidz Marketplace`
+    : searchQuery
+    ? `Buy ${searchQuery} - 101lab GreenBidz Marketplace`
+    : categoryLabel
+    ? `Buy ${categoryLabel} - 101lab GreenBidz Marketplace`
+    : "Industrial Equipment Marketplace - 101lab GreenBidz";
+
+  const pageDescription = groupTitle
+    ? groupDescription || `Browse ${groupTitle} listings on 101lab GreenBidz. Connect with verified sellers of industrial equipment and recyclable materials.`
+    : searchQuery
+    ? `Browse and buy quality ${searchQuery} on 101lab GreenBidz. Connect with trusted sellers of industrial equipment and machinery.`
+    : categoryLabel
+    ? `Discover ${categoryLabel} from verified sellers on 101lab GreenBidz. Quality industrial equipment and machinery.`
+    : "Discover industrial equipment, machinery, and recyclable materials from verified sellers worldwide on 101lab GreenBidz.";
+
+  const pageKeywords = [
+    "buy equipment",
+    "marketplace",
+    "industrial equipment",
+    "machinery",
+    groupTitle || null,
+    categoryLabel || null,
+    searchQuery || null,
+    "101lab GreenBidz",
+    "verified sellers",
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className="min-h-screen bg-background">
       <SEOMeta
         title={pageTitle}
         description={pageDescription}
-        keywords="buy equipment, marketplace, industrial equipment, machinery, sellers, equipment for sale"
+        keywords={pageKeywords}
         type="website"
       />
       <Header />

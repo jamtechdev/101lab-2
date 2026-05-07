@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useGetPublicBlogBySlugQuery, BlogItem } from "@/rtk/slices/adminApiSlice";
 import { useTranslation } from "react-i18next";
 import { normalizeStoredLanguage } from "@/utils/languageUtils";
+import SEOMeta from "@/components/common/SEOMeta";
 
 const pickBlogField = (blog: BlogItem, field: "title" | "excerpt" | "content", lang: string): string => {
   if (lang !== "en") {
@@ -91,6 +92,15 @@ export default function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <SEOMeta
+        title={blog.seo_title || `${localTitle} - GreenBidz Blog`}
+        description={blog.seo_description || localExcerpt || undefined}
+        keywords={blog.seo_keywords || undefined}
+        type="article"
+        image={blog.cover_image || undefined}
+        publishedDate={blog.createdAt}
+        modifiedDate={blog.updatedAt}
+      />
       <Header />
 
       {/* ── Hero banner ─────────────────────────────────────────────────────── */}
