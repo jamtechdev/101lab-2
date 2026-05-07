@@ -999,11 +999,6 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </span>
                       </div>
 
-                      <div>
-
-                        
-
-
                       {/* Countdown / Bid Status */}
                       {bidDetail && isLiveBidding && batchStep > 4 && (
                         <div className="flex items-center justify-between bg-green-50 border border-green-300 rounded-md px-4 py-2.5 mb-3">
