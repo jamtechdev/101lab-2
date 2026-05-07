@@ -991,13 +991,21 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       )}
 
                       {/* Location */}
-                      <div className="flex items-center gap-1.5 text-sm pb-4">
+                      <div className="flex items-center gap-1.5 text-sm pb-2">
                         <span className="text-muted-foreground font-medium">{t("buyer.location")}:</span>
                         <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                         <span className="text-primary font-medium">
                           {parsePhpArray(product.location)}{batchCountry ? `, ${batchCountry}` : ""}
                         </span>
                       </div>
+
+                      {/* Quantity */}
+                      {product.quantity && product.quantity !== "N/A" && (
+                        <div className="flex items-center gap-1.5 text-sm pb-4">
+                          <span className="text-muted-foreground font-medium">{t("buyer.quantity") || "Quantity"}:</span>
+                          <span className="font-medium text-foreground">{product.quantity}</span>
+                        </div>
+                      )}
 
                       {/* Countdown / Bid Status */}
                       {bidDetail && isLiveBidding && batchStep > 4 && (
