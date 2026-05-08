@@ -285,6 +285,19 @@ export interface BatchDetailsProduct {
   condition?: string | null;
   operation_status?: string | null;
   quantity?: string | null;
+  // SEO fields (per language)
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
+  seo_title_zh?: string | null;
+  seo_description_zh?: string | null;
+  seo_keywords_zh?: string | null;
+  seo_title_ja?: string | null;
+  seo_description_ja?: string | null;
+  seo_keywords_ja?: string | null;
+  seo_title_th?: string | null;
+  seo_description_th?: string | null;
+  seo_keywords_th?: string | null;
 }
 
 export interface ProductTranslations {
@@ -984,6 +997,30 @@ export const adminApi = createApi({
         method: "GET",
       }),
       providesTags: (_result, _error, batchId) => [
+        { type: "Batches", id: batchId },
+      ],
+    }),
+
+    /* ---------------- UPDATE PRODUCT SEO (seller + admin) ---------------- */
+    updateProductSeo: builder.mutation<
+      { success: boolean; message: string },
+      {
+        productId: number;
+        batchId: number;
+        body: {
+          seo_title?: string; seo_description?: string; seo_keywords?: string;
+          seo_title_zh?: string; seo_description_zh?: string; seo_keywords_zh?: string;
+          seo_title_ja?: string; seo_description_ja?: string; seo_keywords_ja?: string;
+          seo_title_th?: string; seo_description_th?: string; seo_keywords_th?: string;
+        };
+      }
+    >({
+      query: ({ productId, body }) => ({
+        url: `/product/${productId}/seo`,
+        method: "PATCH",
+        data: body,
+      }),
+      invalidatesTags: (_result, _error, { batchId }) => [
         { type: "Batches", id: batchId },
       ],
     }),
@@ -1807,4 +1844,7 @@ export const {
   useUpdateContentItemMutation,
   useDeleteContentItemMutation,
   useSeedSiteContentMutation,
+
+  /* ---------- PRODUCT SEO ---------- */
+  useUpdateProductSeoMutation,
 } = adminApi;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import SunEditor from "suneditor-react";
 import "suneditor/dist/css/suneditor.min.css";
@@ -21,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, X, UploadCloud, Languages } from "lucide-react";
+import { Loader2, X, UploadCloud, Languages, Sparkles, Search } from "lucide-react";
 import {
   useGetBatchDetailsQuery,
   useUpdateAdminProductMutation,
@@ -29,10 +30,13 @@ import {
   useUpdateAdminBiddingMutation,
   useAddAdminProductImagesMutation,
   useDeleteAdminProductImageMutation,
+  useUpdateProductSeoMutation,
   type BatchDetailsProductImage,
 } from "@/rtk/slices/adminApiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
+import axiosInstance from "@/rtk/api/axiosInstance";
+import { adminApi } from "@/rtk/slices/adminApiSlice";
 
 interface Props {
   batchId: number | null;
@@ -44,6 +48,13 @@ const LANG_LABELS: Record<string, string> = {
   zh: "Chinese (繁體)",
   ja: "Japanese (日本語)",
   th: "Thai (ภาษาไทย)",
+};
+
+const SEO_LANG_LABELS: Record<string, string> = {
+  en: "🇺🇸 English",
+  zh: "🇹🇼 中文",
+  ja: "🇯🇵 日本語",
+  th: "🇹🇭 ไทย",
 };
 
 const EDITOR_OPTIONS = {
@@ -60,21 +71,32 @@ const EDITOR_OPTIONS = {
     ["blockquote", "paragraphStyle", "textStyle"],
     ["fullScreen", "showBlocks", "codeView", "preview", "print"],
   ],
-  // Applies to the editable div inside the SunEditor iframe
   defaultStyle: "white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.6;",
-  // Injects CSS directly into the editor iframe — overrides suneditor's own p/span rules
   addStyleForCss: "p, span, h1, h2, h3, h4, h5, h6, li, td, th, blockquote { white-space: pre-wrap !important; word-break: break-word; }",
   charCounter: false,
 };
 
+// Character counter helper
+const CharCount = ({ value, max }: { value: string; max: number }) => (
+  <span className={`text-xs ml-auto ${value.length > max ? "text-destructive" : "text-muted-foreground"}`}>
+    {value.length}/{max}
+  </span>
+);
+
 const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const { data, isLoading } = useGetBatchDetailsQuery(batchId!, { skip: !batchId || !open });
   const [updateProduct, { isLoading: savingProduct }] = useUpdateAdminProductMutation();
   const [translateProduct, { isLoading: translating }] = useTranslateAdminProductMutation();
   const [updateBidding, { isLoading: savingBidding }] = useUpdateAdminBiddingMutation();
   const [addImages, { isLoading: uploadingImages }] = useAddAdminProductImagesMutation();
   const [deleteImage, { isLoading: deletingImage }] = useDeleteAdminProductImageMutation();
+  const [updateProductSeo, { isLoading: savingSeo }] = useUpdateProductSeoMutation();
+
+  const invalidateBatchCache = () => {
+    if (batchId) dispatch(adminApi.util.invalidateTags([{ type: "Batches", id: batchId }]));
+  };
 
   const { data: categories } = useLanguageAwareCategories();
 
@@ -107,6 +129,27 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [jaKey, setJaKey] = useState(0);
   const [thKey, setThKey] = useState(0);
   const [dataLoadKey, setDataLoadKey] = useState(0);
+
+  // ── SEO fields (per language) ───────────────────────────────────────────
+  const [seoLangTab, setSeoLangTab] = useState<"en" | "zh" | "ja" | "th">("en");
+  // Track each language independently so parallel/sequential generation doesn't conflict
+  const [generatingSeoLangs, setGeneratingSeoLangs] = useState<Set<string>>(new Set());
+
+  const [seoTitleEn, setSeoTitleEn] = useState("");
+  const [seoDescEn, setSeoDescEn] = useState("");
+  const [seoKeywordsEn, setSeoKeywordsEn] = useState("");
+
+  const [seoTitleZh, setSeoTitleZh] = useState("");
+  const [seoDescZh, setSeoDescZh] = useState("");
+  const [seoKeywordsZh, setSeoKeywordsZh] = useState("");
+
+  const [seoTitleJa, setSeoTitleJa] = useState("");
+  const [seoDescJa, setSeoDescJa] = useState("");
+  const [seoKeywordsJa, setSeoKeywordsJa] = useState("");
+
+  const [seoTitleTh, setSeoTitleTh] = useState("");
+  const [seoDescTh, setSeoDescTh] = useState("");
+  const [seoKeywordsTh, setSeoKeywordsTh] = useState("");
 
   // ── Bidding fields ──────────────────────────────────────────────────────
   const [bidType, setBidType] = useState("make_offer");
@@ -148,6 +191,20 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       if (p.condition) setCondition(p.condition);
       if (p.operation_status) setOperationStatus(p.operation_status);
       if (p.quantity) setQuantity(String(p.quantity));
+
+      // SEO fields
+      setSeoTitleEn(p.seo_title || "");
+      setSeoDescEn(p.seo_description || "");
+      setSeoKeywordsEn(p.seo_keywords || "");
+      setSeoTitleZh(p.seo_title_zh || "");
+      setSeoDescZh(p.seo_description_zh || "");
+      setSeoKeywordsZh(p.seo_keywords_zh || "");
+      setSeoTitleJa(p.seo_title_ja || "");
+      setSeoDescJa(p.seo_description_ja || "");
+      setSeoKeywordsJa(p.seo_keywords_ja || "");
+      setSeoTitleTh(p.seo_title_th || "");
+      setSeoDescTh(p.seo_description_th || "");
+      setSeoKeywordsTh(p.seo_keywords_th || "");
     }
     const b = data.data?.bidding;
     if (b) {
@@ -190,14 +247,13 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       setPendingFiles([]);
       setPendingPreviews([]);
       setLangTab("en");
+      setSeoLangTab("en");
       setTranslatingLang(null);
+      setGeneratingSeoLangs(new Set());
     }
   }, [open]);
 
   const productId = data?.data?.products?.[0]?.product_id;
-
-  console.log("product id is there ",productId);
-  
 
   // Translate all languages at once
   const handleTranslateAll = async () => {
@@ -230,6 +286,102 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       toastError(err?.data?.message || "Translation failed");
     } finally {
       setTranslatingLang(null);
+    }
+  };
+
+  // Generate SEO for a specific language, set state, and auto-save to backend.
+  // Returns the generated fields so callers can batch-save across languages.
+  const generateSeoForLang = async (lang: "en" | "zh" | "ja" | "th") => {
+    const langTitle = lang === "zh" ? (titleZh || title)
+      : lang === "ja" ? (titleJa || title)
+      : lang === "th" ? (titleTh || title)
+      : title;
+    const langDesc = lang === "zh" ? (descriptionZh || description)
+      : lang === "ja" ? (descriptionJa || description)
+      : lang === "th" ? (descriptionTh || description)
+      : description;
+
+    const res = await axiosInstance.post("seo/generate", {
+      title: langTitle,
+      description: langDesc,
+      category: categoryName || undefined,
+      type: "product",
+      lang,
+    });
+
+    if (!res.data?.success || !res.data?.data) throw new Error("SEO generation returned no data");
+    return res.data.data as { seo_title: string; seo_description: string; seo_keywords: string };
+  };
+
+  // Generate for one language, update state, and immediately save that language to backend
+  const handleGenerateSeo = async (lang: "en" | "zh" | "ja" | "th") => {
+    if (!title.trim()) { toastError("Please enter a title first"); return; }
+    if (!productId) return;
+
+    setGeneratingSeoLangs((prev) => new Set(prev).add(lang));
+    try {
+      const { seo_title, seo_description, seo_keywords } = await generateSeoForLang(lang);
+
+      // Update local state
+      if (lang === "en") { setSeoTitleEn(seo_title); setSeoDescEn(seo_description); setSeoKeywordsEn(seo_keywords); }
+      if (lang === "zh") { setSeoTitleZh(seo_title); setSeoDescZh(seo_description); setSeoKeywordsZh(seo_keywords); }
+      if (lang === "ja") { setSeoTitleJa(seo_title); setSeoDescJa(seo_description); setSeoKeywordsJa(seo_keywords); }
+      if (lang === "th") { setSeoTitleTh(seo_title); setSeoDescTh(seo_description); setSeoKeywordsTh(seo_keywords); }
+
+      // Auto-save this language to backend immediately
+      await axiosInstance.patch(`product/${productId}/seo`, {
+        [`seo_title${lang === "en" ? "" : `_${lang}`}`]: seo_title,
+        [`seo_description${lang === "en" ? "" : `_${lang}`}`]: seo_description,
+        [`seo_keywords${lang === "en" ? "" : `_${lang}`}`]: seo_keywords,
+      });
+      invalidateBatchCache();
+
+      toastSuccess(`SEO generated & saved for ${SEO_LANG_LABELS[lang]}`);
+    } catch (err: any) {
+      toastError(err?.response?.data?.message || `Failed to generate SEO for ${SEO_LANG_LABELS[lang]}`);
+    } finally {
+      setGeneratingSeoLangs((prev) => { const s = new Set(prev); s.delete(lang); return s; });
+    }
+  };
+
+  // Generate all 4 languages in one request, then save all to backend
+  const handleGenerateAllSeo = async () => {
+    if (!title.trim()) { toastError("Please enter a title first"); return; }
+    if (!productId) return;
+
+    setGeneratingSeoLangs(new Set(["en", "zh", "ja", "th"]));
+    try {
+      const res = await axiosInstance.post("seo/generate-all", {
+        title,
+        description,
+        category: categoryName || undefined,
+        type: "product",
+        titles: { zh: titleZh || title, ja: titleJa || title, th: titleTh || title },
+        descriptions: { zh: descriptionZh || description, ja: descriptionJa || description, th: descriptionTh || description },
+      });
+
+      if (!res.data?.success || !res.data?.data) throw new Error("No data returned");
+
+      const { en, zh, ja, th } = res.data.data;
+
+      if (en) { setSeoTitleEn(en.seo_title); setSeoDescEn(en.seo_description); setSeoKeywordsEn(en.seo_keywords); }
+      if (zh) { setSeoTitleZh(zh.seo_title); setSeoDescZh(zh.seo_description); setSeoKeywordsZh(zh.seo_keywords); }
+      if (ja) { setSeoTitleJa(ja.seo_title); setSeoDescJa(ja.seo_description); setSeoKeywordsJa(ja.seo_keywords); }
+      if (th) { setSeoTitleTh(th.seo_title); setSeoDescTh(th.seo_description); setSeoKeywordsTh(th.seo_keywords); }
+
+      // Save all languages to backend in one PATCH
+      await axiosInstance.patch(`product/${productId}/seo`, {
+        ...(en ? { seo_title: en.seo_title, seo_description: en.seo_description, seo_keywords: en.seo_keywords } : {}),
+        ...(zh ? { seo_title_zh: zh.seo_title, seo_description_zh: zh.seo_description, seo_keywords_zh: zh.seo_keywords } : {}),
+        ...(ja ? { seo_title_ja: ja.seo_title, seo_description_ja: ja.seo_description, seo_keywords_ja: ja.seo_keywords } : {}),
+        ...(th ? { seo_title_th: th.seo_title, seo_description_th: th.seo_description, seo_keywords_th: th.seo_keywords } : {}),
+      });
+      invalidateBatchCache();
+      toastSuccess("All language SEO generated & saved");
+    } catch (err: any) {
+      toastError(err?.response?.data?.message || "Failed to generate SEO for all languages");
+    } finally {
+      setGeneratingSeoLangs(new Set());
     }
   };
 
@@ -298,11 +450,53 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
       body.description_th = descriptionTh;
       body.extra_content_th = extraContentTh;
 
+      // SEO fields (all languages)
+      body.seo_title = seoTitleEn;
+      body.seo_description = seoDescEn;
+      body.seo_keywords = seoKeywordsEn;
+      body.seo_title_zh = seoTitleZh;
+      body.seo_description_zh = seoDescZh;
+      body.seo_keywords_zh = seoKeywordsZh;
+      body.seo_title_ja = seoTitleJa;
+      body.seo_description_ja = seoDescJa;
+      body.seo_keywords_ja = seoKeywordsJa;
+      body.seo_title_th = seoTitleTh;
+      body.seo_description_th = seoDescTh;
+      body.seo_keywords_th = seoKeywordsTh;
+
       await updateProduct({ productId, body }).unwrap();
       toastSuccess(t("admin.edit.productSaved", "Product updated"));
       onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update product");
+    }
+  };
+
+  const handleSaveSeo = async () => {
+    if (!productId) return;
+    try {
+      await updateProductSeo({
+        productId,
+        batchId: batchId!,
+        body: {
+          seo_title: seoTitleEn,
+          seo_description: seoDescEn,
+          seo_keywords: seoKeywordsEn,
+          seo_title_zh: seoTitleZh,
+          seo_description_zh: seoDescZh,
+          seo_keywords_zh: seoKeywordsZh,
+          seo_title_ja: seoTitleJa,
+          seo_description_ja: seoDescJa,
+          seo_keywords_ja: seoKeywordsJa,
+          seo_title_th: seoTitleTh,
+          seo_description_th: seoDescTh,
+          seo_keywords_th: seoKeywordsTh,
+        },
+      }).unwrap();
+      toastSuccess(t("admin.edit.seoSaved", "SEO saved"));
+      onClose();
+    } catch (err: any) {
+      toastError(err?.data?.message || "Failed to save SEO");
     }
   };
 
@@ -326,6 +520,109 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update bidding");
     }
+  };
+
+  // ── Reusable SEO fields for one language ───────────────────────────────
+  const SeoFields = ({
+    lang,
+    seoTitle, setSeoTitle,
+    seoDesc, setSeoDesc,
+    seoKeywords, setSeoKeywords,
+  }: {
+    lang: "en" | "zh" | "ja" | "th";
+    seoTitle: string; setSeoTitle: (v: string) => void;
+    seoDesc: string; setSeoDesc: (v: string) => void;
+    seoKeywords: string; setSeoKeywords: (v: string) => void;
+  }) => {
+    const isGenerating = generatingSeoLangs.has(lang);
+    const anyGenerating = generatingSeoLangs.size > 0;
+    return (
+      <div className="p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {lang === "en"
+              ? "SEO metadata for English pages."
+              : `SEO metadata for ${SEO_LANG_LABELS[lang]} pages. Falls back to English if empty.`}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleGenerateSeo(lang)}
+            disabled={anyGenerating}
+            className="gap-1.5 h-7 text-xs shrink-0 ml-2"
+          >
+            {isGenerating
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <Sparkles className="h-3 w-3" />}
+            {isGenerating ? "Generating…" : "Generate with AI"}
+          </Button>
+        </div>
+
+        {/* SEO Title */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <Label className="text-xs">SEO Title</Label>
+            <CharCount value={seoTitle} max={60} />
+          </div>
+          <Input
+            value={seoTitle}
+            onChange={(e) => setSeoTitle(e.target.value)}
+            placeholder="Page title shown in search results (50–60 chars ideal)"
+            maxLength={80}
+          />
+          {seoTitle && (
+            <div className="mt-1.5 px-3 py-2 rounded-md bg-muted/40 border border-border/50">
+              <p className="text-[11px] text-muted-foreground mb-0.5">Preview</p>
+              <p className="text-[13px] text-blue-600 dark:text-blue-400 font-medium leading-snug line-clamp-1">{seoTitle}</p>
+            </div>
+          )}
+        </div>
+
+        {/* SEO Description */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-1">
+            <Label className="text-xs">SEO Description</Label>
+            <CharCount value={seoDesc} max={160} />
+          </div>
+          <Textarea
+            value={seoDesc}
+            onChange={(e) => setSeoDesc(e.target.value)}
+            rows={3}
+            placeholder="Snippet shown under the title in search results (120–160 chars ideal)"
+            maxLength={200}
+          />
+          {seoDesc && (
+            <div className="mt-1.5 px-3 py-2 rounded-md bg-muted/40 border border-border/50">
+              <p className="text-[11px] text-muted-foreground mb-0.5">Preview</p>
+              <p className="text-[12px] text-muted-foreground leading-snug line-clamp-2">{seoDesc}</p>
+            </div>
+          )}
+        </div>
+
+        {/* SEO Keywords */}
+        <div className="space-y-1">
+          <Label className="text-xs">Keywords</Label>
+          <Input
+            value={seoKeywords}
+            onChange={(e) => setSeoKeywords(e.target.value)}
+            placeholder="comma, separated, keywords"
+          />
+          {seoKeywords && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {seoKeywords.split(",").map((kw, i) => {
+                const k = kw.trim();
+                return k ? (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 text-xs">
+                    {k}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -353,6 +650,10 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
               </TabsTrigger>
               <TabsTrigger value="bidding" className="flex-1">
                 {t("admin.edit.tabBidding", "Bidding")}
+              </TabsTrigger>
+              <TabsTrigger value="seo" className="flex-1 gap-1.5">
+                <Search className="h-3.5 w-3.5" />
+                {t("admin.edit.tabSeo", "SEO")}
               </TabsTrigger>
             </TabsList>
 
@@ -443,20 +744,11 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Title (Chinese)</Label>
-                      <Input
-                        value={titleZh}
-                        onChange={(e) => setTitleZh(e.target.value)}
-                        placeholder="Chinese title…"
-                      />
+                      <Input value={titleZh} onChange={(e) => setTitleZh(e.target.value)} placeholder="Chinese title…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Description (Chinese)</Label>
-                      <Textarea
-                        value={descriptionZh}
-                        onChange={(e) => setDescriptionZh(e.target.value)}
-                        rows={3}
-                        placeholder="Chinese description…"
-                      />
+                      <Textarea value={descriptionZh} onChange={(e) => setDescriptionZh(e.target.value)} rows={3} placeholder="Chinese description…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">
@@ -494,20 +786,11 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Title (Japanese)</Label>
-                      <Input
-                        value={titleJa}
-                        onChange={(e) => setTitleJa(e.target.value)}
-                        placeholder="Japanese title…"
-                      />
+                      <Input value={titleJa} onChange={(e) => setTitleJa(e.target.value)} placeholder="Japanese title…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Description (Japanese)</Label>
-                      <Textarea
-                        value={descriptionJa}
-                        onChange={(e) => setDescriptionJa(e.target.value)}
-                        rows={3}
-                        placeholder="Japanese description…"
-                      />
+                      <Textarea value={descriptionJa} onChange={(e) => setDescriptionJa(e.target.value)} rows={3} placeholder="Japanese description…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">
@@ -545,20 +828,11 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Title (Thai)</Label>
-                      <Input
-                        value={titleTh}
-                        onChange={(e) => setTitleTh(e.target.value)}
-                        placeholder="Thai title…"
-                      />
+                      <Input value={titleTh} onChange={(e) => setTitleTh(e.target.value)} placeholder="Thai title…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Description (Thai)</Label>
-                      <Textarea
-                        value={descriptionTh}
-                        onChange={(e) => setDescriptionTh(e.target.value)}
-                        rows={3}
-                        placeholder="Thai description…"
-                      />
+                      <Textarea value={descriptionTh} onChange={(e) => setDescriptionTh(e.target.value)} rows={3} placeholder="Thai description…" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">
@@ -683,17 +957,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     {existingMedia.map((img) => (
                       <div key={img.id} className="relative group w-24 h-24">
                         {img.type?.startsWith("video/") ? (
-                          <video
-                            src={img.url}
-                            className="w-full h-full object-cover rounded border"
-                            muted
-                          />
+                          <video src={img.url} className="w-full h-full object-cover rounded border" muted />
                         ) : (
-                          <img
-                            src={img.url}
-                            alt=""
-                            className="w-full h-full object-cover rounded border"
-                          />
+                          <img src={img.url} alt="" className="w-full h-full object-cover rounded border" />
                         )}
                         <button
                           type="button"
@@ -718,17 +984,9 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                     {pendingPreviews.map((src, i) => (
                       <div key={i} className="relative group w-24 h-24">
                         {pendingFiles[i]?.type?.startsWith("video/") ? (
-                          <video
-                            src={src}
-                            className="w-full h-full object-cover rounded border border-dashed border-primary"
-                            muted
-                          />
+                          <video src={src} className="w-full h-full object-cover rounded border border-dashed border-primary" muted />
                         ) : (
-                          <img
-                            src={src}
-                            alt=""
-                            className="w-full h-full object-cover rounded border border-dashed border-primary"
-                          />
+                          <img src={src} alt="" className="w-full h-full object-cover rounded border border-dashed border-primary" />
                         )}
                         <button
                           type="button"
@@ -771,10 +1029,7 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
               </div>
 
               <DialogFooter>
-                <Button
-                  onClick={handleUploadPending}
-                  disabled={uploadingImages || pendingFiles.length === 0}
-                >
+                <Button onClick={handleUploadPending} disabled={uploadingImages || pendingFiles.length === 0}>
                   {uploadingImages && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("admin.edit.uploadMedia", "Upload")}
                   {pendingFiles.length > 0 ? ` (${pendingFiles.length})` : ""}
@@ -855,20 +1110,12 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
                 <div className="space-y-1">
                   <Label>{t("admin.edit.bidStart", "Start Date")}</Label>
-                  <Input
-                    type="date"
-                    value={bidStartDate}
-                    onChange={(e) => setBidStartDate(e.target.value)}
-                  />
+                  <Input type="date" value={bidStartDate} onChange={(e) => setBidStartDate(e.target.value)} />
                 </div>
 
                 <div className="space-y-1">
                   <Label>{t("admin.edit.bidEnd", "End Date")}</Label>
-                  <Input
-                    type="date"
-                    value={bidEndDate}
-                    onChange={(e) => setBidEndDate(e.target.value)}
-                  />
+                  <Input type="date" value={bidEndDate} onChange={(e) => setBidEndDate(e.target.value)} />
                 </div>
               </div>
 
@@ -876,6 +1123,85 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                 <Button onClick={handleSaveBidding} disabled={savingBidding}>
                   {savingBidding && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("admin.edit.saveBidding", "Save Bidding")}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+
+            {/* ── SEO tab ──────────────────────────────────────────────── */}
+            <TabsContent value="seo" className="space-y-4 mt-4">
+
+              {/* Header row */}
+              <div className="flex items-start justify-between gap-3 px-1">
+                <div>
+                  <h3 className="text-sm font-semibold">Search Engine Optimisation</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add SEO metadata per language. AI generates optimised titles, descriptions and keywords from your listing content.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateAllSeo}
+                  disabled={generatingSeoLangs.size > 0 || !title.trim()}
+                  className="gap-1.5 h-8 text-xs shrink-0"
+                >
+                  {generatingSeoLangs.size > 0
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <Sparkles className="h-3 w-3" />}
+                  {generatingSeoLangs.size > 0 ? "Generating…" : "Generate All with AI"}
+                </Button>
+              </div>
+
+              {/* Language sub-tabs */}
+              <div className="border rounded-lg overflow-hidden">
+                <Tabs value={seoLangTab} onValueChange={(v) => setSeoLangTab(v as typeof seoLangTab)}>
+                  <TabsList className="w-full rounded-none border-b bg-muted/20 h-9">
+                    <TabsTrigger value="en" className="flex-1 text-xs h-8">🇺🇸 English</TabsTrigger>
+                    <TabsTrigger value="zh" className="flex-1 text-xs h-8">🇹🇼 中文</TabsTrigger>
+                    <TabsTrigger value="ja" className="flex-1 text-xs h-8">🇯🇵 日本語</TabsTrigger>
+                    <TabsTrigger value="th" className="flex-1 text-xs h-8">🇹🇭 ไทย</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="en" className="mt-0">
+                    <SeoFields
+                      lang="en"
+                      seoTitle={seoTitleEn} setSeoTitle={setSeoTitleEn}
+                      seoDesc={seoDescEn} setSeoDesc={setSeoDescEn}
+                      seoKeywords={seoKeywordsEn} setSeoKeywords={setSeoKeywordsEn}
+                    />
+                  </TabsContent>
+                  <TabsContent value="zh" className="mt-0">
+                    <SeoFields
+                      lang="zh"
+                      seoTitle={seoTitleZh} setSeoTitle={setSeoTitleZh}
+                      seoDesc={seoDescZh} setSeoDesc={setSeoDescZh}
+                      seoKeywords={seoKeywordsZh} setSeoKeywords={setSeoKeywordsZh}
+                    />
+                  </TabsContent>
+                  <TabsContent value="ja" className="mt-0">
+                    <SeoFields
+                      lang="ja"
+                      seoTitle={seoTitleJa} setSeoTitle={setSeoTitleJa}
+                      seoDesc={seoDescJa} setSeoDesc={setSeoDescJa}
+                      seoKeywords={seoKeywordsJa} setSeoKeywords={setSeoKeywordsJa}
+                    />
+                  </TabsContent>
+                  <TabsContent value="th" className="mt-0">
+                    <SeoFields
+                      lang="th"
+                      seoTitle={seoTitleTh} setSeoTitle={setSeoTitleTh}
+                      seoDesc={seoDescTh} setSeoDesc={setSeoDescTh}
+                      seoKeywords={seoKeywordsTh} setSeoKeywords={setSeoKeywordsTh}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              <DialogFooter>
+                <Button onClick={handleSaveSeo} disabled={savingSeo}>
+                  {savingSeo && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {t("admin.edit.saveSeo", "Save SEO")}
                 </Button>
               </DialogFooter>
             </TabsContent>

@@ -18,6 +18,8 @@ import Factories from "./pages/landing/Factories";
 import Resellers from "./pages/landing/Resellers";
 import ContactInquiryTest from "./pages/Test/ContactInquiryTest";
 import Auth from "./pages/auth/Auth";
+import CompleteGoogleProfile from "./pages/auth/CompleteGoogleProfile";
+import GoogleCallback from "./pages/auth/GoogleCallback";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import VerifyEmailPage from "./pages/auth/VerifyEmailPage";
 import DashboardHome from "./pages/dashboard/DashboardHome";
@@ -222,6 +224,8 @@ const App = () => {
                 <Route path="/auth" element={<Auth />} />
               </Route>
 
+              <Route path="/complete-google-profile" element={<CompleteGoogleProfile />} />
+              <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
               <Route path="/verify-email-token" element={<VerifyEmailPage />} />
