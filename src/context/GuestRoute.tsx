@@ -14,7 +14,12 @@ const GuestRoute: React.FC = () => {
 
     // If API returns success, user is logged in
     if (data?.success && data.user) {
-        const role = data.user.role;
+        const { role, accountStatus } = data.user;
+        // Incomplete profile — let them stay on auth/complete-profile pages
+        if (accountStatus === "profile_incomplete") return <Outlet />;
+        if (accountStatus === "pending" || (accountStatus && accountStatus !== "approved")) {
+          return <Navigate to="/account-pending" replace />;
+        }
         if (role === "seller") return <Navigate to="/dashboard" replace />;
         if (role === "buyer") return <Navigate to="/buyer-dashboard" replace />;
         return <Navigate to="/forbidden" replace />;

@@ -1,11 +1,10 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { Loader2, CheckCircle2, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { getSocket } from "@/services/socket";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 const GoogleCallback = () => {
@@ -13,21 +12,22 @@ const GoogleCallback = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // null = hidden | { type: "pending" } = show modal
   const [pendingModal, setPendingModal] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
-    const token       = searchParams.get("token");
+    const token        = searchParams.get("token");
     const refreshToken = searchParams.get("refreshToken");
-    const userId      = searchParams.get("userId");
-    const role        = searchParams.get("role");
-    const name        = searchParams.get("name");
-    const company     = searchParams.get("company");
-    const email       = searchParams.get("email") || "";
-    const error       = searchParams.get("error");
+    const userId       = searchParams.get("userId");
+    const role         = searchParams.get("role");
+    const name         = searchParams.get("name");
+    const company      = searchParams.get("company");
+    const email        = searchParams.get("email") || "";
+    const error        = searchParams.get("error");
+    const needsProfile = searchParams.get("needsProfile");
+    const firstName    = searchParams.get("first_name") || "";
+    const lastName     = searchParams.get("last_name") || "";
 
     if (error === "account_pending") {
-      // Show the same pending modal as Auth.tsx — don't redirect
       setPendingModal({ email });
       return;
     }
@@ -44,7 +44,7 @@ const GoogleCallback = () => {
       return;
     }
 
-    // Store auth data exactly like the email login flow in Auth.tsx
+    // Store tokens — same as email login flow in Auth.tsx
     localStorage.setItem("accessToken", token);
     localStorage.setItem("refreshToken", refreshToken || "");
     localStorage.setItem("userId", userId);
@@ -52,6 +52,7 @@ const GoogleCallback = () => {
     localStorage.setItem("jwtRole", role);
     localStorage.setItem("activeView", role);
     if (name) localStorage.setItem("userName", name);
+    if (email) localStorage.setItem("userEmail", email);
     if (company && company !== "null") localStorage.setItem("companyName", company);
     else localStorage.removeItem("companyName");
 
@@ -59,15 +60,23 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    toastSuccess(t("auth.validation.welcomeBackToast"));
+    // New user or profile incomplete → go to complete profile
+    if (needsProfile === "1") {
+      navigate(
+        `/complete-google-profile?email=${encodeURIComponent(email)}&first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`
+      );
+      return;
+    }
 
+    // Existing approved user → dashboard
+    toastSuccess(t("auth.validation.welcomeBackToast"));
     if (role === "buyer")       window.location.href = "/buyer-dashboard";
     else if (role === "seller") window.location.href = "/dashboard";
     else if (role === "admin")  window.location.href = "/admin";
     else                        window.location.href = "/forbidden";
   }, []);
 
-  // ── Loading spinner (shown while processing) ─────────────────────────────────
+  // Loading spinner
   if (!pendingModal) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -79,13 +88,12 @@ const GoogleCallback = () => {
     );
   }
 
-  // ── Pending approval modal (same as Auth.tsx unverifiedModal type="pending") ─
+  // Pending approval modal — same as Auth.tsx
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fade-in">
         <div className="relative w-full max-w-md bg-background rounded-2xl shadow-2xl border border-border p-8 flex flex-col items-center text-center">
 
-          {/* Close */}
           <button
             type="button"
             onClick={() => navigate("/auth?mode=signin")}
@@ -96,30 +104,25 @@ const GoogleCallback = () => {
             </svg>
           </button>
 
-          {/* Icon — blue like the pending state in Auth.tsx */}
           <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-5">
             <CheckCircle2 className="w-8 h-8 text-blue-500" />
           </div>
 
-          {/* Title */}
           <h3 className="text-xl font-bold text-foreground mb-2">
             {t("auth.accountPendingApprovalTitle")}
           </h3>
 
-          {/* Body */}
           <p className="text-sm text-muted-foreground leading-relaxed mb-1">
             {t("auth.accountPendingApprovalBody")}
           </p>
           <p className="text-sm font-semibold text-foreground mb-4">{pendingModal.email}</p>
 
-          {/* Help box */}
           <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
             <p className="text-xs text-muted-foreground leading-relaxed">
               {t("auth.accountPendingApprovalHelp")}
             </p>
           </div>
 
-          {/* Browse while waiting */}
           <Button
             type="button"
             variant="outline"
@@ -129,7 +132,6 @@ const GoogleCallback = () => {
             {t("auth.browseWhileWaiting")}
           </Button>
 
-          {/* Close link */}
           <button
             type="button"
             className="text-xs text-muted-foreground hover:text-foreground underline"

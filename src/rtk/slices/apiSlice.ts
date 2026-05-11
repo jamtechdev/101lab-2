@@ -46,6 +46,7 @@ export interface VerifyResponse {
     name: string;
     email: string;
     role: string;
+    accountStatus?: string;
   };
 }
 

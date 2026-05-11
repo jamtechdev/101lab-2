@@ -30,14 +30,21 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
     return <Navigate to="/auth" replace />;
 
   const user = data.user;
-  // jwtRole is the immutable role from login token
-  // activeView is what the seller has toggled to (buyer/seller view)
-  const jwtRole = user.role; // from server verify — always accurate
+  const accountStatus = user.accountStatus;
+
+  // Block incomplete/pending accounts from dashboard
+  if (accountStatus === "profile_incomplete") {
+    return <Navigate to="/complete-google-profile" replace />;
+  }
+  if (accountStatus === "pending" || (accountStatus && accountStatus !== "approved")) {
+    return <Navigate to="/account-pending" replace />;
+  }
+
+  const jwtRole = user.role;
   const activeView = localStorage.getItem("activeView") || jwtRole;
-  
+
   // If no role restrictions, allow access
   if (!allowedRoles || allowedRoles.length === 0) {
-  
     return <Outlet />;
   }
 
