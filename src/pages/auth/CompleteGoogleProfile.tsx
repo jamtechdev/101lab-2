@@ -42,9 +42,9 @@ const CompleteGoogleProfile = () => {
   const [searchParams] = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const prefillEmail = searchParams.get("email") || "";
-  const prefillFirst = searchParams.get("first_name") || "";
-  const prefillLast  = searchParams.get("last_name")  || "";
+  const prefillEmail = searchParams.get("email")      || localStorage.getItem("googlePrefillEmail") || localStorage.getItem("userEmail") || "";
+  const prefillFirst = searchParams.get("first_name") || localStorage.getItem("googlePrefillFirst") || "";
+  const prefillLast  = searchParams.get("last_name")  || localStorage.getItem("googlePrefillLast")  || "";
 
   const [form, setForm] = useState({
     phone: "", phoneCode: "+86",

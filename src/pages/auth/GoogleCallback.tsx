@@ -60,11 +60,14 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    // New user or profile incomplete → go to complete profile
+    // New user or profile incomplete → go to marketplace, dashboard will redirect to complete-profile
     if (needsProfile === "1") {
-      navigate(
-        `/complete-google-profile?email=${encodeURIComponent(email)}&first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}`
-      );
+      // Store prefill so CompleteGoogleProfile can read them when redirected from dashboard
+      localStorage.setItem("googlePrefillEmail", email);
+      localStorage.setItem("googlePrefillFirst", firstName);
+      localStorage.setItem("googlePrefillLast", lastName);
+      toastSuccess("Signed in with Google! Complete your profile to access the dashboard.");
+      window.location.href = "/marketplace";
       return;
     }
 
