@@ -13,7 +13,15 @@ const axiosInstance = axios.create({
   headers: {
     'x-system-key': system_key,
   },
-  withCredentials: !isDev, // credentials not needed through proxy
+  withCredentials: !isDev,
+});
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  const refresh = localStorage.getItem("refreshToken");
+  if (token) config.headers["Authorization"] = `Bearer ${token}`;
+  if (refresh) config.headers["x-refresh-token"] = refresh;
+  return config;
 });
 
 export default axiosInstance;

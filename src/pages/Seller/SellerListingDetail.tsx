@@ -251,6 +251,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const { user } = useAuth();
   const { openLoginModal } = useLoginModal();
 
+  
+
   const {
     data,
     isLoading,
@@ -623,9 +625,29 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
     if (type === "bid" || type === "bidding") {
       // Block pending / non-approved users from bidding
-      if (user && user.accountStatus && user.accountStatus !== "approved") {
-        setShowPendingBidBlock(true);
-        return;
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        const accountStatus = user?.accountStatus || localStorage.getItem("accountStatus");
+        if (!accountStatus) {
+          // Status unknown — fetch from backend before opening dialog
+          axiosInstance.get("/user/verify-user").then((res) => {
+            const status = res.data?.user?.accountStatus;
+            if (status) localStorage.setItem("accountStatus", status);
+            if (status && status !== "approved" && status !== "admin") {
+              setShowPendingBidBlock(true);
+            } else {
+              openDialogFor(product, type, mode);
+            }
+          }).catch(() => {
+            // If fetch fails, allow through
+            openDialogFor(product, type, mode);
+          });
+          return;
+        }
+        if (accountStatus !== "approved" && accountStatus !== "admin") {
+          setShowPendingBidBlock(true);
+          return;
+        }
       }
       setBidCompanyName(user?.company_name || user?.company || product?.seller?.company || "");
       setBidContactPerson(user?.name || user?.fullName || "");
@@ -1654,17 +1676,27 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                 <Clock className="w-8 h-8 text-amber-500" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground mb-1">Account Pending Approval</h3>
+                <h3 className="text-lg font-bold text-foreground mb-1">
+                  {localStorage.getItem("accountStatus") === "profile_incomplete" ? "Complete Your Profile" : "Account Pending Approval"}
+                </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Your account is currently under review. You'll be able to place bids and make offers once our team approves your account.
+                  {localStorage.getItem("accountStatus") === "profile_incomplete"
+                    ? "Please complete your profile to place bids and make offers."
+                    : "Your account is currently under review. You'll be able to place bids and make offers once our team approves your account."}
                 </p>
               </div>
               <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 text-left">
-                <p className="text-xs text-muted-foreground">Our team typically reviews new accounts within 1–2 business days. You'll receive an email once approved.</p>
+                <p className="text-xs text-muted-foreground">
+                  {localStorage.getItem("accountStatus") === "profile_incomplete"
+                    ? "Go to your dashboard to complete your profile details."
+                    : "Our team typically reviews new accounts within 1–2 business days. You'll receive an email once approved."}
+                </p>
               </div>
               <div className="flex gap-2 w-full">
                 <Button variant="outline" className="flex-1" onClick={() => setShowPendingBidBlock(false)}>Close</Button>
-                <Button className="flex-1" onClick={() => { setShowPendingBidBlock(false); navigate("/complete-profile"); }}>Complete Profile</Button>
+                {localStorage.getItem("accountStatus") === "profile_incomplete" && (
+                  <Button className="flex-1" onClick={() => { setShowPendingBidBlock(false); navigate("/dashboard"); }}>Complete Profile</Button>
+                )}
               </div>
             </div>
           </DialogContent>

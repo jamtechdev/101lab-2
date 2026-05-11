@@ -38,14 +38,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const res = await axiosInstance.get("/user/verify-user");
 
-
       if (res.data?.success && res.data?.user) {
         setUser(res.data.user);
+        if (res.data.user.accountStatus) {
+          localStorage.setItem("accountStatus", res.data.user.accountStatus);
+        }
       } else {
         setUser(null);
       }
     } catch (error) {
-      console.warn("⚠️ Auth verify failed:", error);
       setUser(null);
     } finally {
       setLoading(false); // ✅ Ensures we exit loading always
