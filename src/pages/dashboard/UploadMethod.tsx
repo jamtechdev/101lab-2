@@ -2245,9 +2245,10 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                         <div className="border-t border-border pt-3">
                           <h5 className="font-semibold text-foreground mb-1">{t("upload.details")}</h5>
                           {item.description && (
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {item.description}
-                            </p>
+                            <div
+                              className="text-sm text-muted-foreground mb-2 prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: item.description }}
+                            />
                           )}
                           {item.category && (
                             <p className="text-sm text-muted-foreground">
