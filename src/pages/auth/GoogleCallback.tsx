@@ -24,6 +24,7 @@ const GoogleCallback = () => {
     const needsProfile = searchParams.get("needsProfile");
     const firstName    = searchParams.get("first_name") || "";
     const lastName     = searchParams.get("last_name") || "";
+    const userStatus   = searchParams.get("userStatus") || "approved";
 
     if (error === "account_pending") {
       if (email) localStorage.setItem("userEmail", email);
@@ -70,8 +71,15 @@ const GoogleCallback = () => {
       return;
     }
 
-    // Approved user → dashboard
     toastSuccess(t("auth.validation.welcomeBackToast"));
+
+    // Pending user → marketplace (can browse, but bid popup will block them)
+    if (userStatus !== "approved") {
+      window.location.href = "/buyer-marketplace";
+      return;
+    }
+
+    // Approved user → dashboard
     if (role === "buyer")       window.location.href = "/buyer-dashboard";
     else if (role === "seller") window.location.href = "/dashboard";
     else if (role === "admin")  window.location.href = "/admin";
