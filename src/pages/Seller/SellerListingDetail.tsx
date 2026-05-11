@@ -625,29 +625,27 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
     if (type === "bid" || type === "bidding") {
       // Block pending / non-approved users from bidding
+      // Always fetch fresh status so admin approval is reflected immediately
       const userId = localStorage.getItem("userId");
       if (userId) {
-        const accountStatus = user?.accountStatus || localStorage.getItem("accountStatus");
-        if (!accountStatus) {
-          // Status unknown — fetch from backend before opening dialog
-          axiosInstance.get("/user/verify-user").then((res) => {
-            const status = res.data?.user?.accountStatus;
-            if (status) localStorage.setItem("accountStatus", status);
-            if (status && status !== "approved" && status !== "admin") {
-              setShowPendingBidBlock(true);
-            } else {
-              openDialogFor(product, type, mode);
-            }
-          }).catch(() => {
-            // If fetch fails, allow through
+        axiosInstance.get("/user/verify-user").then((res) => {
+          const status = res.data?.user?.accountStatus;
+          if (status) localStorage.setItem("accountStatus", status);
+          if (status && status !== "approved" && status !== "admin") {
+            setShowPendingBidBlock(true);
+          } else {
             openDialogFor(product, type, mode);
-          });
-          return;
-        }
-        if (accountStatus !== "approved" && accountStatus !== "admin") {
-          setShowPendingBidBlock(true);
-          return;
-        }
+          }
+        }).catch(() => {
+          // If fetch fails fall back to cached value, default allow
+          const cached = localStorage.getItem("accountStatus");
+          if (cached && cached !== "approved" && cached !== "admin") {
+            setShowPendingBidBlock(true);
+          } else {
+            openDialogFor(product, type, mode);
+          }
+        });
+        return;
       }
       setBidCompanyName(user?.company_name || user?.company || product?.seller?.company || "");
       setBidContactPerson(user?.name || user?.fullName || "");
