@@ -90,7 +90,6 @@ const AccountPending = () => {
               </div>
               <div className="px-5 py-4 space-y-3">
                 {[
-                  t("auth.verifyStep1"),
                   t("auth.verifyStep2"),
                   t("auth.verifyStep3"),
                 ].map((step, i) => (

@@ -408,8 +408,8 @@ const CompleteGoogleProfile = () => {
                     onClick={() => submit(false)}
                   >
                     {isSubmitting
-                      ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.creatingAccount")}</>
-                      : <><UserPlus className="w-4 h-4" />{t("auth.createAccount")}</>
+                      ? <><Loader2 className="w-4 h-4 animate-spin" />Saving…</>
+                      : <><UserPlus className="w-4 h-4" />Complete Profile</>
                     }
                   </Button>
 
