@@ -298,6 +298,15 @@ export interface BatchDetailsProduct {
   seo_title_th?: string | null;
   seo_description_th?: string | null;
   seo_keywords_th?: string | null;
+  manufacturer?: string | null;
+  model?: string | null;
+  serial_number?: string | null;
+  dimensions?: string | null;
+  weight?: string | null;
+  rigging_responsibility?: string | null;
+  loading_responsibility?: string | null;
+  shipping_responsibility?: string | null;
+  packaging_type?: string | null;
 }
 
 export interface ProductTranslations {

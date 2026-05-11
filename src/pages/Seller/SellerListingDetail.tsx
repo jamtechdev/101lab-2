@@ -1507,80 +1507,18 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                                 ? <div className="rich-content text-sm text-muted-foreground " dangerouslySetInnerHTML={{ __html: desc }} />
                                 : <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
                             )}
+                            {/* Extra content — full styled HTML with gradient icon tables */}
+                            {(() => {
+                              const extra = getTranslatedField(product, 'extra_content') || "";
+                              if (!extra) return null;
+                              return <div className="mt-3" dangerouslySetInnerHTML={{ __html: extra }} />;
+                            })()}
                           </div>
                         );
                       })()}
                     </div>
                   </section>
 
-                  {/* Logistics */}
-                  {(() => {
-                    const extra = getTranslatedField(product, 'extra_content') || "";
-                    const hasLogisticsMeta = product.rigging_responsibility || product.loading_responsibility || product.shipping_responsibility || product.packaging_type;
-                    if (!extra && !hasLogisticsMeta) return null;
-                    return (
-                      <section id="logistics-section">
-                        {/* <h2 className="text-xl font-bold text-foreground mb-5">Logistics122</h2> */}
-                        <div className=" rounded-xl overflow-hidden">
-                          <div className="px-5">
-                            <div className="flex items-start gap-3 mb-4">
-                              {/* <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <Truck className="w-4 h-4 text-orange-600" />
-                              </div> */}
-                              <div className="text-sm space-y-2 flex-1">
-                                {product.rigging_responsibility && (
-                                  <p className="text-foreground">
-                                    <span className="font-semibold">Rigging Responsibility:</span>{" "}
-                                    <span className={cn(
-                                      "inline-block px-2 py-0.5 rounded border text-xs font-semibold",
-                                      product.rigging_responsibility.toLowerCase() === "included"
-                                        ? "border-green-500 text-green-700 bg-green-50"
-                                        : "border-border text-foreground bg-muted/40"
-                                    )}>
-                                      {product.rigging_responsibility}
-                                    </span>
-                                  </p>
-                                )}
-                                {product.loading_responsibility && (
-                                  <p className="text-foreground">
-                                    <span className="font-semibold">Loading Responsibility:</span>{" "}
-                                    <span className={cn(
-                                      "inline-block px-2 py-0.5 rounded border text-xs font-semibold",
-                                      product.loading_responsibility.toLowerCase() === "included"
-                                        ? "border-green-500 text-green-700 bg-green-50"
-                                        : "border-border text-foreground bg-muted/40"
-                                    )}>
-                                      {product.loading_responsibility}
-                                    </span>
-                                  </p>
-                                )}
-                                {product.shipping_responsibility && (
-                                  <p className="text-foreground">
-                                    <span className="font-semibold">Shipping Responsibility:</span>{" "}
-                                    <span className="text-foreground">{product.shipping_responsibility}</span>
-                                    {" "}Or{" "}
-                                    <span className="inline-flex items-center gap-1 border border-primary text-primary text-xs px-2 py-0.5 rounded font-semibold">
-                                      101Lab Delivery!{" "}
-                                      <button className="underline hover:no-underline text-primary">Get a Quote!</button>
-                                    </span>
-                                  </p>
-                                )}
-                                {product.packaging_type && (
-                                  <p className="text-foreground">
-                                    <span className="font-semibold">Packaging Type:</span> {product.packaging_type}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            {/* Rich HTML extra content */}
-                            {extra && (
-                              <div className="rich-content text-sm text-muted-foreground max-w-none pt-3 border-t border-border/50" dangerouslySetInnerHTML={{ __html: extra }} />
-                            )}
-                          </div>
-                        </div>
-                      </section>
-                    );
-                  })()}
 
                   {/* Documents */}
                   {product.documents.length > 0 && (

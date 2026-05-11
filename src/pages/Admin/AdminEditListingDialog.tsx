@@ -83,6 +83,128 @@ const CharCount = ({ value, max }: { value: string; max: number }) => (
   </span>
 );
 
+const ICON_CELL = (gradient: string, emoji: string) =>
+  `<td style="padding:6px 8px 6px 0;vertical-align:top;width:50px;">` +
+  `<div style="width:42px;height:42px;border-radius:12px;background:${gradient};text-align:center;line-height:42px;font-size:18px">${emoji}</div>` +
+  `</td>`;
+
+function buildExtraContentHtml(s: {
+  manufacturer: string; model: string; serial: string;
+  dimensions: string; weight: string; keyFeatures: string;
+  rigging: string; loading: string; shipping: string; packaging: string;
+}): string {
+  const parts: string[] = [];
+
+  // ── Core Specifications table ──────────────────────────────────────────
+  const coreRows: string[] = [];
+
+  if (s.manufacturer || s.model || s.serial) {
+    let cell = "";
+    if (s.manufacturer) cell += `<strong>Manufacturer:</strong> ${s.manufacturer}`;
+    if (s.model) cell += `${s.manufacturer ? "<br>" : ""}<strong>Model:</strong> ${s.model}`;
+    if (s.serial) cell += `${(s.manufacturer || s.model) ? "<br>" : ""}<strong>Serial Number:</strong> ${s.serial}`;
+    coreRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#f8a5a5,#f67280)", "⚙")}<td style="padding:6px 0;vertical-align:top;"><div>${cell}</div></td></tr>`);
+  }
+
+  if (s.dimensions || s.weight) {
+    let cell = "";
+    if (s.dimensions) cell += `<strong>Dimensions:</strong> ${s.dimensions}`;
+    if (s.weight) cell += `${s.dimensions ? "<br>" : ""}<strong>Weight:</strong> ${s.weight}`;
+    coreRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#74b9ff,#0984e3)", "📐")}<td style="padding:6px 0;vertical-align:top;"><div>${cell}</div></td></tr>`);
+  }
+
+  if (s.keyFeatures) {
+    const items = s.keyFeatures.split("\n").map(f => f.trim()).filter(Boolean);
+    const listHtml = items.map(f => `<li style="margin:2px 0;">${f}</li>`).join("");
+    coreRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#a29bfe,#6c5ce7)", "★")}<td style="padding:6px 0;vertical-align:top;"><div><strong>Key Features:</strong><ul style="margin:4px 0 0 0;padding-left:16px;">${listHtml}</ul></div></td></tr>`);
+  }
+
+  if (coreRows.length) {
+    parts.push(
+      `<table style="border-collapse:collapse;width:100%;margin-bottom:12px;">` +
+      `<tbody>` +
+      `<tr><td colspan="2"><div><strong>Core Specifications</strong></div></td></tr>` +
+      coreRows.join("") +
+      `</tbody></table>`
+    );
+  }
+
+  // ── Logistics table ────────────────────────────────────────────────────
+  const logRows: string[] = [];
+
+  if (s.rigging) {
+    logRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#b2bec3,#636e72)", "🏗")}<td style="padding:6px 0;vertical-align:top;"><div><strong>Rigging Responsibility:</strong> <span style="color:#00a86b;font-size:12px;">${s.rigging}</span></div></td></tr>`);
+  }
+  if (s.loading) {
+    logRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#b2bec3,#636e72)", "📦")}<td style="padding:6px 0;vertical-align:top;"><div><strong>Loading Responsibility:</strong> <span style="color:#00a86b;font-size:12px;">${s.loading}</span></div></td></tr>`);
+  }
+  if (s.shipping) {
+    logRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#b2bec3,#636e72)", "🚛")}<td style="padding:6px 0;vertical-align:top;"><div><strong>Shipping Responsibility:</strong> ${s.shipping} or <span style="font-size:12px;color:#0d6efd;">Get a Quote</span></div></td></tr>`);
+  }
+  if (s.packaging) {
+    logRows.push(`<tr>${ICON_CELL("linear-gradient(135deg,#b2bec3,#636e72)", "📦")}<td style="padding:6px 0;vertical-align:top;"><div><strong>Packaging:</strong> ${s.packaging}</div></td></tr>`);
+  }
+
+  if (logRows.length) {
+    parts.push(
+      `<table style="border-collapse:collapse;width:100%;">` +
+      `<tbody>` +
+      `<tr><td colspan="2"><div><strong>Logistics</strong></div></td></tr>` +
+      logRows.join("") +
+      `</tbody></table>`
+    );
+  }
+
+  return parts.join("");
+}
+
+function parseExtraContentToFields(html: string) {
+  const result = { manufacturer: "", model: "", serial: "", dimensions: "", weight: "", keyFeatures: "", rigging: "", loading: "", shipping: "", packaging: "" };
+  if (!html) return result;
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  // New styled format: each <tr> has icon cell + content cell
+  // Content cell has <strong>Label:</strong> Value pairs (with <br> between them)
+  doc.querySelectorAll("tr").forEach((row) => {
+    const cells = row.querySelectorAll("td");
+    // Skip header rows (colspan=2) and rows with < 2 cells
+    if (cells.length < 2) return;
+    // Content is in the last td (cells[1] for icon rows)
+    const contentCell = cells[cells.length - 1];
+    // Extract all strong+value pairs from this cell
+    const strongs = Array.from(contentCell.querySelectorAll("strong"));
+    strongs.forEach((strong) => {
+      const label = strong.textContent?.replace(/:$/, "").trim().toLowerCase() || "";
+      // Value = next sibling text nodes until next <strong> or <br>
+      let val = "";
+      let node = strong.nextSibling;
+      while (node) {
+        if (node.nodeType === Node.TEXT_NODE) val += node.textContent || "";
+        else if ((node as Element).tagName === "BR") break;
+        else if ((node as Element).tagName === "STRONG") break;
+        else val += (node as Element).textContent || "";
+        node = node.nextSibling;
+      }
+      val = val.replace(/^\s*[–-]\s*/, "").trim();
+      if (label === "manufacturer") result.manufacturer = val;
+      else if (label === "model") result.model = val;
+      else if (label === "serial number") result.serial = val;
+      else if (label === "dimensions") result.dimensions = val;
+      else if (label === "weight") result.weight = val;
+      else if (label === "rigging responsibility") result.rigging = val;
+      else if (label === "loading responsibility") result.loading = val;
+      else if (label === "shipping responsibility") result.shipping = val.replace(/\s*or\s*get a quote.*/i, "").trim();
+      else if (label === "packaging") result.packaging = val;
+    });
+    // Key Features: parse <ul><li> inside this cell
+    const liItems = Array.from(contentCell.querySelectorAll("ul li"))
+      .map((li) => li.textContent?.trim()).filter(Boolean);
+    if (liItems.length) result.keyFeatures = liItems.join("\n");
+  });
+
+  return result;
+}
+
 const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -121,6 +243,18 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const [titleTh, setTitleTh] = useState("");
   const [descriptionTh, setDescriptionTh] = useState("");
   const [extraContentTh, setExtraContentTh] = useState("");
+
+  // ── Structured extra_content fields (EN only — builds HTML automatically) ──
+  const [specManufacturer, setSpecManufacturer] = useState("");
+  const [specModel, setSpecModel] = useState("");
+  const [specSerial, setSpecSerial] = useState("");
+  const [specDimensions, setSpecDimensions] = useState("");
+  const [specWeight, setSpecWeight] = useState("");
+  const [specKeyFeatures, setSpecKeyFeatures] = useState("");
+  const [specRigging, setSpecRigging] = useState("");
+  const [specLoading, setSpecLoading] = useState("");
+  const [specShipping, setSpecShipping] = useState("");
+  const [specPackaging, setSpecPackaging] = useState("");
 
   // ── Language tab state + SunEditor re-mount keys ────────────────────────
   const [langTab, setLangTab] = useState<"en" | "zh" | "ja" | "th">("en");
@@ -174,7 +308,19 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     if (p) {
       setTitle(p.title_en || p.title || "");
       setDescription((p.description_en || p.description || "").replace(/<[^>]*>/g, ""));
-      setExtraContent(p.extra_content_en || p.extra_content || "");
+      const rawExtra = p.extra_content_en || p.extra_content || "";
+      setExtraContent(rawExtra);
+      const parsed = parseExtraContentToFields(rawExtra);
+      setSpecManufacturer(parsed.manufacturer || p.manufacturer || "");
+      setSpecModel(parsed.model || p.model || "");
+      setSpecSerial(parsed.serial || p.serial_number || "");
+      setSpecDimensions(parsed.dimensions || p.dimensions || "");
+      setSpecWeight(parsed.weight || p.weight || "");
+      setSpecKeyFeatures(parsed.keyFeatures);
+      setSpecRigging(parsed.rigging || p.rigging_responsibility || "");
+      setSpecLoading(parsed.loading || p.loading_responsibility || "");
+      setSpecShipping(parsed.shipping || p.shipping_responsibility || "");
+      setSpecPackaging(parsed.packaging || p.packaging_type || "");
       setExistingMedia(p.images || []);
 
       setTitleZh(p.title_zh || "");
@@ -259,7 +405,8 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
   const handleTranslateAll = async () => {
     if (!title.trim()) { toastError("Please enter a title before translating"); return; }
     try {
-      const res = await translateProduct({ title, description, extra_content: extraContent }).unwrap();
+      const builtHtmlForTranslate = buildExtraContentHtml({ manufacturer: specManufacturer, model: specModel, serial: specSerial, dimensions: specDimensions, weight: specWeight, keyFeatures: specKeyFeatures, rigging: specRigging, loading: specLoading, shipping: specShipping, packaging: specPackaging });
+      const res = await translateProduct({ title, description, extra_content: builtHtmlForTranslate }).unwrap();
       const d = res.data;
       setTitleZh(d.title_zh); setDescriptionZh(d.description_zh); setExtraContentZh(d.extra_content_zh);
       setTitleJa(d.title_ja); setDescriptionJa(d.description_ja); setExtraContentJa(d.extra_content_ja);
@@ -276,7 +423,8 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
     if (!title.trim()) { toastError("Please enter a title before translating"); return; }
     setTranslatingLang(lang);
     try {
-      const res = await translateProduct({ title, description, extra_content: extraContent }).unwrap();
+      const builtHtmlForTranslate = buildExtraContentHtml({ manufacturer: specManufacturer, model: specModel, serial: specSerial, dimensions: specDimensions, weight: specWeight, keyFeatures: specKeyFeatures, rigging: specRigging, loading: specLoading, shipping: specShipping, packaging: specPackaging });
+      const res = await translateProduct({ title, description, extra_content: builtHtmlForTranslate }).unwrap();
       const d = res.data;
       if (lang === "zh") { setTitleZh(d.title_zh); setDescriptionZh(d.description_zh); setExtraContentZh(d.extra_content_zh); setZhKey((k) => k + 1); }
       if (lang === "ja") { setTitleJa(d.title_ja); setDescriptionJa(d.description_ja); setExtraContentJa(d.extra_content_ja); setJaKey((k) => k + 1); }
@@ -437,8 +585,13 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
       body.title_en = title;
       body.description_en = description;
-      body.extra_content = extraContent;
-      body.extra_content_en = extraContent;
+      const builtHtml = buildExtraContentHtml({
+        manufacturer: specManufacturer, model: specModel, serial: specSerial,
+        dimensions: specDimensions, weight: specWeight, keyFeatures: specKeyFeatures,
+        rigging: specRigging, loading: specLoading, shipping: specShipping, packaging: specPackaging,
+      });
+      body.extra_content = builtHtml;
+      body.extra_content_en = builtHtml;
 
       body.title_zh = titleZh;
       body.description_zh = descriptionZh;
@@ -708,17 +861,53 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
                         placeholder="Enter description in English"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">
-                        Additional Content
-                        <span className="text-muted-foreground ml-1">(rich text)</span>
-                      </Label>
-                      <SunEditor
-                        key={`en-${dataLoadKey}`}
-                        setContents={extraContent}
-                        onChange={(html) => setExtraContent(html)}
-                        setOptions={{ ...EDITOR_OPTIONS, placeholder: "Add extra rich content here (specs, features, notes)…" }}
-                      />
+                    <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Core Specifications</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Manufacturer</Label>
+                          <Input value={specManufacturer} onChange={(e) => setSpecManufacturer(e.target.value)} placeholder="e.g. CAPP" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Model</Label>
+                          <Input value={specModel} onChange={(e) => setSpecModel(e.target.value)} placeholder="e.g. 2-1000 µL" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Serial Number</Label>
+                          <Input value={specSerial} onChange={(e) => setSpecSerial(e.target.value)} placeholder="e.g. Not Specified" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Dimensions</Label>
+                          <Input value={specDimensions} onChange={(e) => setSpecDimensions(e.target.value)} placeholder="e.g. 11.02 × 2.87 × 1.69 inches" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Weight</Label>
+                          <Input value={specWeight} onChange={(e) => setSpecWeight(e.target.value)} placeholder="e.g. 0.5 kg" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Key Features <span className="text-muted-foreground font-normal">(one per line)</span></Label>
+                        <Textarea value={specKeyFeatures} onChange={(e) => setSpecKeyFeatures(e.target.value)} rows={3} placeholder={"High flow rates\nUniform media distribution\nExcellent scalability"} />
+                      </div>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">Logistics</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Rigging Responsibility</Label>
+                          <Input value={specRigging} onChange={(e) => setSpecRigging(e.target.value)} placeholder="e.g. Buyer" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Loading Responsibility</Label>
+                          <Input value={specLoading} onChange={(e) => setSpecLoading(e.target.value)} placeholder="e.g. Buyer" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Shipping Responsibility</Label>
+                          <Input value={specShipping} onChange={(e) => setSpecShipping(e.target.value)} placeholder="e.g. Buyer" />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Packaging Type</Label>
+                          <Input value={specPackaging} onChange={(e) => setSpecPackaging(e.target.value)} placeholder="e.g. 10 Piece" />
+                        </div>
+                      </div>
                     </div>
                   </TabsContent>
 
