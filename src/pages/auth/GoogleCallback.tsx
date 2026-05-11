@@ -70,7 +70,7 @@ const GoogleCallback = () => {
       return;
     }
 
-    // Existing approved user → dashboard
+    // Approved user → dashboard
     toastSuccess(t("auth.validation.welcomeBackToast"));
     if (role === "buyer")       window.location.href = "/buyer-dashboard";
     else if (role === "seller") window.location.href = "/dashboard";

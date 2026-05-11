@@ -312,6 +312,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
   const [batchStep, setBatchStep] = useState(0);
   const [inspectionSchedule, setInspectionSchedule] = useState<any>(null);
   const [userInspectionRegistration, setUserInspectionRegistration] = useState<any>(null);
+  const [showPendingBidBlock, setShowPendingBidBlock] = useState(false);
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [bidDialogMode, setBidDialogMode] = useState<"place_bid" | "make_offer" | "buy_now">("place_bid");
   const [makeOfferStep, setMakeOfferStep] = useState<"form" | "review">("form");
@@ -621,6 +622,11 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     setSelectedProduct(product);
 
     if (type === "bid" || type === "bidding") {
+      // Block pending / non-approved users from bidding
+      if (user && user.user_status && user.user_status !== "approved") {
+        setShowPendingBidBlock(true);
+        return;
+      }
       setBidCompanyName(user?.company_name || user?.company || product?.seller?.company || "");
       setBidContactPerson(user?.name || user?.fullName || "");
       setBidCountry(user?.country || "");
@@ -628,7 +634,6 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
       setBidNotes("");
       setBidDialogMode(mode || "place_bid");
       if (mode === "make_offer") setMakeOfferStep("form");
-      // ── Reset bid confirmation step ──
       setPlaceBidStep("form");
       setShowBidDialog(true);
       return;
@@ -1640,6 +1645,30 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
         </div>
 
         {/* ------------- Dialogs ------------- */}
+
+        {/* Account Pending — cannot bid dialog */}
+        <Dialog open={showPendingBidBlock} onOpenChange={setShowPendingBidBlock}>
+          <DialogContent className="max-w-sm text-center">
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="w-16 h-16 rounded-full bg-amber-50 border-4 border-amber-100 flex items-center justify-center">
+                <Clock className="w-8 h-8 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground mb-1">Account Pending Approval</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Your account is currently under review. You'll be able to place bids and make offers once our team approves your account.
+                </p>
+              </div>
+              <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 text-left">
+                <p className="text-xs text-muted-foreground">Our team typically reviews new accounts within 1–2 business days. You'll receive an email once approved.</p>
+              </div>
+              <div className="flex gap-2 w-full">
+                <Button variant="outline" className="flex-1" onClick={() => setShowPendingBidBlock(false)}>Close</Button>
+                <Button className="flex-1" onClick={() => { setShowPendingBidBlock(false); navigate("/complete-profile"); }}>Complete Profile</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Place Bid / Make Offer Dialog */}
         <Dialog open={showBidDialog} onOpenChange={(open) => { setShowBidDialog(open); if (!open) setPlaceBidStep("form"); }}>

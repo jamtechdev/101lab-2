@@ -10,6 +10,7 @@ interface AuthUser {
   isAssignedUser?: boolean; // NEW: True if user is assigned by company admin
   isCompanyAdmin?: boolean; // NEW: True if user is the company admin
   userType?: string; // NEW: "assigned_user" | "company_admin" | null
+  user_status?: string; // "approved" | "pending" | "profile_incomplete" | etc.
 }
 
 interface AuthContextType {
