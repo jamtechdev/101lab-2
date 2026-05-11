@@ -623,7 +623,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
     if (type === "bid" || type === "bidding") {
       // Block pending / non-approved users from bidding
-      if (user && user.user_status && user.user_status !== "approved") {
+      if (user && user.accountStatus && user.accountStatus !== "approved") {
         setShowPendingBidBlock(true);
         return;
       }
