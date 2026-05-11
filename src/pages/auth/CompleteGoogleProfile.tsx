@@ -11,7 +11,7 @@ import { toastError } from "@/helper/toasterNotification";
 import { cn } from "@/lib/utils";
 import {
   Loader2, Building2, Phone, Tag, Check, ChevronDown, ChevronRight,
-  ArrowLeft, CheckCircle2, AlertCircle, UserPlus, Lock, Eye, EyeOff,
+  ArrowLeft, CheckCircle2, UserPlus, Lock, Eye, EyeOff,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SITE_TYPE_PROFILE } from "@/config/site";
@@ -36,8 +36,6 @@ const PHONE_CODES = [
 
 const API_BASE = "https://api.101recycle.greenbidz.com";
 
-type Step = "form" | "done";
-
 const CompleteGoogleProfile = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -48,7 +46,6 @@ const CompleteGoogleProfile = () => {
   const prefillFirst = searchParams.get("first_name") || "";
   const prefillLast  = searchParams.get("last_name")  || "";
 
-  const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     phone: "", phoneCode: "+86",
     company: "", country: "",
@@ -126,7 +123,7 @@ const CompleteGoogleProfile = () => {
       );
 
       if (data.success) {
-        setStep("done");
+        navigate("/account-pending");
       } else {
         toastError(data.message || "Something went wrong.");
       }
@@ -181,57 +178,8 @@ const CompleteGoogleProfile = () => {
         <div className="flex-1 flex items-start justify-center py-8 px-4 lg:px-8">
           <div className="w-full max-w-2xl">
 
-            {/* ══ DONE SCREEN — same as check_email in Auth.tsx ══ */}
-            {step === "done" && (
-              <div className="animate-fade-in">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-8" />
-                  <h2 className="text-lg font-bold text-foreground">{t("auth.finishSetupTitle")}</h2>
-                  <div className="w-8" />
-                </div>
-
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 mb-6">
-                  <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-800 leading-relaxed">
-                    {t("auth.finishSetupBanner")}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-border bg-background overflow-hidden">
-                  <div className="flex items-start gap-4 p-5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground mb-3">Account Created via Google</p>
-                      <div className="flex items-start gap-3">
-                        <div className="w-7 h-7 rounded-full border-2 border-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          Your profile has been submitted for{" "}
-                          <span className="font-semibold text-foreground">{prefillEmail}</span>.{" "}
-                          Our team will review and approve your account shortly.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="border-t border-border bg-muted/30 px-5 py-4 space-y-2.5">
-                    {[t("auth.verifyStep1"), t("auth.verifyStep2"), t("auth.verifyStep3")].map((s, i) => (
-                      <div key={i} className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                        <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px] flex-shrink-0">{i + 1}</div>
-                        {s}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <Button className="w-full h-11 mt-5 bg-primary hover:bg-primary/90 font-semibold gap-2" onClick={() => navigate("/marketplace")}>
-                  {t("auth.browseWhileWaiting")}
-                </Button>
-              </div>
-            )}
-
             {/* ══ PROFILE FORM ══ */}
-            {step === "form" && (
-              <div className="animate-fade-in">
+            <div className="animate-fade-in">
                 <div className="text-center mb-7">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-muted/40 border border-border mb-4">
                     <svg className="w-7 h-7" viewBox="0 0 24 24">
@@ -466,8 +414,7 @@ const CompleteGoogleProfile = () => {
                   </Button>
 
                 </div>
-              </div>
-            )}
+            </div>
 
           </div>
         </div>
