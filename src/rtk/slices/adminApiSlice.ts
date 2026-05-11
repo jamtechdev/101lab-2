@@ -697,6 +697,8 @@ export interface AdminAuctionGroupItem {
   description?: string;
   description_en?: string;
   description_zh?: string;
+  description_ja?: string;
+  description_th?: string;
   country: string;
   languages: string[];
   site_id: number;
@@ -1415,6 +1417,13 @@ export const adminApi = createApi({
       query: (body) => ({ url: `/admin/auction-groups/translate-tag`, method: "POST", data: body }),
     }),
 
+    translateGroupTitle: builder.mutation<
+      { success: boolean; data: { title_en: string; title_zh: string; title_ja: string; title_th: string; description_en: string; description_zh: string; description_ja: string; description_th: string } },
+      { title: string; description?: string }
+    >({
+      query: (body) => ({ url: `/admin/auction-groups/translate-title`, method: "POST", data: body }),
+    }),
+
     /* ---------------- ALL OFFERS (admin) ---------------- */
     getAdminAllOffers: builder.query<
       AdminOfferResponse,
@@ -1798,6 +1807,7 @@ export const {
   useUpdateGroupTagMutation,
   useDeleteGroupTagMutation,
   useTranslateTagContentMutation,
+  useTranslateGroupTitleMutation,
 
   /* ---------- PRODUCT REQUESTS ---------- */
   useSubmitProductRequestMutation,

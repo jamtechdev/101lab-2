@@ -89,6 +89,10 @@ export interface UpdateAuctionGroupRequest {
   description?: string;
   country?: string;
   languages?: string[];
+  description_en?: string;
+  description_zh?: string;
+  description_ja?: string;
+  description_th?: string;
 }
 
 // ---------- API Slice ----------
