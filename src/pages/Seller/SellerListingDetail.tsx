@@ -624,38 +624,40 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     setSelectedProduct(product);
 
     if (type === "bid" || type === "bidding") {
-      // Block pending / non-approved users from bidding
-      // Always fetch fresh status so admin approval is reflected immediately
+      const openBidDialog = () => {
+        setBidCompanyName(user?.company_name || user?.company || product?.seller?.company || "");
+        setBidContactPerson(user?.name || user?.fullName || "");
+        setBidCountry(user?.country || "");
+        setIsTaxInclusive(bidDetail.taxInclusive ?? true);
+        setBidNotes("");
+        setBidDialogMode(mode || "place_bid");
+        if (mode === "make_offer") setMakeOfferStep("form");
+        setPlaceBidStep("form");
+        setShowBidDialog(true);
+      };
+
       const userId = localStorage.getItem("userId");
       if (userId) {
+        // Always fetch fresh status so admin approval is reflected immediately
         axiosInstance.get("/user/verify-user").then((res) => {
           const status = res.data?.user?.accountStatus;
           if (status) localStorage.setItem("accountStatus", status);
           if (status && status !== "approved" && status !== "admin") {
             setShowPendingBidBlock(true);
           } else {
-            openDialogFor(product, type, mode);
+            openBidDialog();
           }
         }).catch(() => {
-          // If fetch fails fall back to cached value, default allow
           const cached = localStorage.getItem("accountStatus");
           if (cached && cached !== "approved" && cached !== "admin") {
             setShowPendingBidBlock(true);
           } else {
-            openDialogFor(product, type, mode);
+            openBidDialog();
           }
         });
         return;
       }
-      setBidCompanyName(user?.company_name || user?.company || product?.seller?.company || "");
-      setBidContactPerson(user?.name || user?.fullName || "");
-      setBidCountry(user?.country || "");
-      setIsTaxInclusive(bidDetail.taxInclusive ?? true);
-      setBidNotes("");
-      setBidDialogMode(mode || "place_bid");
-      if (mode === "make_offer") setMakeOfferStep("form");
-      setPlaceBidStep("form");
-      setShowBidDialog(true);
+      openBidDialog();
       return;
     }
 
