@@ -328,7 +328,8 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     if (lang === "th") return obj[`${field}_th`] || obj[field];
     return obj[field];
   };
-  const [offerQuantity, setOfferQuantity] = useState<number>(1);
+  const [offerQuantity, setOfferQuantity] = useState<string>("1");
+  const [bidQuantity, setBidQuantity] = useState<string>("1");
   // ── NEW: confirmation step for place bid ──
   const [placeBidStep, setPlaceBidStep] = useState<"form" | "review">("form");
   const [showBidSuccessDialog, setShowBidSuccessDialog] = useState(false);
@@ -803,6 +804,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
+    formData.append("bid_quantity", String(parseInt(bidQuantity) || 1));
     quotation_types.forEach((type) => formData.append("quotation_types[]", type));
     if (hasWholeBid) formData.append("amount", String(Number(bidAmount)));
     if (batchCommission.percent != null && batchCommission.percent > 0) {
@@ -826,6 +828,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
         setBidCountry("");
         setBidAmount("");
         setBidNotes("");
+        setBidQuantity("1");
         setUseWholePrice(true);
         setUseWeightPrice(false);
         setWeightPrices({});
@@ -857,7 +860,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
     formData.append("contact_person", contactPerson?.trim() || "");
     formData.append("country", bidCountry?.trim() || "");
     formData.append("notes", bidNotes ?? "");
-    formData.append("offer_quantity", String(offerQuantity || 1));
+    formData.append("offer_quantity", String(parseInt(offerQuantity) || 1));
     if (bidAmount && Number(bidAmount) > 0) formData.append("amount", String(Number(bidAmount)));
     if (batchCommission.percent != null && batchCommission.percent > 0) {
       formData.append("buyer_premium_percent", String(batchCommission.percent));
@@ -1735,23 +1738,27 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       <Input value={contactPerson} disabled className="bg-muted/40" />
                     </div>
                     <div>
-                      {/* <Label className="text-sm font-semibold text-foreground mb-2 block">
+                      <Label className="text-sm font-semibold text-foreground mb-2 block">
                         {t("makeOfferModal.offerQuantity") || "Offer Quantity"}
                       </Label>
                       <Input
                         type="number"
                         min="1"
-                        max={products[0]?.quantity !== "N/A" ? Number(products[0]?.quantity) : undefined}
+                        max={products[0]?.quantity && products[0].quantity !== "N/A" ? Number(products[0]?.quantity) : undefined}
                         step="1"
                         value={offerQuantity}
-                        onChange={(e) => setOfferQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        onChange={(e) => setOfferQuantity(e.target.value)}
+                        onBlur={() => {
+                          const parsed = parseInt(offerQuantity);
+                          setOfferQuantity(String(isNaN(parsed) || parsed < 1 ? 1 : parsed));
+                        }}
                         placeholder={t("makeOfferModal.offerQuantityPlaceholder") || "Enter quantity"}
-                      /> */}
-                      {/* {products[0]?.quantity && products[0].quantity !== "N/A" && (
+                      />
+                      {products[0]?.quantity && products[0].quantity !== "N/A" && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("auctionPage.maximumUnits", { count: products[0].quantity })}
                         </p>
-                      )} */}
+                      )}
                     </div>
                     <div>
                       <Label className="text-sm font-semibold text-foreground mb-2 block">
@@ -1930,6 +1937,29 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         </select>
                       </div>
 
+                      {/* Quantity */}
+                      <div>
+                        <Label>{t("makeOfferModal.offerQuantity") || "Quantity"}</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max={products[0]?.quantity && products[0].quantity !== "N/A" ? Number(products[0].quantity) : undefined}
+                          step="1"
+                          value={bidQuantity}
+                          onChange={(e) => setBidQuantity(e.target.value)}
+                          onBlur={() => {
+                            const parsed = parseInt(bidQuantity);
+                            setBidQuantity(String(isNaN(parsed) || parsed < 1 ? 1 : parsed));
+                          }}
+                          placeholder="Enter quantity"
+                        />
+                        {products[0]?.quantity && products[0].quantity !== "N/A" && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t("auctionPage.maximumUnits", { count: products[0].quantity })}
+                          </p>
+                        )}
+                      </div>
+
                       {/* Bid Amount */}
                       <div>
                         <Label>{t("buyer.wholeItemPrice") || "Bid Amount"} ({bidDetail?.currency})</Label>
@@ -2045,9 +2075,13 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                         <span className="text-muted-foreground">Contact</span>
                         <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{contactPerson}</span>
                       </div>
-                      <div className="flex items-center justify-between px-4 py-3">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
                         <span className="text-muted-foreground">Country</span>
                         <span className="font-semibold text-foreground">{bidCountry}</span>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <span className="text-muted-foreground">{t("makeOfferModal.quantity") || "Quantity"}</span>
+                        <span className="font-semibold text-foreground">{bidQuantity}</span>
                       </div>
                     </div>
 
