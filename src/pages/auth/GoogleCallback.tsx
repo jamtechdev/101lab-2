@@ -28,7 +28,7 @@ const GoogleCallback = () => {
 
     if (error === "account_pending") {
       if (email) localStorage.setItem("userEmail", email);
-      navigate("/account-pending", { replace: true });
+      navigate("/dashboard/settings", { replace: true });
       return;
     }
 
@@ -60,22 +60,21 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    // New user or profile incomplete → go to marketplace, dashboard will redirect to complete-profile
+    // New user or profile incomplete → settings where complete profile form is shown
     if (needsProfile === "1") {
-      // Store prefill so CompleteGoogleProfile can read them when redirected from dashboard
       localStorage.setItem("googlePrefillEmail", email);
       localStorage.setItem("googlePrefillFirst", firstName);
       localStorage.setItem("googlePrefillLast", lastName);
       toastSuccess("Signed in with Google! Complete your profile to access the dashboard.");
-      window.location.href = "/marketplace";
+      window.location.href = "/dashboard/settings";
       return;
     }
 
     toastSuccess(t("auth.validation.welcomeBackToast"));
 
-    // Pending user → marketplace (can browse, but bid popup will block them)
+    // Pending user → settings (restricted until approved)
     if (userStatus !== "approved") {
-      window.location.href = "/buyer-marketplace";
+      window.location.href = "/dashboard/settings";
       return;
     }
 
