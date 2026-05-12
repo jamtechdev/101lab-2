@@ -61,7 +61,8 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
       const isSellerOnlyPath = SELLER_ONLY_PATHS.some(
         (p) => location.pathname === p || location.pathname.startsWith(p + "/")
       );
-      if (jwtRole === "buyer" && isSellerOnlyPath) {
+      const isSettingsPath = location.pathname === "/dashboard/settings";
+      if (jwtRole === "buyer" && isSellerOnlyPath && !isSettingsPath) {
         return <Navigate to="/buyer-dashboard" replace />;
       }
       return <Outlet />;
