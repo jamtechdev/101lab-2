@@ -60,12 +60,13 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    // New user or profile incomplete → complete profile first
+    // New user or profile incomplete → dashboard
     if (needsProfile === "1") {
       localStorage.setItem("googlePrefillEmail", email);
       localStorage.setItem("googlePrefillFirst", firstName);
       localStorage.setItem("googlePrefillLast", lastName);
-      window.location.href = "/complete-google-profile";
+      toastSuccess("Signed in with Google! Welcome.");
+      window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
       return;
     }
 
