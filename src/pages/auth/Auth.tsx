@@ -245,7 +245,7 @@ const Auth = () => {
         if (token) localStorage.setItem("accessToken", token);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
         if (userId) localStorage.setItem("userId", userId.toString());
-        navigate("/dashboard/settings");
+        window.location.href = "/dashboard/settings";
       } else {
         toastError(err?.data?.message || t("auth.validation.loginFailed"));
       }
