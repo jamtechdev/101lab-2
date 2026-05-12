@@ -197,3 +197,20 @@ html {
 
 /* SweetAlert above all modals/dialogs */
 .swal2-container { z-index: 99999 !important; }
+
+/* ── Auth / Onboarding page utilities ── */
+@layer base {
+  :root {
+    --brand-navy: 215 60% 18%;
+    --brand-teal: 180 65% 40%;
+  }
+}
+@layer utilities {
+  .text-brand-navy  { color: hsl(var(--brand-navy)); }
+  .text-brand-teal  { color: hsl(var(--brand-teal)); }
+  .bg-brand-navy    { background-color: hsl(var(--brand-navy)); }
+  .bg-gradient-lab  { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdfa 100%); }
+  .bg-gradient-primary { background: linear-gradient(135deg, hsl(var(--brand-navy)), hsl(var(--brand-teal))); }
+  .shadow-panel     { box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15); }
+  .shadow-control   { box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15); }
+}

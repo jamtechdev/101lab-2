@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import authLogo from "@/assets/lablogo.png";
 import { Button } from "@/components/ui/button";
@@ -50,36 +50,34 @@ const INDUSTRY_OPTIONS = [
 ];
 
 const PHONE_CODES = [
-  // Keep order aligned with CountrySelect: priority countries first, then others.
-  { code: "+86", flag: "🇨🇳", label: "CN" },
-  { code: "+62", flag: "🇮🇩", label: "ID" },
-  { code: "+91", flag: "🇮🇳", label: "IN" },
-  { code: "+60", flag: "🇲🇾", label: "MY" },
-  { code: "+886", flag: "🇹🇼", label: "TW" },
-  { code: "+66", flag: "🇹🇭", label: "TH" },
-  { code: "+81", flag: "🇯🇵", label: "JP" },
-  { code: "+84", flag: "🇻🇳", label: "VN" },
-
-  { code: "+20", flag: "🇪🇬", label: "EG" },
-  { code: "+61", flag: "🇦🇺", label: "AU" },
-  { code: "+55", flag: "🇧🇷", label: "BR" },
-  { code: "+33", flag: "🇫🇷", label: "FR" },
-  { code: "+49", flag: "🇩🇪", label: "DE" },
-  { code: "+852", flag: "🇭🇰", label: "HK" },
-  { code: "+254", flag: "🇰🇪", label: "KE" },
-  { code: "+82", flag: "🇰🇷", label: "KR" },
-  { code: "+52", flag: "🇲🇽", label: "MX" },
-  { code: "+31", flag: "🇳🇱", label: "NL" },
-  { code: "+234", flag: "🇳🇬", label: "NG" },
-  { code: "+65", flag: "🇸🇬", label: "SG" },
-  { code: "+7", flag: "🇷🇺", label: "RU" },
-  { code: "+966", flag: "🇸🇦", label: "SA" },
-  { code: "+27", flag: "🇿🇦", label: "ZA" },
-  { code: "+90", flag: "🇹🇷", label: "TR" },
-  { code: "+971", flag: "🇦🇪", label: "AE" },
-  { code: "+44", flag: "🇬🇧", label: "GB" },
-  { code: "+1", flag: "🇺🇸", label: "US" },
-];
+  { code: "+86", label: "CN" },
+  { code: "+62", label: "ID" },
+  { code: "+91", label: "IN" },
+  { code: "+60", label: "MY" },
+  { code: "+886", label: "TW" },
+  { code: "+66", label: "TH" },
+  { code: "+81", label: "JP" },
+  { code: "+84", label: "VN" },
+  { code: "+20", label: "EG" },
+  { code: "+61", label: "AU" },
+  { code: "+55", label: "BR" },
+  { code: "+33", label: "FR" },
+  { code: "+49", label: "DE" },
+  { code: "+852", label: "HK" },
+  { code: "+254", label: "KE" },
+  { code: "+82", label: "KR" },
+  { code: "+52", label: "MX" },
+  { code: "+31", label: "NL" },
+  { code: "+234", label: "NG" },
+  { code: "+65", label: "SG" },
+  { code: "+27", label: "ZA" },
+  { code: "+34", label: "ES" },
+  { code: "+46", label: "SE" },
+  { code: "+41", label: "CH" },
+  { code: "+90", label: "TR" },
+  { code: "+44", label: "GB" },
+  { code: "+1", label: "US" },
+]
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -106,7 +104,6 @@ const Auth = () => {
     // industry: "", industryOther: "",
   });
   const [wantToSell, setWantToSell] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [interestDropdownOpen, setInterestDropdownOpen] = useState(false);
   const [expandedParents, setExpandedParents] = useState<string[]>([]);
@@ -187,7 +184,6 @@ const Auth = () => {
     if (form.password !== form.confirmPassword) { toastWarning(t("auth.passwordsNoMatch")); return; }
     if (!form.first_name.trim()) { toastWarning(t("auth.validation.firstNameRequired")); return; }
     if (!form.last_name.trim()) { toastWarning(t("auth.validation.lastNameRequired")); return; }
-    if (!termsAccepted) { toastWarning(t("auth.validation.acceptTerms")); return; }
 
     try {
       await signupWithLink({
@@ -247,7 +243,7 @@ const Auth = () => {
         if (token) localStorage.setItem("accessToken", token);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
         if (userId) localStorage.setItem("userId", userId.toString());
-        window.location.href = "/dashboard/settings";
+        window.location.href = "/dashboard";
       } else {
         toastError(err?.data?.message || t("auth.validation.loginFailed"));
       }
@@ -259,58 +255,39 @@ const Auth = () => {
     t("auth.features.realTimeNotifications"), t("auth.features.businessVerification"),
   ];
 
-  // ── Interests dropdown label helper
+  // â”€â”€ Interests dropdown label helper
   const getInterestLabel = (slug: string) =>
     labCategories.flatMap(c => [c, ...(c.subcategories || [])]).find(c => c.slug === slug)?.name || slug;
 
   return (
     <>
     <SEOMeta {...getSEO('auth')} />
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen overflow-hidden bg-gradient-lab px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-7xl  items-center justify-center">
+        <div className="grid w-full items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
 
-      {/* ── Left branding panel ── */}
-      <div className="hidden lg:flex lg:w-[420px] xl:w-[460px] flex-col justify-center p-10 relative overflow-hidden shrink-0"
-        style={{ background: "linear-gradient(160deg, #e8f8f2 0%, #d6f0e8 50%, #c8ece2 100%)" }}>
-        <div className="flex flex-col gap-8">
-          {/* Logo card */}
-          <div className="w-40 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center px-4">
-            <img src={authLogo} alt="101LAB" className="h-12 w-auto object-contain" />
-          </div>
-          {/* Heading */}
-          <div>
-            <h1 className="text-[2.6rem] font-extrabold text-gray-900 leading-[1.15] mb-4">
-              Welcome to a smarter<br />lab equipment<br />marketplace.
+          {/* â”€â”€ Left branding aside â”€â”€ */}
+          <aside className="hidden lg:block">
+            <div className="mb-10 inline-flex rounded-2xl bg-card/80 px-6 py-4 shadow-panel backdrop-blur">
+              <img src={authLogo} alt="101LAB" className="h-20 w-auto object-contain" />
+            </div>
+            <h1 className="max-w-xl text-5xl font-extrabold leading-tight text-brand-navy">
+              Welcome to a smarter lab equipment marketplace.
             </h1>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+            <p className="mt-5 max-w-lg text-xl leading-8 text-muted-foreground">
               Build your account, tune your equipment interests, and unlock bidding-ready verification.
             </p>
-          </div>
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-2">
-            {["Infrastructure", "Biotech", "Pharma", "T&M"].map(pill => (
-              <span key={pill} className="px-4 py-1.5 rounded-full text-sm font-semibold text-white"
-                style={{ backgroundColor: "#2ec99a" }}>
-                {pill}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {["Infrastructure", "Biotech", "Pharma", "T&M"].map(pill => (
+                <span key={pill} className="rounded-full px-4 py-2 text-sm font-bold text-white" style={{ backgroundColor: "#2ec99a" }}>{pill}</span>
+              ))}
+            </div>
+          </aside>
 
-      {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col overflow-y-auto bg-white ">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border lg:border-none lg:px-10 lg:pt-6 lg:pb-0">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground lg:hidden">
-            <ArrowLeft className="w-4 h-4" />{t("auth.backToHome")}
-          </button>
-          <span className="text-sm font-semibold text-primary lg:hidden">GreenBidz</span>
-          <div className="ml-auto"><LanguageSwitcher /></div>
-        </div>
+          {/* card â”€â”€ */}
+          <div className={authMode === "signup" ? "rounded-3xl bg-card shadow-panel ring-1 ring-border/70" : "w-full"}>
 
-        <div className="flex-1 flex items-start justify-center py-10 px-6 lg:px-10">
-          <div className="w-full max-w-4xl">
-
-            {/* ══ SIGN IN ══ */}
+            {/* â•â• SIGN IN â•â• */}
             {authMode === "signin" && (
               <div className="animate-fade-in max-w-md mx-auto rounded-2xl border border-border bg-card shadow-sm p-8 lg:p-10">
                 <div className="text-center mb-7">
@@ -337,7 +314,7 @@ const Auth = () => {
                     </div>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                      <Input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
+                      <Input type={showPassword ? "text" : "password"} placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={password} onChange={e => setPassword(e.target.value)} required className="h-12 pl-10 pr-11 bg-muted/30 border-border focus:border-primary" />
                       <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -347,7 +324,7 @@ const Auth = () => {
                     {isLoginLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.signingIn")}</> : <><LogIn className="w-4 h-4" />{t("auth.loginButton")}</>}
                   </Button>
                 </form>
-                {/* ── Google sign-in button ── */}
+                {/* â”€â”€ Google sign-in button â”€â”€ */}
                 <div className="relative my-5">
                   <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
                   <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground uppercase tracking-wide">or</span></div>
@@ -381,11 +358,11 @@ const Auth = () => {
               </div>
             )}
 
-            {/* ══ SIGN UP ══ */}
+            {/* â•â• SIGN UP â•â• */}
             {authMode === "signup" && userType !== "admin" && (
-              <div className="animate-fade-in bg-white">
+              <div className="animate-fade-in">
 
-                {/* ── Check email screen ── */}
+                {/* â”€â”€ Check email screen â”€â”€ */}
                 {signupStep === "check_email" && (
                   <div className="animate-fade-in">
                     {/* Header */}
@@ -397,7 +374,7 @@ const Auth = () => {
                       <div className="w-8" />
                     </div>
 
-                    {/* Returned from verify tab — prompt to sign in */}
+                    {/* Returned from verify tab â€” prompt to sign in */}
                     {returnedFromVerify && (
                       <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4">
                         <div className="flex items-center gap-2.5">
@@ -488,230 +465,206 @@ const Auth = () => {
                   </div>
                 )}
 
-                {/* ── Registration form ── */}
+                {/* â”€â”€ Registration form â”€â”€ */}
                 {signupStep === "form" && (
-                  <div className="animate-fade-in">
+                  <div className="animate-fade-in mx-auto w-full max-w-3xl   p-6 sm:p-10">
                     <div className="mb-8">
-                      <p className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">CREATE ACCOUNT</p>
-                      <h2 className="text-4xl font-extrabold text-gray-900 leading-tight">Start browsing 101LAB</h2>
+                      <p className="text-sm font-extrabold uppercase tracking-normal text-brand-teal mb-2">Create Account</p>
+                      <h2 className="mt-2 text-3xl font-extrabold text-brand-navy">Start browsing 101LAB</h2>
                     </div>
 
-                    {/* ── Google sign-up button (top) ── */}
+                    {/* â”€â”€ Google sign-up button (top) â”€â”€ */}
                     <button
                       type="button"
                       onClick={handleGoogleSignIn}
                       disabled={isGoogleLoading}
-                      className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-700 disabled:opacity-50 mb-6 shadow-sm"
+                      className="flex w-full items-center justify-center gap-3 rounded-full border border-gray-200 bg-white px-6 py-4 text-base font-semibold text-gray-700 shadow-sm transition-all hover:shadow-md disabled:opacity-50 mb-6"
                     >
-                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      <svg className="w-6 h-6 flex-shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+                        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+                        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"/>
+                        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.3 0-9.7-3.4-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+                        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.6l6.2 5.2C41.1 35.6 44 30.3 44 24c0-1.3-.1-2.4-.4-3.5z"/>
                       </svg>
                       Sign up with Google
                     </button>
 
-                    <div className="relative mb-6">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-                      <div className="relative flex justify-center"><span className="bg-white px-4 text-xs font-semibold text-gray-400 uppercase tracking-widest">OR</span></div>
+                    <div className="my-6 flex items-center gap-4">
+                      <span className="h-px flex-1 bg-border" />
+                      <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">or</span>
+                      <span className="h-px flex-1 bg-border" />
                     </div>
 
-                    <form onSubmit={handleSignupSubmit} className="space-y-6">
+                    <form onSubmit={handleSignupSubmit} className="grid gap-7 sm:grid-cols-2">
 
                       {/* First Name | Last Name */}
-                      <div className="grid grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> First Name
-                          </Label>
-                          <Input placeholder="First Name" value={form.first_name} onChange={setF("first_name")}
-                            required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> Last Name
-                          </Label>
-                          <Input placeholder="Last Name" value={form.last_name} onChange={setF("last_name")}
-                            required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                        </div>
-                      </div>
+                      <label className="block">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>First Name</span>
+                        <input placeholder="First Name" value={form.first_name} onChange={setF("first_name")} required
+                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                      </label>
+                      <label className="block">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Last Name</span>
+                        <input placeholder="Last Name" value={form.last_name} onChange={setF("last_name")} required
+                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                      </label>
 
                       {/* Email */}
-                      <div className="space-y-2">
-                        <Label className="text-base font-bold text-gray-800">
-                          <span className="text-red-500">*</span> Email
-                        </Label>
-                        <Input type="email" placeholder="name@company.com" value={form.email}
-                          onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }}
-                          required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                      </div>
+                      <label className="block sm:col-span-2">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Email</span>
+                        <input type="email" placeholder="name@company.com" value={form.email}
+                          onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }} required
+                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                      </label>
 
-                      {/* Phone | Company */}
-                      <div className="grid grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> Phone Number
-                          </Label>
-                          <div className="flex h-14 rounded-2xl border border-gray-200 bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden">
-                            <select
-                              value={form.phoneCode}
-                              onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
-                              className="h-full pl-3 pr-1 text-sm bg-gray-50 border-r border-gray-200 text-gray-700 focus:outline-none cursor-pointer shrink-0"
-                            >
-                              {PHONE_CODES.map(({ code, flag, label }) => (
-                                <option key={code} value={code}>{flag} {code}</option>
-                              ))}
-                            </select>
-                            <input
-                              type="tel"
-                              placeholder="+1 555 000 0000"
-                              value={form.phone}
-                              onChange={setF("phone")}
-                              className="flex-1 h-full px-4 text-sm bg-transparent focus:outline-none text-gray-800 placeholder:text-gray-400"
-                            />
-                          </div>
+                      {/* Phone Number */}
+                      <label className="block">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Phone Number</span>
+                        <div className="flex h-14 rounded-2xl border border-gray-200 bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden">
+                          <select
+                            value={form.phoneCode}
+                            onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
+                            className="h-full pl-3 pr-1 text-base bg-muted border-r border-input text-foreground focus:outline-none cursor-pointer shrink-0"
+                          >
+                            {PHONE_CODES.map(({ code, label }) => (
+                              <option key={code} value={code}>{label} {code}</option>
+                            ))}
+                          </select>
+                          <input type="tel" placeholder="+1 555 000 0000" value={form.phone} onChange={setF("phone")}
+                            className="flex-1 h-full px-4 text-xl font-medium bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground/55" />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> Company Name
-                          </Label>
-                          <Input placeholder="Your company / lab" value={form.company} onChange={setF("company")}
-                            className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                        </div>
-                      </div>
+                      </label>
 
-                      {/* Country | Equipment Interest */}
-                      <div className="grid grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> Country
-                          </Label>
-                          <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-14 rounded-2xl border-gray-200 bg-white px-4" />
-                        </div>
-                        <div className="space-y-2" ref={dropdownRef}>
-                          <Label className="text-base font-bold text-gray-800">
-                            <span className="text-red-500">*</span> Equipment Interest
-                          </Label>
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setInterestDropdownOpen(v => !v)}
-                              className={cn(
-                                "w-full h-14 px-4 rounded-2xl border text-sm flex items-center justify-between bg-white transition-all",
-                                interestDropdownOpen ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 hover:border-gray-300"
-                              )}
-                            >
-                              <span className="text-gray-400 truncate">
-                                {selectedInterests.length === 0
-                                  ? "Select category"
-                                  : <span className="text-gray-800">{selectedInterests.length} selected</span>
-                                }
-                              </span>
-                              <ChevronDown className={cn("w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
-                            </button>
-                            {interestDropdownOpen && (
-                              <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
-                                {labCategories.map((cat) => {
-                                  const parentSel = selectedInterests.includes(cat.slug);
-                                  const isExp = expandedParents.includes(cat.slug);
-                                  const hasSubs = cat.subcategories?.length > 0;
-                                  return (
-                                    <div key={cat.slug} className="border-b border-border/60 last:border-0">
-                                      <div className="flex items-stretch">
-                                        <button type="button" onClick={() => toggleInterest(cat.slug)}
-                                          className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
-                                          <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-primary border-primary" : "border-border")}>
-                                            {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
-                                          </div>
-                                          <span className={parentSel ? "text-primary" : "text-foreground"}>{cat.name}</span>
-                                        </button>
-                                        {hasSubs && (
-                                          <button type="button"
-                                            onClick={() => setExpandedParents(prev => prev.includes(cat.slug) ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug])}
-                                            className="px-3 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
-                                            <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isExp && "rotate-90")} />
-                                          </button>
-                                        )}
-                                      </div>
-                                      {hasSubs && isExp && (
-                                        <div className="bg-muted/30 border-t border-border/60">
-                                          {cat.subcategories.map((sub) => {
-                                            const subSel = selectedInterests.includes(sub.slug);
-                                            return (
-                                              <button key={sub.slug} type="button" onClick={() => toggleInterest(sub.slug)}
-                                                className="flex items-center gap-2 w-full px-5 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b border-border/40 last:border-0">
-                                                <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all", subSel ? "bg-primary border-primary" : "border-border")}>
-                                                  {subSel && <Check className="w-2 h-2 text-white" />}
-                                                </div>
-                                                <span className={subSel ? "text-primary font-medium" : "text-muted-foreground"}>{sub.name}</span>
-                                              </button>
-                                            );
-                                          })}
+                      {/* Company Name */}
+                      <label className="block">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Company Name</span>
+                        <input placeholder="Your company / lab" value={form.company} onChange={setF("company")}
+                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                      </label>
+
+                      {/* Country */}
+                      <label className="block">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Country</span>
+                        <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))}
+                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm" />
+                      </label>
+
+                      {/* Equipment Interest */}
+                      <div className="block" ref={dropdownRef}>
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Equipment Interest</span>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setInterestDropdownOpen(v => !v)}
+                            className={cn(
+                              "w-full h-14 px-5 rounded-2xl border border-gray-200 bg-white text-sm flex items-center justify-between transition-all",
+                              interestDropdownOpen ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
+                            )}
+                          >
+                            <span className={selectedInterests.length === 0 ? "text-muted-foreground/55" : "text-foreground"}>
+                              {selectedInterests.length === 0 ? "Select category" : `${selectedInterests.length} selected`}
+                            </span>
+                            <ChevronDown className={cn("w-5 h-5 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
+                          </button>
+                          {interestDropdownOpen && (
+                            <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
+                              {labCategories.map((cat) => {
+                                const parentSel = selectedInterests.includes(cat.slug);
+                                const isExp = expandedParents.includes(cat.slug);
+                                const hasSubs = cat.subcategories?.length > 0;
+                                return (
+                                  <div key={cat.slug} className="border-b border-border/60 last:border-0">
+                                    <div className="flex items-stretch">
+                                      <button type="button" onClick={() => toggleInterest(cat.slug)}
+                                        className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
+                                        <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-primary border-primary" : "border-border")}>
+                                          {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
                                         </div>
+                                        <span className={parentSel ? "text-primary" : "text-foreground"}>{cat.name}</span>
+                                      </button>
+                                      {hasSubs && (
+                                        <button type="button"
+                                          onClick={() => setExpandedParents(prev => prev.includes(cat.slug) ? prev.filter(s => s !== cat.slug) : [...prev, cat.slug])}
+                                          className="px-3 border-l border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                                          <ChevronRight className={cn("w-3.5 h-3.5 transition-transform", isExp && "rotate-90")} />
+                                        </button>
                                       )}
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
+                                    {hasSubs && isExp && (
+                                      <div className="bg-muted/30 border-t border-border/60">
+                                        {cat.subcategories.map((sub) => {
+                                          const subSel = selectedInterests.includes(sub.slug);
+                                          return (
+                                            <button key={sub.slug} type="button" onClick={() => toggleInterest(sub.slug)}
+                                              className="flex items-center gap-2 w-full px-5 py-2 text-xs hover:bg-muted/50 transition-colors text-left border-b border-border/40 last:border-0">
+                                              <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-all", subSel ? "bg-primary border-primary" : "border-border")}>
+                                                {subSel && <Check className="w-2 h-2 text-white" />}
+                                              </div>
+                                              <span className={subSel ? "text-primary font-medium" : "text-muted-foreground"}>{sub.name}</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Password */}
-                      <div className="space-y-2">
-                        <Label className="text-base font-bold text-gray-800">
-                          <span className="text-red-500">*</span> Password
-                        </Label>
+                      <label className="block sm:col-span-2">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Password</span>
                         <div className="relative">
-                          <Input type={showPassword ? "text" : "password"} placeholder="Enter password"
+                          <input type={showPassword ? "text" : "password"} placeholder="Enter password"
                             value={form.password} onChange={setF("password")} required
-                            className="h-14 pr-12 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowPassword(v => !v)}>
-                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
+                            {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                           </button>
                         </div>
-                        <p className="text-sm text-gray-400">Passwords must contain at least 8 characters, a capital letter and a special character</p>
-                      </div>
+                        <span className="mt-3 block text-lg font-semibold text-muted-foreground">At least 8 characters, a capital letter and a special character</span>
+                      </label>
 
                       {/* Confirm Password */}
-                      <div className="space-y-2">
-                        <Label className="text-base font-bold text-gray-800">
-                          <span className="text-red-500">*</span> Confirm Password
-                        </Label>
+                      <label className="block sm:col-span-2">
+                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Confirm Password</span>
                         <div className="relative">
-                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password"
+                          <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password"
                             value={form.confirmPassword} onChange={setF("confirmPassword")} required
-                            className="h-14 pr-12 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
-                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowConfirmPassword(v => !v)}>
-                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(v => !v)}>
+                            {showConfirmPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                           </button>
                         </div>
-                      </div>
+                      </label>
 
                       {/* Become a Seller */}
-                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors sm:col-span-2">
                         <input
                           type="checkbox"
                           checked={wantToSell}
                           onChange={e => setWantToSell(e.target.checked)}
-                          className="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                          className="w-5 h-5 accent-primary flex-shrink-0"
                         />
                         <div className="flex-1">
-                          <span className="text-sm font-semibold text-gray-800">Become a Seller</span>
-                          <p className="text-xs text-gray-400 mt-0.5">Register as a seller to list and auction your items. Requires admin approval.</p>
+                          <span className="text-base font-bold text-foreground">Become a Seller</span>
+                          <p className="text-sm text-muted-foreground mt-0.5">Register as a seller to list and auction your items. Requires admin approval.</p>
                         </div>
                       </label>
 
-                      <Button type="submit" className="w-full h-14 text-base font-semibold text-white gap-2 rounded-2xl" style={{ backgroundColor: '#3730a3' }} disabled={isSignupLoading}>
-                        {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Creating Account…</> : "Create Account"}
-                      </Button>
+                      <button type="submit" disabled={isSignupLoading}
+                        className="sm:col-span-2 mt-2 w-full rounded-2xl px-6 py-4 text-base font-bold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={{ background: "linear-gradient(135deg, hsl(215,60%,18%), hsl(180,65%,40%))" }}>
+                        {isSignupLoading ? "Creating Accountâ€¦" : "Create Account"}
+                      </button>
                     </form>
 
-                    <div className="relative my-4">
+                    <div className="relative my-6">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                      <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
+                      <div className="relative flex justify-center"><span className="bg-card px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
                     </div>
                     <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signin")}>
                       <LogIn className="w-4 h-4" />{t("auth.signIn")}
@@ -722,93 +675,49 @@ const Auth = () => {
               </div>
             )}
 
-          </div>
-        </div>
-      </div>
+          </div>{/* end right card */}
+        </div>{/* end grid */}
+      </div>{/* end centered section */}
 
-      {/* ── Unverified / Pending account overlay modal ── */}
+      {/* â”€â”€ Unverified / Pending account overlay modal â”€â”€ */}
       {unverifiedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-fade-in">
           <div className="relative w-full max-w-md bg-background rounded-2xl shadow-2xl border border-border p-8 flex flex-col items-center text-center">
-            {/* Close */}
-            <button
-              type="button"
-              onClick={() => setUnverifiedModal(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <button type="button" onClick={() => setUnverifiedModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-
-            {/* Icon */}
-            <div className={cn(
-              "w-16 h-16 rounded-full flex items-center justify-center mb-5",
-              unverifiedModal.type === "not_verified" ? "bg-amber-100" : "bg-blue-50"
-            )}>
-              {unverifiedModal.type === "not_verified"
-                ? <Mail className="w-8 h-8 text-amber-500" />
-                : <CheckCircle2 className="w-8 h-8 text-blue-500" />
-              }
+            <div className={cn("w-16 h-16 rounded-full flex items-center justify-center mb-5", unverifiedModal.type === "not_verified" ? "bg-amber-100" : "bg-blue-50")}>
+              {unverifiedModal.type === "not_verified" ? <Mail className="w-8 h-8 text-amber-500" /> : <CheckCircle2 className="w-8 h-8 text-blue-500" />}
             </div>
-
-            {/* Title */}
             <h3 className="text-xl font-bold text-foreground mb-2">
               {unverifiedModal.type === "not_verified" ? t("auth.emailNotVerifiedTitle") : t("auth.accountPendingApprovalTitle")}
             </h3>
-
-            {/* Body */}
             <p className="text-sm text-muted-foreground leading-relaxed mb-1">
-              {unverifiedModal.type === "not_verified"
-                ? t("auth.emailNotVerifiedBody")
-                : t("auth.accountPendingApprovalBody")
-              }
+              {unverifiedModal.type === "not_verified" ? t("auth.emailNotVerifiedBody") : t("auth.accountPendingApprovalBody")}
             </p>
             <p className="text-sm font-semibold text-foreground mb-4">{unverifiedModal.email}</p>
-
             <div className="w-full bg-muted/40 border border-border rounded-xl px-4 py-3 mb-5 text-left">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {unverifiedModal.type === "not_verified"
-                  ? t("auth.emailNotVerifiedHelp")
-                  : t("auth.accountPendingApprovalHelp")
-                }
+                {unverifiedModal.type === "not_verified" ? t("auth.emailNotVerifiedHelp") : t("auth.accountPendingApprovalHelp")}
               </p>
             </div>
-
             {unverifiedModal.type === "not_verified" && (
-              <Button
-                type="button"
-                className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3"
-                disabled={isResendingLink}
+              <Button type="button" className="w-full h-11 font-semibold bg-primary hover:bg-primary/90 gap-2 mb-3" disabled={isResendingLink}
                 onClick={async () => {
                   setIsResendingLink(true);
-                  try {
-                    await resendVerificationLink({ email: unverifiedModal.email }).unwrap();
-                    toastSuccess(t("auth.verificationEmailResentInbox"));
-                  } catch (err: any) {
-                    toastError(err?.data?.message || t("auth.failedToResend"));
-                  } finally { setIsResendingLink(false); }
-                }}
-              >
-                {isResendingLink
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.sending")}</>
-                  : <><RefreshCw className="w-4 h-4" />{t("auth.resendVerificationEmail")}</>
-                }
+                  try { await resendVerificationLink({ email: unverifiedModal.email }).unwrap(); toastSuccess(t("auth.verificationEmailResentInbox")); }
+                  catch (err: any) { toastError(err?.data?.message || t("auth.failedToResend")); }
+                  finally { setIsResendingLink(false); }
+                }}>
+                {isResendingLink ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.sending")}</> : <><RefreshCw className="w-4 h-4" />{t("auth.resendVerificationEmail")}</>}
               </Button>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-10 text-sm mb-3"
-              onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}
-            >
+            <Button type="button" variant="outline" className="w-full h-10 text-sm mb-3" onClick={() => { setUnverifiedModal(null); navigate("/marketplace"); }}>
               {t("auth.browseWhileWaiting")}
             </Button>
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground underline"
-              onClick={() => setUnverifiedModal(null)}
-            >
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground underline" onClick={() => setUnverifiedModal(null)}>
               {t("auth.close")}
             </button>
           </div>
@@ -821,3 +730,4 @@ const Auth = () => {
 };
 
 export default Auth;
+
