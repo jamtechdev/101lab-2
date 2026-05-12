@@ -55,13 +55,8 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   // If route allows both seller and buyer
   if (allowedRoles.includes("seller") && allowedRoles.includes("buyer")) {
     if (jwtRole === "seller" || jwtRole === "buyer") {
-      // Pure buyers trying to access seller-only paths → redirect to buyer dashboard
-      const isSellerOnlyPath = SELLER_ONLY_PATHS.some(
-        (p) => location.pathname === p || location.pathname.startsWith(p + "/")
-      );
-      const isSettingsPath = location.pathname === "/dashboard/settings";
-      const isRestricted = accountStatus === "profile_incomplete" || accountStatus === "pending" || (accountStatus && accountStatus !== "approved");
-      if (jwtRole === "buyer" && isSellerOnlyPath && !isSettingsPath && !isRestricted) {
+      // Buyer on /dashboard → send to buyer dashboard
+      if (jwtRole === "buyer" && location.pathname === "/dashboard") {
         return <Navigate to="/buyer-dashboard" replace />;
       }
       return <Outlet />;

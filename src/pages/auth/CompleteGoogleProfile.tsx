@@ -135,7 +135,7 @@ const CompleteGoogleProfile = () => {
           localStorage.setItem("jwtRole", "seller");
           localStorage.setItem("activeView", "seller");
         }
-        window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
+        window.location.href = "/dashboard";
       } else {
         toastError(data.message || "Something went wrong.");
       }

@@ -66,7 +66,7 @@ const GoogleCallback = () => {
       localStorage.setItem("googlePrefillFirst", firstName);
       localStorage.setItem("googlePrefillLast", lastName);
       toastSuccess("Signed in with Google! Welcome.");
-      window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
+      window.location.href = "/dashboard";
       return;
     }
 
@@ -79,7 +79,7 @@ const GoogleCallback = () => {
     }
 
     // Approved user → dashboard
-    if (role === "buyer")       window.location.href = "/buyer-dashboard";
+    if (role === "buyer")       window.location.href = "/dashboard";
     else if (role === "seller") window.location.href = "/dashboard";
     else if (role === "admin")  window.location.href = "/admin";
     else                        window.location.href = "/forbidden";

@@ -229,7 +229,7 @@ const Auth = () => {
         socket.emit("joinRooms", { user_id: userId, role }, (res: any) => { });
         if (accessToken) localStorage.setItem("accessToken", accessToken);
         if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
-        if (role === "buyer") window.location.href = "/buyer-dashboard";
+        if (role === "buyer") window.location.href = "/dashboard";
         else if (role === "seller") window.location.href = "/dashboard";
         else if (role === "admin") window.location.href = "/admin";
         else window.location.href = "/forbidden";

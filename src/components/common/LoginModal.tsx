@@ -63,7 +63,7 @@ const LoginModal = ({ open, onClose, onSuccess, portalType = "buyer" }: LoginMod
           onSuccess();
         } else {
           // Navigate to role dashboard
-          if (role === "buyer") navigate("/buyer-dashboard");
+          if (role === "buyer") navigate("/dashboard");
           else if (role === "seller") navigate("/dashboard");
           else if (role === "admin") navigate("/admin");
         }
