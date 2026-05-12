@@ -241,7 +241,11 @@ const Auth = () => {
       if (code === "EMAIL_NOT_VERIFIED") {
         setUnverifiedModal({ email, type: "not_verified" });
       } else if (err?.status === 403 || code === "ACCOUNT_PENDING") {
-        setUnverifiedModal({ email, type: "pending" });
+        const { token, refreshToken, userId } = err?.data || {};
+        if (token) localStorage.setItem("accessToken", token);
+        if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+        if (userId) localStorage.setItem("userId", userId.toString());
+        navigate("/dashboard/settings");
       } else {
         toastError(err?.data?.message || t("auth.validation.loginFailed"));
       }

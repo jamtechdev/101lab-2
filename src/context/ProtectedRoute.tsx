@@ -32,12 +32,14 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   const user = data.user;
   const accountStatus = user.accountStatus;
 
-  // Block incomplete/pending accounts from dashboard
-  if (accountStatus === "profile_incomplete") {
-    return <Navigate to="/complete-google-profile" replace />;
+  // Block incomplete/pending accounts — only settings is accessible
+  if (accountStatus === "profile_incomplete" && location.pathname !== "/dashboard/settings") {
+    return <Navigate to="/dashboard/settings" replace />;
   }
   if (accountStatus === "pending" || (accountStatus && accountStatus !== "approved")) {
-    return <Navigate to="/account-pending" replace />;
+    if (location.pathname !== "/dashboard/settings") {
+      return <Navigate to="/dashboard/settings" replace />;
+    }
   }
 
   const jwtRole = user.role;

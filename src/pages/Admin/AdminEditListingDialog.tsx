@@ -619,7 +619,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
       await updateProduct({ productId, body }).unwrap();
       toastSuccess(t("admin.edit.productSaved", "Product updated"));
-      onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update product");
     }
@@ -647,7 +646,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
         },
       }).unwrap();
       toastSuccess(t("admin.edit.seoSaved", "SEO saved"));
-      onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to save SEO");
     }
@@ -669,7 +667,6 @@ const AdminEditListingDialog = ({ batchId, open, onClose }: Props) => {
 
       await updateBidding({ batchId, body }).unwrap();
       toastSuccess(t("admin.edit.biddingSaved", "Bidding updated"));
-      onClose();
     } catch (err: any) {
       toastError(err?.data?.message || "Failed to update bidding");
     }

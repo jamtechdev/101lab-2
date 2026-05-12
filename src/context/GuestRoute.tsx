@@ -18,7 +18,7 @@ const GuestRoute: React.FC = () => {
         // Incomplete profile — let them stay on auth/complete-profile pages
         if (accountStatus === "profile_incomplete") return <Outlet />;
         if (accountStatus === "pending" || (accountStatus && accountStatus !== "approved")) {
-          return <Navigate to="/account-pending" replace />;
+          return <Navigate to="/dashboard/settings" replace />;
         }
         if (role === "seller") return <Navigate to="/dashboard" replace />;
         if (role === "buyer") return <Navigate to="/buyer-dashboard" replace />;
