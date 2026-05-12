@@ -208,6 +208,8 @@ const Auth = () => {
     if (!validateEmail(email)) { toastWarning(t("auth.validation.validEmail")); return; }
     try {
       const result = await login({ email, password }).unwrap();
+      console.log("changes");
+      
       if (result?.success) {
         try { pushLoginEvent(result, "email"); } catch { }
         toastSuccess(t("auth.validation.welcomeBackToast"));
