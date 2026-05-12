@@ -15,10 +15,12 @@ import {
   Trophy,
   ShoppingCart,
   History,
+  Lock,
+  Clock,
 } from "lucide-react";
 import logo from "@/assets/greenbidz_logo.png";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
-import { useLogoutMutation } from "@/rtk/slices/apiSlice";
+import { useLogoutMutation, useVerifyUserQuery } from "@/rtk/slices/apiSlice";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import BuyerNotificationBell from "@/services/BuyerNotifcationBell";
 import RoleSwitcher from "@/components/common/RoleSwitcher";
@@ -35,11 +37,14 @@ const SectionHeader = ({ title }: { title: string }) => (
 
 const BuyerDashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [restrictedModal, setRestrictedModal] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [logout, { isLoading }] = useLogoutMutation();
   const userName = localStorage.getItem("userName");
   const { t } = useTranslation();
+  const { data: verifyData } = useVerifyUserQuery();
+  const accountStatus = verifyData?.user?.accountStatus;
 
   const navigationSections = [
     {
@@ -143,20 +148,31 @@ const BuyerDashboardLayout = () => {
                       item.href === "/buyer-dashboard"
                         ? location.pathname === "/buyer-dashboard" || location.pathname.startsWith("/buyer-dashboard/")
                         : location.pathname === item.href || location.pathname.startsWith(item.href + "/");
+
+                    const allowedWhenRestricted = ["/buyer-dashboard", "/buyer/profile-setting", "/buyer-marketplace"];
+                    const isRestricted = accountStatus && accountStatus !== "approved"
+                      ? !allowedWhenRestricted.includes(item.href)
+                      : false;
+
                     return (
                       <Link
                         key={item.name}
-                        to={item.href}
+                        to={isRestricted ? "#" : item.href}
                         className={cn(
                           "flex items-center gap-2 px-2.5 py-1.5 rounded text-[12px] font-medium transition-all duration-150",
                           isActive
                             ? "bg-sidebar-foreground/10 text-sidebar-foreground"
-                            : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80"
+                            : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80",
+                          isRestricted && "opacity-50 cursor-not-allowed"
                         )}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={(e) => {
+                          if (isRestricted) { e.preventDefault(); setRestrictedModal(true); return; }
+                          setSidebarOpen(false);
+                        }}
                       >
                         <Icon className="w-3.5 h-3.5" />
-                        <span>{item.name}</span>
+                        <span className="flex-1">{item.name}</span>
+                        {isRestricted && <Lock className="w-3 h-3 opacity-40 shrink-0" />}
                       </Link>
                     );
                   })}
@@ -166,6 +182,34 @@ const BuyerDashboardLayout = () => {
           </nav>
         </div>
       </aside>
+
+      {/* Account restricted modal */}
+      {restrictedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-amber-600" />
+                </div>
+                <h2 className="text-sm font-semibold text-gray-900">Account Pending Approval</h2>
+              </div>
+              <button onClick={() => setRestrictedModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 text-center">
+              <p className="text-sm text-gray-500 mb-5">Your account is under review. You'll be notified once approved.</p>
+              <button
+                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => setRestrictedModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="lg:pl-56">

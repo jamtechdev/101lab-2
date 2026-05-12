@@ -1,11 +1,85 @@
 // @ts-nocheck
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail } from "lucide-react";
+import { Mail, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/greenbidz_logo.png";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { SITE_FULL_NAME } from "@/config/branding";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
+
+const API_BASE = "https://api.101recycle.greenbidz.com";
+
+const NewsletterBanner = () => {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+    try {
+      const { data } = await axios.post(`${API_BASE}/api/v1/newsletter/subscribe`, { email, name });
+      setStatus("success");
+      setMessage(data.message || "Subscribed!");
+      setEmail(""); setName("");
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err?.response?.data?.message || "Something went wrong.");
+    }
+  };
+
+  return (
+    <div className="bg-gradient-to-r from-[hsl(155,72%,17%)] to-[hsl(155,55%,25%)]">
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="text-center lg:text-left">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-2">Stay Updated</p>
+            <h2 className="text-2xl font-extrabold text-white">Subscribe to our Newsletter</h2>
+            <p className="mt-2 text-sm text-white/70 max-w-md">Get the latest lab equipment listings, auction alerts, and marketplace news delivered to your inbox.</p>
+          </div>
+          <div className="w-full lg:w-auto lg:min-w-[480px]">
+            {status === "success" ? (
+              <div className="flex items-center gap-3 bg-white/10 rounded-2xl px-6 py-4 text-white">
+                <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
+                <p className="font-semibold text-sm">{message}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="flex-1 h-12 rounded-xl px-4 text-sm bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                />
+                <input
+                  type="email"
+                  placeholder="Your email address"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="flex-1 h-12 rounded-xl px-4 text-sm bg-white/10 border border-white/20 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
+                />
+                <button
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="h-12 px-6 rounded-xl bg-white text-[hsl(155,72%,17%)] font-bold text-sm flex items-center gap-2 hover:bg-white/90 transition-colors disabled:opacity-60 shrink-0"
+                >
+                  {status === "loading" ? "..." : <><span>Subscribe</span><ArrowRight className="w-4 h-4" /></>}
+                </button>
+              </form>
+            )}
+            {status === "error" && <p className="text-red-300 text-xs mt-2">{message}</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const MONDAY_FORM_URL = "https://forms.monday.com/";
 
@@ -36,6 +110,8 @@ const Footer = () => {
     : (categoriesData as any)?.data ?? [];
 
   return (
+    <>
+    <NewsletterBanner />
     <footer className="bg-foreground text-card">
       {/* CTA banner */}
       {/* <div className="border-b border-card/10">
@@ -165,6 +241,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };
 
