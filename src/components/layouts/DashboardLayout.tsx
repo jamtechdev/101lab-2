@@ -68,7 +68,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
   // Get user permissions for navigation filtering
   const { hasPermission, hasAnyPermission } = useSellerPermissions();
 
-  const { data: verifyData } = useVerifyUserQuery();
+  const { data: verifyData, refetch: refetchUser } = useVerifyUserQuery();
   const accountStatus = verifyData?.user?.accountStatus;
 
   // Check if user is in normal seller mode (not company mode)
@@ -257,7 +257,7 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
             {/* Body */}
             <div className="overflow-y-auto p-6">
               {accountStatus === "profile_incomplete" ? (
-                <CompleteProfileForm onSuccess={() => setRestrictedModal(false)} />
+                <CompleteProfileForm onSuccess={() => { setRestrictedModal(false); refetchUser(); }} />
               ) : (
                 <div className="text-center py-8">
                   <p className="text-sm text-gray-500">Your account is under review. You'll be notified once approved.</p>
