@@ -24,6 +24,7 @@ import {
   TableProperties,
   BarChart3,
   Tag,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/greenbidz_logo.png";
@@ -205,7 +206,13 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
                         location.pathname === item.href ||
                         (item.href !== "/dashboard" && location.pathname.startsWith(item.href + "/"));
 
-                      const isRestricted = accountStatus && accountStatus !== "approved" && item.href !== "/dashboard/settings";
+                      const allowedWhenIncomplete = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
+                      const allowedWhenPending = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
+                      const isRestricted = accountStatus === "profile_incomplete"
+                        ? !allowedWhenIncomplete.includes(item.href)
+                        : accountStatus && accountStatus !== "approved"
+                          ? !allowedWhenPending.includes(item.href)
+                          : false;
 
                       return (
                         <Link
@@ -215,7 +222,8 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
                             "flex items-center gap-2 px-2.5 py-1.5 rounded text-[12px] font-medium transition-all duration-150",
                             isActive
                               ? "bg-sidebar-foreground/10 text-sidebar-foreground"
-                              : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80"
+                              : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80",
+                            isRestricted && "opacity-50 cursor-not-allowed"
                           )}
                           onClick={(e) => {
                             if (isRestricted) { e.preventDefault(); setRestrictedModal(true); return; }
@@ -223,7 +231,8 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
                           }}
                         >
                           <Icon className="w-3.5 h-3.5" />
-                          <span>{item.name}</span>
+                          <span className="flex-1">{item.name}</span>
+                          {isRestricted && <Lock className="w-3 h-3 opacity-40 shrink-0" />}
                         </Link>
                       );
                     })}
@@ -238,14 +247,13 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
       {/* Account restricted modal */}
       {restrictedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-amber-600" />
+                  {accountStatus === "profile_incomplete" ? <Lock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-amber-600" />}
                 </div>
-                <h2 className="text-base font-semibold text-gray-900">
+                <h2 className="text-sm font-semibold text-gray-900">
                   {accountStatus === "profile_incomplete" ? "Complete Your Profile" : "Account Pending Approval"}
                 </h2>
               </div>
@@ -253,22 +261,26 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Body */}
-            <div className="overflow-y-auto p-6">
-              {accountStatus === "profile_incomplete" ? (
-                <CompleteProfileForm onSuccess={() => { setRestrictedModal(false); refetchUser(); }} />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500">Your account is under review. You'll be notified once approved.</p>
-                  <button
-                    className="mt-4 w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                    onClick={() => setRestrictedModal(false)}
-                  >
-                    Close
-                  </button>
-                </div>
+            <div className="p-5 text-center">
+              <p className="text-sm text-gray-500 mb-5">
+                {accountStatus === "profile_incomplete"
+                  ? "Please complete your profile to unlock all dashboard features."
+                  : "Your account is under review. You'll be notified once approved."}
+              </p>
+              {accountStatus === "profile_incomplete" && (
+                <button
+                  className="w-full py-2.5 rounded-lg bg-green-700 text-white text-sm font-medium hover:bg-green-800 transition-colors mb-2"
+                  onClick={() => { setRestrictedModal(false); window.location.href = "/complete-google-profile"; }}
+                >
+                  Complete Profile
+                </button>
               )}
+              <button
+                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => setRestrictedModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

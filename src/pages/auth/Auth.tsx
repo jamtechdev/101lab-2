@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
+import authLogo from "@/assets/lablogo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -102,8 +103,9 @@ const Auth = () => {
     first_name: "", last_name: "", phone: "",
     phoneCode: "+86",
     company: "", country: "",
-    industry: "", industryOther: "",
+    // industry: "", industryOther: "",
   });
+  const [wantToSell, setWantToSell] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [interestDropdownOpen, setInterestDropdownOpen] = useState(false);
@@ -189,11 +191,11 @@ const Auth = () => {
 
     try {
       await signupWithLink({
-        email: form.email, password: form.password, role: "buyer",
+        email: form.email, password: form.password, role: wantToSell ? "seller" : "buyer",
         first_name: form.first_name, last_name: form.last_name,
         phone: form.phone ? `${form.phoneCode}${form.phone}` : "",
         company: form.company, country: form.country,
-        industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
+        // industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
         interests: selectedInterests,
       }).unwrap();
       try { pushRoleSelectedEvent(userType); } catch { }
@@ -267,28 +269,36 @@ const Auth = () => {
     <div className="min-h-screen flex bg-background">
 
       {/* ── Left branding panel ── */}
-      <div className="hidden lg:flex lg:w-[380px] xl:w-[440px] flex-col justify-between p-10 text-primary-foreground relative overflow-hidden bg-gradient-primary shrink-0">
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M20 20h20v20H20zM0 0h20v20H0z\'/%3E%3C/g%3E%3C/svg%3E")' }} />
-        <div className="relative z-10">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm opacity-70 hover:opacity-100 transition-opacity mb-10">
-            <ArrowLeft className="w-4 h-4" />{t("auth.backToHome")}
-          </button>
-          <div className="mb-1"><span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">{t("auth.welcomeTo")}</span></div>
-          <h1 className="text-3xl font-bold mb-3 tracking-tight">101Lab</h1>
-          <p className="text-sm opacity-70 leading-relaxed max-w-[300px]">{t("landing.subtitle")}</p>
-        </div>
-        <div className="relative z-10 space-y-4 mt-auto">
-          <div className="w-10 h-[2px] opacity-30 bg-warning" />
-          {FEATURES.map((item, i) => (
-            <div key={i} className="flex items-start gap-3 text-sm opacity-70">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-warning" /><span>{item}</span>
-            </div>
-          ))}
+      <div className="hidden lg:flex lg:w-[420px] xl:w-[460px] flex-col justify-center p-10 relative overflow-hidden shrink-0"
+        style={{ background: "linear-gradient(160deg, #e8f8f2 0%, #d6f0e8 50%, #c8ece2 100%)" }}>
+        <div className="flex flex-col gap-8">
+          {/* Logo card */}
+          <div className="w-40 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center px-4">
+            <img src={authLogo} alt="101LAB" className="h-12 w-auto object-contain" />
+          </div>
+          {/* Heading */}
+          <div>
+            <h1 className="text-[2.6rem] font-extrabold text-gray-900 leading-[1.15] mb-4">
+              Welcome to a smarter<br />lab equipment<br />marketplace.
+            </h1>
+            <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
+              Build your account, tune your equipment interests, and unlock bidding-ready verification.
+            </p>
+          </div>
+          {/* Category pills */}
+          <div className="flex flex-wrap gap-2">
+            {["Infrastructure", "Biotech", "Pharma", "T&M"].map(pill => (
+              <span key={pill} className="px-4 py-1.5 rounded-full text-sm font-semibold text-white"
+                style={{ backgroundColor: "#2ec99a" }}>
+                {pill}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Right panel ── */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-y-auto bg-white ">
         <div className="flex items-center justify-between px-5 py-3 border-b border-border lg:border-none lg:px-10 lg:pt-6 lg:pb-0">
           <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground lg:hidden">
             <ArrowLeft className="w-4 h-4" />{t("auth.backToHome")}
@@ -297,8 +307,8 @@ const Auth = () => {
           <div className="ml-auto"><LanguageSwitcher /></div>
         </div>
 
-        <div className="flex-1 flex items-start justify-center py-8 px-4 lg:px-8">
-          <div className="w-full max-w-2xl">
+        <div className="flex-1 flex items-start justify-center py-10 px-6 lg:px-10">
+          <div className="w-full max-w-4xl">
 
             {/* ══ SIGN IN ══ */}
             {authMode === "signin" && (
@@ -373,7 +383,7 @@ const Auth = () => {
 
             {/* ══ SIGN UP ══ */}
             {authMode === "signup" && userType !== "admin" && (
-              <div className="animate-fade-in">
+              <div className="animate-fade-in bg-white">
 
                 {/* ── Check email screen ── */}
                 {signupStep === "check_email" && (
@@ -481,187 +491,125 @@ const Auth = () => {
                 {/* ── Registration form ── */}
                 {signupStep === "form" && (
                   <div className="animate-fade-in">
-                    <div className="text-center mb-7">
-                      <h2 className="text-2xl font-bold">{t("auth.createYourAccountTitle")}</h2>
-                      <p className="text-sm text-muted-foreground mt-1">{t("auth.joinMarketplaceFree")}</p>
+                    <div className="mb-8">
+                      <p className="text-xs font-bold text-teal-500 uppercase tracking-widest mb-2">CREATE ACCOUNT</p>
+                      <h2 className="text-4xl font-extrabold text-gray-900 leading-tight">Start browsing 101LAB</h2>
+                    </div>
+
+                    {/* ── Google sign-up button (top) ── */}
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isGoogleLoading}
+                      className="w-full h-14 flex items-center justify-center gap-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-700 disabled:opacity-50 mb-6 shadow-sm"
+                    >
+                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                      </svg>
+                      Sign up with Google
+                    </button>
+
+                    <div className="relative mb-6">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                      <div className="relative flex justify-center"><span className="bg-white px-4 text-xs font-semibold text-gray-400 uppercase tracking-widest">OR</span></div>
                     </div>
 
                     <form onSubmit={handleSignupSubmit} className="space-y-6">
 
-                      {/* ── Section: Credentials ── */}
-                      <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                        <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Lock className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <p className="text-sm font-semibold text-foreground">{t("auth.accountCredentials")}</p>
+                      {/* First Name | Last Name */}
+                      <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> First Name
+                          </Label>
+                          <Input placeholder="First Name" value={form.first_name} onChange={setF("first_name")}
+                            required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> Last Name
+                          </Label>
+                          <Input placeholder="Last Name" value={form.last_name} onChange={setF("last_name")}
+                            required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
+                        </div>
+                      </div>
 
-                        {/* Email — full row */}
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">
-                            {t("auth.companyEmail")} <span className="text-destructive">*</span>
+                      {/* Email */}
+                      <div className="space-y-2">
+                        <Label className="text-base font-bold text-gray-800">
+                          <span className="text-red-500">*</span> Email
+                        </Label>
+                        <Input type="email" placeholder="name@company.com" value={form.email}
+                          onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }}
+                          required className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
+                      </div>
+
+                      {/* Phone | Company */}
+                      <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> Phone Number
+                          </Label>
+                          <div className="flex h-14 rounded-2xl border border-gray-200 bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 overflow-hidden">
+                            <select
+                              value={form.phoneCode}
+                              onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
+                              className="h-full pl-3 pr-1 text-sm bg-gray-50 border-r border-gray-200 text-gray-700 focus:outline-none cursor-pointer shrink-0"
+                            >
+                              {PHONE_CODES.map(({ code, flag, label }) => (
+                                <option key={code} value={code}>{flag} {code}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="tel"
+                              placeholder="+1 555 000 0000"
+                              value={form.phone}
+                              onChange={setF("phone")}
+                              className="flex-1 h-full px-4 text-sm bg-transparent focus:outline-none text-gray-800 placeholder:text-gray-400"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> Company Name
+                          </Label>
+                          <Input placeholder="Your company / lab" value={form.company} onChange={setF("company")}
+                            className="h-14 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
+                        </div>
+                      </div>
+
+                      {/* Country | Equipment Interest */}
+                      <div className="grid grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> Country
+                          </Label>
+                          <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-14 rounded-2xl border-gray-200 bg-white px-4" />
+                        </div>
+                        <div className="space-y-2" ref={dropdownRef}>
+                          <Label className="text-base font-bold text-gray-800">
+                            <span className="text-red-500">*</span> Equipment Interest
                           </Label>
                           <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input type="email" placeholder="company@yourcompany.com" value={form.email}
-                              onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }}
-                              required className="h-11 pl-10 bg-background border-border focus:border-primary" />
-                          </div>
-                        </div>
-
-                        {/* Password + Confirm — 2 cols */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">
-                              {t("auth.password")} <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                              <Input type={showPassword ? "text" : "password"} placeholder={t("auth.passwordMinPlaceholder")}
-                                value={form.password} onChange={setF("password")} required
-                                className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
-                              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowPassword(v => !v)}>
-                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">
-                              {t("auth.confirmPassword")} <span className="text-destructive">*</span>
-                            </Label>
-                            <div className="relative">
-                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                              <Input type={showConfirmPassword ? "text" : "password"} placeholder={t("auth.repeatPasswordPlaceholder")}
-                                value={form.confirmPassword} onChange={setF("confirmPassword")} required
-                                className="h-11 pl-10 pr-10 bg-background border-border focus:border-primary" />
-                              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5" onClick={() => setShowConfirmPassword(v => !v)}>
-                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* ── Section: Personal + Company (combined) ── */}
-                      <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                        <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <User className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <p className="text-sm font-semibold text-foreground">{t("auth.personalCompanyDetails")}</p>
-                        </div>
-
-                        {/* First name | Last name | Phone — 3 cols */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">
-                              {t("auth.firstName")} <span className="text-destructive">*</span>
-                            </Label>
-                            <Input placeholder={t("auth.firstNameExample")} value={form.first_name} onChange={setF("first_name")}
-                              required className="h-11 bg-background border-border focus:border-primary" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">
-                              {t("auth.lastName")} <span className="text-destructive">*</span>
-                            </Label>
-                            <Input placeholder={t("auth.lastNameExample")} value={form.last_name} onChange={setF("last_name")}
-                              required className="h-11 bg-background border-border focus:border-primary" />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">{t("auth.phoneNumber")}</Label>
-                            <div className="flex h-11 rounded-md border border-border bg-background focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden">
-                              <select
-                                value={form.phoneCode}
-                                onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
-                                className="h-full pl-2 pr-1 text-sm bg-muted/40 border-r border-border text-foreground focus:outline-none cursor-pointer shrink-0"
-                              >
-                                {PHONE_CODES.map(({ code, flag, label }) => (
-                                  <option key={code} value={code}>{flag} {code}</option>
-                                ))}
-                              </select>
-                              <input
-                                type="tel"
-                                placeholder={t("auth.phonePlaceholder")}
-                                value={form.phone}
-                                onChange={setF("phone")}
-                                className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Company | Country — 2 cols */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">{t("auth.companyName")}</Label>
-                            <div className="relative">
-                              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                              <Input placeholder={t("auth.yourCompany")} value={form.company} onChange={setF("company")}
-                                className="h-11 pl-10 bg-background border-border focus:border-primary" />
-                            </div>
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label className="text-sm font-medium text-foreground">{t("auth.country")}</Label>
-                            <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} className="h-11 bg-background" />
-                          </div>
-                        </div>
-
-                        {/* Customer Industry — full row */}
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-medium text-foreground">{t("auth.customerIndustry")}</Label>
-                          <select
-                            value={form.industry}
-                            onChange={e => setForm(p => ({ ...p, industry: e.target.value, industryOther: "" }))}
-                            className="w-full h-11 px-3 rounded-md border border-border bg-background text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          >
-                            <option value="">{t("auth.selectYourIndustry")}</option>
-                            {INDUSTRY_OPTIONS.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                          {form.industry === "Other" && (
-                            <Input
-                              placeholder={t("auth.specifyIndustryPlaceholder")}
-                              value={form.industryOther}
-                              onChange={setF("industryOther")}
-                              className="h-11 bg-background border-border focus:border-primary mt-2"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* ── Section: Interests ── */}
-                      {labCategories.length > 0 && (
-                        <div className="rounded-2xl border border-border bg-muted/20 p-6 space-y-4">
-                          <div className="flex items-center gap-2 pb-1 border-b border-border/60">
-                            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <Tag className="w-3.5 h-3.5 text-primary" />
-                            </div>
-                            <p className="text-sm font-semibold text-foreground">
-                              {t("auth.equipmentInterests")} <span className="text-xs font-normal text-muted-foreground ml-1">({t("auth.optional")})</span>
-                            </p>
-                          </div>
-                          <div ref={dropdownRef} className="relative">
-                            {/* Trigger */}
                             <button
                               type="button"
                               onClick={() => setInterestDropdownOpen(v => !v)}
                               className={cn(
-                                "w-full h-11 px-3 rounded-md border text-sm flex items-center justify-between bg-background transition-all",
-                                interestDropdownOpen ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+                                "w-full h-14 px-4 rounded-2xl border text-sm flex items-center justify-between bg-white transition-all",
+                                interestDropdownOpen ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-200 hover:border-gray-300"
                               )}
                             >
-                              <span className="flex items-center gap-2 text-muted-foreground truncate">
+                              <span className="text-gray-400 truncate">
                                 {selectedInterests.length === 0
-                                  ? t("auth.selectCategoriesInterested")
-                                  : <span className="text-foreground font-medium">{t("auth.categoriesSelected", { count: selectedInterests.length })}</span>
+                                  ? "Select category"
+                                  : <span className="text-gray-800">{selectedInterests.length} selected</span>
                                 }
                               </span>
-                              <ChevronDown className={cn("w-4 h-4 text-muted-foreground flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
+                              <ChevronDown className={cn("w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ml-2", interestDropdownOpen && "rotate-180")} />
                             </button>
-
-                            {/* Panel */}
                             {interestDropdownOpen && (
                               <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
                                 {labCategories.map((cat) => {
@@ -707,61 +655,63 @@ const Auth = () => {
                                 })}
                               </div>
                             )}
-
-                            {/* Selected tags */}
-                            {selectedInterests.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {selectedInterests.map(slug => (
-                                  <span key={slug} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
-                                    {getInterestLabel(slug)}
-                                    <button type="button" onClick={() => toggleInterest(slug)} className="hover:text-destructive ml-0.5 leading-none">×</button>
-                                  </span>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
-                      )}
+                      </div>
 
-                      {/* Terms */}
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input type="checkbox" checked={termsAccepted} onChange={e => setTermsAccepted(e.target.checked)} className="mt-0.5 w-4 h-4 accent-primary flex-shrink-0" />
-                        <span className="text-xs text-muted-foreground leading-relaxed">
-                          {t("auth.agreementPrefix")}{" "}
-                          <span className="text-primary hover:underline cursor-pointer">{t("auth.userTerms")}</span>,{" "}
-                          <span className="text-primary hover:underline cursor-pointer">{t("auth.privacyStatement")}</span>{" "}
-                          {t("auth.agreementSuffix")}
-                        </span>
+                      {/* Password */}
+                      <div className="space-y-2">
+                        <Label className="text-base font-bold text-gray-800">
+                          <span className="text-red-500">*</span> Password
+                        </Label>
+                        <div className="relative">
+                          <Input type={showPassword ? "text" : "password"} placeholder="Enter password"
+                            value={form.password} onChange={setF("password")} required
+                            className="h-14 pr-12 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
+                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowPassword(v => !v)}>
+                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                        <p className="text-sm text-gray-400">Passwords must contain at least 8 characters, a capital letter and a special character</p>
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div className="space-y-2">
+                        <Label className="text-base font-bold text-gray-800">
+                          <span className="text-red-500">*</span> Confirm Password
+                        </Label>
+                        <div className="relative">
+                          <Input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password"
+                            value={form.confirmPassword} onChange={setF("confirmPassword")} required
+                            className="h-14 pr-12 rounded-2xl border-gray-200 bg-white focus:border-indigo-500 focus:ring-indigo-500/20 text-sm px-4" />
+                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowConfirmPassword(v => !v)}>
+                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Become a Seller */}
+                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={wantToSell}
+                          onChange={e => setWantToSell(e.target.checked)}
+                          className="w-4 h-4 accent-indigo-600 flex-shrink-0"
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold text-gray-800">Become a Seller</span>
+                          <p className="text-xs text-gray-400 mt-0.5">Register as a seller to list and auction your items. Requires admin approval.</p>
+                        </div>
                       </label>
 
-                      <Button type="submit" className="w-full h-12 text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-2" disabled={isSignupLoading}>
-                        {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />{t("auth.creatingAccount")}</> : t("auth.createAccount")}
+                      <Button type="submit" className="w-full h-14 text-base font-semibold text-white gap-2 rounded-2xl" style={{ backgroundColor: '#3730a3' }} disabled={isSignupLoading}>
+                        {isSignupLoading ? <><Loader2 className="w-4 h-4 animate-spin" />Creating Account…</> : "Create Account"}
                       </Button>
                     </form>
 
-                    {/* ── Google sign-up button ── */}
                     <div className="relative my-4">
                       <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                      <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">or sign up with</span></div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleGoogleSignIn}
-                      disabled={isGoogleLoading}
-                      className="w-full h-11 flex items-center justify-center gap-3 rounded-lg border border-border bg-background hover:bg-muted/40 transition-colors text-sm font-medium text-foreground disabled:opacity-50 mb-4"
-                    >
-                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                      </svg>
-                      Continue with Google
-                    </button>
-
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
-                      <div className="relative flex justify-center"><span className="bg-background px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
+                      <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-muted-foreground">{t("auth.alreadyHaveAccount")}</span></div>
                     </div>
                     <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold border-primary text-primary hover:bg-primary hover:text-primary-foreground gap-2" onClick={() => setAuthMode("signin")}>
                       <LogIn className="w-4 h-4" />{t("auth.signIn")}

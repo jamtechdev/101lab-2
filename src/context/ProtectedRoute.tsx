@@ -32,14 +32,12 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   const user = data.user;
   const accountStatus = user.accountStatus;
 
-  // Block incomplete/pending accounts — only settings is accessible
-  if (accountStatus === "profile_incomplete" && location.pathname !== "/dashboard/settings") {
+  // pending/incomplete accounts — only dashboard home + settings accessible
+  const isRestricted = accountStatus && accountStatus !== "approved";
+  const allowedPaths = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
+  const isAllowedPath = allowedPaths.includes(location.pathname);
+  if (isRestricted && !isAllowedPath) {
     return <Navigate to="/dashboard/settings" replace />;
-  }
-  if (accountStatus === "pending" || (accountStatus && accountStatus !== "approved")) {
-    if (location.pathname !== "/dashboard/settings") {
-      return <Navigate to="/dashboard/settings" replace />;
-    }
   }
 
   const jwtRole = user.role;
@@ -62,7 +60,8 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
         (p) => location.pathname === p || location.pathname.startsWith(p + "/")
       );
       const isSettingsPath = location.pathname === "/dashboard/settings";
-      if (jwtRole === "buyer" && isSellerOnlyPath && !isSettingsPath) {
+      const isRestricted = accountStatus === "profile_incomplete" || accountStatus === "pending" || (accountStatus && accountStatus !== "approved");
+      if (jwtRole === "buyer" && isSellerOnlyPath && !isSettingsPath && !isRestricted) {
         return <Navigate to="/buyer-dashboard" replace />;
       }
       return <Outlet />;

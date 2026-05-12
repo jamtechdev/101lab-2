@@ -123,7 +123,8 @@ const CompleteGoogleProfile = () => {
       );
 
       if (data.success) {
-        navigate("/account-pending");
+        const role = localStorage.getItem("userRole") || localStorage.getItem("jwtRole") || "buyer";
+        window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
       } else {
         toastError(data.message || "Something went wrong.");
       }

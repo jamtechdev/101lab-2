@@ -60,13 +60,13 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    // New user or profile incomplete → settings where complete profile form is shown
+    // New user or profile incomplete → go to dashboard based on role
     if (needsProfile === "1") {
       localStorage.setItem("googlePrefillEmail", email);
       localStorage.setItem("googlePrefillFirst", firstName);
       localStorage.setItem("googlePrefillLast", lastName);
-      toastSuccess("Signed in with Google! Complete your profile to access the dashboard.");
-      window.location.href = "/dashboard/settings";
+      toastSuccess("Signed in with Google! Welcome to your dashboard.");
+      window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
       return;
     }
 
