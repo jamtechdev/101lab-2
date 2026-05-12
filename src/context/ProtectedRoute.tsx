@@ -37,7 +37,7 @@ const ProtectedRoute: React.FC<Props> = ({ allowedRoles }) => {
   const allowedPaths = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
   const isAllowedPath = allowedPaths.includes(location.pathname);
   if (isRestricted && !isAllowedPath) {
-    return <Navigate to="/dashboard/settings" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const jwtRole = user.role;

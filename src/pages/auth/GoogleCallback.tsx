@@ -28,7 +28,7 @@ const GoogleCallback = () => {
 
     if (error === "account_pending") {
       if (email) localStorage.setItem("userEmail", email);
-      navigate("/dashboard/settings", { replace: true });
+      navigate("/dashboard", { replace: true });
       return;
     }
 
@@ -60,21 +60,20 @@ const GoogleCallback = () => {
     socket.connect();
     socket.emit("joinRooms", { user_id: userId, role }, () => {});
 
-    // New user or profile incomplete → go to dashboard based on role
+    // New user or profile incomplete → complete profile first
     if (needsProfile === "1") {
       localStorage.setItem("googlePrefillEmail", email);
       localStorage.setItem("googlePrefillFirst", firstName);
       localStorage.setItem("googlePrefillLast", lastName);
-      toastSuccess("Signed in with Google! Welcome to your dashboard.");
-      window.location.href = role === "seller" ? "/dashboard" : "/buyer-dashboard";
+      window.location.href = "/complete-google-profile";
       return;
     }
 
     toastSuccess(t("auth.validation.welcomeBackToast"));
 
-    // Pending user → settings (restricted until approved)
+    // Pending user → dashboard
     if (userStatus !== "approved") {
-      window.location.href = "/dashboard/settings";
+      window.location.href = "/dashboard";
       return;
     }
 
