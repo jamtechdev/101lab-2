@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Store, Building2, Loader2, Lock, Crown, CheckCircle2,
@@ -12,17 +12,13 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useSubmitSellerUpgradeRequestMutation, useGetMySellerUpgradeStatusQuery, useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
+import { useSubmitSellerUpgradeRequestMutation, useGetMySellerUpgradeStatusQuery } from "@/rtk/slices/apiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
-import { CountrySelect } from "@/components/common/CountrySelect";
 
 interface RoleSwitcherProps {
   variant?: "default" | "segmented";
 }
 
-const inputClass =
-  "w-full px-3 py-2.5 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors placeholder:text-muted-foreground/60";
 
 function UpgradeModal({
   open,
@@ -30,13 +26,11 @@ function UpgradeModal({
   isZh,
   existingRequest,
   isSubmitting,
-  form,
-  setForm,
   onSubmit,
 }: any) {
   const statusMap = {
     pending: {
-      icon: <Clock className="w-5 h-5 text-amber-500" />,
+      icon: <Clock className="w-6 h-6 text-amber-500" />,
       bg: "bg-amber-50 border-amber-200",
       text: "text-amber-800",
       title: isZh ? "申請審核中" : "Request Under Review",
@@ -45,7 +39,7 @@ function UpgradeModal({
         : "Your seller request is being reviewed. You'll be notified by email once processed.",
     },
     approved: {
-      icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
+      icon: <CheckCircle2 className="w-6 h-6 text-green-500" />,
       bg: "bg-green-50 border-green-200",
       text: "text-green-800",
       title: isZh ? "申請已通過" : "Request Approved",
@@ -54,165 +48,65 @@ function UpgradeModal({
         : "You've been approved! You can now switch to Seller mode directly.",
     },
     rejected: {
-      icon: <XCircle className="w-5 h-5 text-red-500" />,
+      icon: <XCircle className="w-6 h-6 text-red-500" />,
       bg: "bg-red-50 border-red-200",
       text: "text-red-800",
       title: isZh ? "申請未通過" : "Request Not Approved",
-      body: null,
+      body: isZh ? "您的申請未通過，您可以重新提交。" : "Your request was not approved. You can submit a new request.",
     },
   };
 
-  const showForm = !existingRequest || existingRequest.status === "rejected";
+  const canApply = !existingRequest || existingRequest.status === "rejected";
   const statusInfo = existingRequest ? statusMap[existingRequest.status] : null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[480px] p-0 gap-0 border border-border bg-background overflow-hidden max-h-[92vh] flex flex-col">
+      <DialogContent className="sm:max-w-[400px] p-0 gap-0 border border-border bg-background overflow-hidden">
 
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Crown className="w-4.5 h-4.5 text-primary" />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold text-primary uppercase tracking-widest">
-                {isZh ? "賣家申請" : "Seller Access"}
-              </p>
-              <DialogTitle className="text-base font-bold text-foreground leading-tight">
-                {isZh ? "申請成為賣家" : "Become a Seller"}
-              </DialogTitle>
-            </div>
+        <div className="px-6 pt-6 pb-5 text-center">
+          <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Crown className="w-7 h-7 text-primary" />
           </div>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogTitle className="text-lg font-bold text-foreground">
+            {isZh ? "申請成為賣家" : "Become a Seller"}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-1.5">
             {isZh
-              ? "填寫以下資料，管理員審核通過後即可使用賣家功能。"
-              : "Fill in your details below. Once approved you'll get full seller access."}
+              ? "提交申請後，管理員將審核您的帳戶並授予賣家權限。"
+              : "Submit a request and our team will review your account to grant seller access."}
           </DialogDescription>
         </div>
 
-        {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-
-          {/* Status banner */}
-          {statusInfo && (
-            <div className={cn("flex items-start gap-3 p-4 rounded-xl border", statusInfo.bg)}>
-              <div className="shrink-0 mt-0.5">{statusInfo.icon}</div>
-              <div>
-                <p className={cn("text-sm font-semibold", statusInfo.text)}>{statusInfo.title}</p>
-                {statusInfo.body && (
-                  <p className={cn("text-xs mt-0.5 leading-relaxed", statusInfo.text, "opacity-80")}>{statusInfo.body}</p>
-                )}
-                {existingRequest?.status === "rejected" && existingRequest.admin_notes && (
-                  <p className={cn("text-xs mt-1 leading-relaxed font-medium", statusInfo.text)}>
-                    {isZh ? "原因：" : "Reason: "}{existingRequest.admin_notes}
-                  </p>
-                )}
-                {existingRequest?.status === "rejected" && (
-                  <p className="text-xs mt-2 text-muted-foreground">
-                    {isZh ? "您可以重新填寫申請表格。" : "You may re-apply using the form below."}
-                  </p>
-                )}
-              </div>
+        {/* Status banner */}
+        {statusInfo && (
+          <div className={cn("mx-6 mb-4 flex items-start gap-3 p-4 rounded-xl border", statusInfo.bg)}>
+            <div className="shrink-0">{statusInfo.icon}</div>
+            <div>
+              <p className={cn("text-sm font-semibold", statusInfo.text)}>{statusInfo.title}</p>
+              {statusInfo.body && (
+                <p className={cn("text-xs mt-1 leading-relaxed", statusInfo.text, "opacity-80")}>{statusInfo.body}</p>
+              )}
+              {existingRequest?.status === "rejected" && existingRequest.admin_notes && (
+                <p className={cn("text-xs mt-1 font-medium", statusInfo.text)}>
+                  {isZh ? "原因：" : "Reason: "}{existingRequest.admin_notes}
+                </p>
+              )}
             </div>
-          )}
-
-          {/* Form */}
-          {showForm && (
-            <form id="seller-upgrade-form" onSubmit={onSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                  {isZh ? "公司名稱" : "Company Name"} <span className="text-destructive normal-case font-normal">*</span>
-                </Label>
-                <input
-                  type="text" autoComplete="off" required
-                  value={form.company_name}
-                  onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-                  placeholder={isZh ? "輸入公司名稱" : "Enter your company name"}
-                  className={inputClass}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                    {isZh ? "稅務編號" : "Tax ID"}
-                  </Label>
-                  <input
-                    type="text" autoComplete="off"
-                    value={form.company_tax_id}
-                    onChange={(e) => setForm((p) => ({ ...p, company_tax_id: e.target.value }))}
-                    placeholder={isZh ? "統一編號" : "e.g. 12345678"}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                    {isZh ? "業務類型" : "Business Type"}
-                  </Label>
-                  <input
-                    type="text" autoComplete="off"
-                    value={form.business_type}
-                    onChange={(e) => setForm((p) => ({ ...p, business_type: e.target.value }))}
-                    placeholder={isZh ? "製造商、回收商..." : "Manufacturer, Recycler..."}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                    {isZh ? "聯絡電話" : "Phone"}
-                  </Label>
-                  <input
-                    type="tel" autoComplete="off"
-                    value={form.phone}
-                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                    placeholder="+886 ..."
-                    className={inputClass}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                    {isZh ? "國家" : "Country"}
-                  </Label>
-                  <CountrySelect
-                    value={form.country}
-                    onChange={(v) => setForm((p) => ({ ...p, country: v }))}
-                    placeholder={isZh ? "選擇國家" : "Select country"}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                  {isZh ? "申請原因" : "Why do you want to sell?"}
-                </Label>
-                <textarea
-                  autoComplete="off" rows={3}
-                  value={form.reason}
-                  onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-                  placeholder={isZh ? "請說明您的業務需求與背景..." : "Tell us about your business and what you'd like to sell..."}
-                  className={cn(inputClass, "resize-none")}
-                />
-              </div>
-            </form>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0 flex flex-col gap-2">
-          {showForm && (
+        <div className="px-6 pb-6 flex flex-col gap-2">
+          {canApply && (
             <Button
-              type="submit"
-              form="seller-upgrade-form"
-              className="w-full h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2"
+              onClick={onSubmit}
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 rounded-xl"
               disabled={isSubmitting}
             >
               {isSubmitting
                 ? <><Loader2 className="w-4 h-4 animate-spin" />{isZh ? "送出中..." : "Submitting..."}</>
-                : <>{isZh ? "送出申請" : "Submit Request"} <ChevronRight className="w-4 h-4" /></>
+                : <><ChevronRight className="w-4 h-4" />{isZh ? "送出申請" : "Request to Become a Seller"}</>
               }
             </Button>
           )}
@@ -254,27 +148,6 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
     ? (storedView === "buyer" || isBuyerDashboard ? "buyer" : "seller")
     : "buyer";
 
-  const { data: profileData } = useGetUserProfileQuery(userId, { skip: !userId });
-  const profileInfo = profileData?.data?.personalInfo;
-
-  const [form, setForm] = useState({
-    company_name: "", company_tax_id: "", business_type: "",
-    phone: "", country: "", reason: "",
-  });
-
-  // Pre-fill form once profile data loads
-  useEffect(() => {
-    if (profileInfo) {
-      setForm(prev => ({
-        ...prev,
-        company_name: profileInfo.company || "",
-        phone: profileInfo.phone || "",
-        country: profileInfo.address?.country || "",
-        company_tax_id: profileInfo.companyTaxIdNumber || "",
-      }));
-    }
-  }, [profileInfo]);
-
   const handleSwitch = (targetRole: string) => {
     if (targetRole === currentRole || switching) return;
 
@@ -301,18 +174,12 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
     setTimeout(() => { window.location.href = targetPath; }, 300);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.company_name.trim()) {
-      toastError(isZh ? "請填寫公司名稱" : "Company name is required");
-      return;
-    }
+  const handleSubmit = async () => {
     try {
-      await submitRequest(form).unwrap();
+      await submitRequest({}).unwrap();
       toastSuccess(isZh ? "申請已送出，等待管理員審核" : "Request submitted! Admin will review shortly.");
       setShowUpgradeModal(false);
       refetchStatus();
-      setForm({ company_name: "", company_tax_id: "", business_type: "", phone: "", country: "", reason: "" });
     } catch (err: any) {
       toastError(err?.data?.message || (isZh ? "送出失敗，請稍後再試" : "Failed to submit. Please try again."));
     }
@@ -325,8 +192,6 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
       isZh={isZh}
       existingRequest={existingRequest}
       isSubmitting={isSubmitting}
-      form={form}
-      setForm={setForm}
       onSubmit={handleSubmit}
     />
   );
