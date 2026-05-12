@@ -96,7 +96,7 @@ const getCountryIso = (countryName: string): string => {
 };
 
 const maskName = (name: string): string => {
-  if (!name) return "";
+  if (!name) return "";https://automation.101lab.co/
   return name
     .split(" ")
     .map((word) => word.charAt(0) + "*".repeat(Math.max(word.length - 1, 2)))

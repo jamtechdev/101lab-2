@@ -912,38 +912,7 @@ function GroupTagsPanel({ group }: { group: AdminAuctionGroupItem }) {
 }
 
 /* ── Edit button — fetches current batch IDs then opens dialog ──────────── */
-function EditGroupButton({ group, onEdit }: { group: AdminAuctionGroupItem; onEdit: (group: AdminAuctionGroupItem, batchIds: number[]) => void }) {
-  const [loading, setLoading] = useState(false);
-  const { data, refetch } = useGetAuctionsInGroupQuery(group.group_id);
-
-  const handleClick = async () => {
-    setLoading(true);
-    try {
-      const res = await refetch();
-      const auctions = res.data?.data ?? [];
-      const seenIds = new Set<number>();
-      const batchIds: number[] = [];
-      for (const a of auctions) {
-        const ids: number[] = a.batches?.map((b: any) => b.batch_id) ?? a.batch_ids ?? [];
-        for (const id of ids) {
-          if (!seenIds.has(id)) { seenIds.add(id); batchIds.push(id); }
-        }
-      }
-      onEdit(group, batchIds);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Button size="sm" variant="outline"
-      className="gap-1.5 border-blue-300 text-blue-600 hover:bg-blue-50"
-      onClick={handleClick} disabled={loading}>
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
-      Edit
-    </Button>
-  );
-}
+   
 
 /* ── Main page ──────────────────────────────────────────────────────────── */
 const AdminAuctionGroups = () => {
