@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Store, Building2, Loader2, Lock, Crown, CheckCircle2,
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useSubmitSellerUpgradeRequestMutation, useGetMySellerUpgradeStatusQuery } from "@/rtk/slices/apiSlice";
+import { useSubmitSellerUpgradeRequestMutation, useGetMySellerUpgradeStatusQuery, useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { CountrySelect } from "@/components/common/CountrySelect";
 
@@ -254,10 +254,26 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
     ? (storedView === "buyer" || isBuyerDashboard ? "buyer" : "seller")
     : "buyer";
 
+  const { data: profileData } = useGetUserProfileQuery(userId, { skip: !userId });
+  const profileInfo = profileData?.data?.personalInfo;
+
   const [form, setForm] = useState({
     company_name: "", company_tax_id: "", business_type: "",
     phone: "", country: "", reason: "",
   });
+
+  // Pre-fill form once profile data loads
+  useEffect(() => {
+    if (profileInfo) {
+      setForm(prev => ({
+        ...prev,
+        company_name: profileInfo.company || "",
+        phone: profileInfo.phone || "",
+        country: profileInfo.address?.country || "",
+        company_tax_id: profileInfo.companyTaxIdNumber || "",
+      }));
+    }
+  }, [profileInfo]);
 
   const handleSwitch = (targetRole: string) => {
     if (targetRole === currentRole || switching) return;
