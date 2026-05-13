@@ -929,7 +929,7 @@ export default function PublicSellPage() {
             <p className="text-xs font-semibold text-gray-500 mb-2">{t("sellPage.trustedBy")}</p>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-green-600 font-bold text-sm">★</span>
-              <span className="font-bold text-sm">Trustpilot</span>
+       
             </div>
             <div className="flex gap-0.5 mb-1">
               {[1,2,3,4].map(i => (
@@ -937,7 +937,7 @@ export default function PublicSellPage() {
               ))}
               <span className="bg-green-300 text-white text-xs px-1.5 py-0.5">★</span>
             </div>
-            <p className="text-xs text-muted-foreground">{t("sellPage.trustScore")} <strong>4.6</strong> | <span className="underline cursor-pointer">106 {t("sellPage.reviews")}</span></p>
+            
           </div>
 
         </aside>
