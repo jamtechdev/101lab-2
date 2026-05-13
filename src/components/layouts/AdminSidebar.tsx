@@ -95,10 +95,10 @@ const AdminSidebar = ({ activePath }: AdminSidebarProps) => {
 
             document.cookie = "accessToken=; Max-Age=0; path=/; domain=.101recycle.greenbidz.com; secure; SameSite=None";
             document.cookie = "refreshToken=; Max-Age=0; path=/; domain=.101recycle.greenbidz.com; secure; SameSite=None";
-            localStorage.removeItem("userId");
-            localStorage.removeItem("userRole");
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
+            const keepKeys = new Set(["language", "prefer-smooth-animations"]);
+            Object.keys(localStorage).forEach((key) => {
+                if (!keepKeys.has(key)) localStorage.removeItem(key);
+            });
 
             toastSuccess(t("common.logoutSuccess") || "Logged out successfully");
             window.location.href = "/auth?type=admin";

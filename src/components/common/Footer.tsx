@@ -91,7 +91,7 @@ const Footer = () => {
   const supportLinks = [
     { label: t("footer.faq"), href: "#" },
     { label: t("footer.shipping"), href: "#" },
-    { label: t("footer.escrow"), href: "#" },
+    // { label: t("footer.escrow"), href: "#" },
     { label: t("footer.contactUs"), href: "#" },
   ];
 

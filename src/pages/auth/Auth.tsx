@@ -148,6 +148,7 @@ const Auth = () => {
   useEffect(() => {
     const type = searchParams.get("type") as UserType | null;
     const mode = searchParams.get("mode") as AuthMode | null;
+    const wantSeller = searchParams.get("wantSeller") === "1";
     if (!type || !allowedTypes.includes(type)) {
       const p = new URLSearchParams(searchParams); p.set("type", "buyer");
       setSearchParams(p, { replace: true }); setUserType("buyer");
@@ -156,6 +157,7 @@ const Auth = () => {
       if (type === "admin") setAuthMode("signin");
       else if (mode === "signin" || mode === "signup") setAuthMode(mode);
     }
+    if (wantSeller) setWantToSell(true);
   }, [searchParams]);
 
   const validateEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);

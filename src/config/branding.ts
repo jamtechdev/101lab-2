@@ -34,8 +34,8 @@ const BRANDING_MAP: Record<string, {
 
   // 101IT - env value is "LabGreenbidz"
   'labgreenbidz': {
-    siteName: '101IT',
-    fullName: '101IT by Greenbidz',
+    siteName: '101LAB',
+    fullName: '101LAB by Greenbidz',
     tagline: 'Laboratory Equipment Marketplace',
     description: 'Buy and sell quality laboratory equipment and instruments.',
   },
