@@ -90,9 +90,7 @@ const Footer = () => {
 
   const supportLinks = [
     { label: t("footer.faq"), href: "#" },
-    { label: t("footer.shipping"), href: "#" },
-    // { label: t("footer.escrow"), href: "#" },
-    { label: t("footer.contactUs"), href: "#" },
+    { label: t("footer.contactUs"), href: "mailto:support@greenbidz.com" },
   ];
 
   const companyLinks = [
@@ -104,6 +102,7 @@ const Footer = () => {
   const labLinks = [
     { label: t("footer.blogs"), to: "/blog" },
     { label: t("footer.wantedItems"), to: "/wanted" },
+    { label: "Sell Your Machine", to: "/sell" },
   ];
   const categories: any[] = Array.isArray(categoriesData)
     ? categoriesData

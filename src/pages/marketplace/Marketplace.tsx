@@ -452,7 +452,83 @@ const Marketplace = () => {
           )}
         </div>
 
-        {/* Sidebar + content */}
+        {/* ── Hero banner: full width, above sidebar+grid ── */}
+        {selectedGroup && groupDetail && (
+          <div className="mb-8 border-b border-border/60 pb-8">
+            {/* "— FEATURED AUCTION" label */}
+            <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-primary">
+              <span className="h-px w-8 bg-primary" />
+              Featured Auction
+            </div>
+
+            {/* Large bold title — first word(s) black, last word green like screenshot */}
+            <h1 className="max-w-3xl text-2xl font-extrabold leading-snug tracking-tight text-foreground md:text-3xl">
+              {(() => {
+                const words = getGroupTitle().split(" ");
+                const greenCount = 3;
+                const black = words.slice(0, words.length - greenCount).join(" ");
+                const green = words.slice(-greenCount).join(" ");
+                return (
+                  <>
+                    {black}{" "}
+                    <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                      {green}
+                    </span>
+                  </>
+                );
+              })()}
+            </h1>
+
+            {/* Description */}
+            {getGroupDescription() && (
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                {getGroupDescription()}
+              </p>
+            )}
+
+            {/* Stats — bold number + small uppercase label, separated by pipe */}
+            <div className="mt-5 flex flex-wrap items-center gap-0 text-sm divide-x divide-border">
+              <div className="pr-5">
+                <div className="text-xl font-bold text-foreground">{totalItems || "—"}</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Lots</div>
+              </div>
+              <div className="px-5">
+                <div className="text-xl font-bold text-foreground">{groupDetail?.scale || "Various"}</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Scale</div>
+              </div>
+            </div>
+            {groupTags.length > 0 && (
+              <div className="mt-6 rounded-xl border border-border/70 bg-card overflow-hidden">
+                <div className="divide-y divide-border/60">
+                  {groupTags.map((tag: any) => {
+                    const isOpen = openTags.includes(String(tag?.tag_id));
+                    return (
+                      <div key={tag?.tag_id}>
+                        <button
+                          onClick={() => toggleTag(String(tag?.tag_id))}
+                          className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-medium hover:bg-muted/30 transition-colors text-left"
+                        >
+                          {tag?.tag_name}
+                          <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                        </button>
+                        {isOpen && (
+                          <div className="px-5 pb-5 pt-1 bg-muted/10">
+                            <div
+                              className="sun-editor-editable prose prose-sm max-w-none text-sm text-foreground [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
+                              dangerouslySetInnerHTML={{ __html: getTagContent(tag) || "" }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Sidebar + card grid ── */}
         <div className="flex gap-6">
           <BuyerMarketplaceFilters
             selectedCategory={selectedCategory}
@@ -470,61 +546,14 @@ const Marketplace = () => {
           />
 
           <div className="flex-1 min-w-0">
-            {/* Auction Group banner + tags (shown when group filter is active) */}
-            {selectedGroup && groupDetail && (
-              <div className="mb-5 bg-white border border-border rounded-lg overflow-hidden">
-                {/* Group title */}
-                <div className="px-4 py-3 border-b bg-muted/30">
-                  <p className="text-sm font-semibold text-foreground">
-                    {getGroupTitle()}
-                  </p>
-                </div>
-
-                {/* Description */}
-                {getGroupDescription() && (
-                  <div className="px-4 py-3 text-sm text-muted-foreground border-b">
-                    {getGroupDescription()}
-                  </div>
-                )}
-
-                {/* Tags as collapsible rows */}
-                {groupTags.length > 0 && (
-                  <div className="divide-y divide-border">
-                    {groupTags.map((tag: any) => {
-                      const isOpen = openTags.includes(String(tag?.tag_id));
-                      return (
-                        <div key={tag?.tag_id}>
-                          <button
-                            onClick={() => toggleTag(String(tag?.tag_id))}
-                            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/30 transition-colors text-left"
-                          >
-                            {tag?.tag_name}
-                            <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                          </button>
-                          {isOpen && (
-                            <div className="px-4 pb-4 pt-1">
-                              <div
-                                className="sun-editor-editable prose prose-sm max-w-none text-sm text-foreground [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1"
-                                dangerouslySetInnerHTML={{ __html: getTagContent(tag) || '' }}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Loading - Skeleton */}
+            {/* Loading skeleton */}
             {isLoading && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Store className="w-4 h-4 text-primary" />
-                    Loading listings...
-                  </h2>
+                <div className="mb-6 flex items-end justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight text-foreground">{t("buyer.available")}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">Loading…</p>
+                  </div>
                 </div>
                 <ProductCardSkeleton count={12} />
               </div>
@@ -532,93 +561,92 @@ const Marketplace = () => {
 
             {/* Error */}
             {isError && (
-              <Card className="border-destructive/20 bg-destructive/5">
-                <div className="p-8 text-center space-y-4">
-                  <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-                  <p className="text-destructive font-medium text-lg">Failed to load marketplace listings.</p>
-                </div>
-              </Card>
+              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-10 text-center space-y-4">
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+                <p className="text-destructive font-medium text-lg">Failed to load marketplace listings.</p>
+              </div>
             )}
 
             {/* Grid */}
             {!isLoading && !isError && (
               <div className="relative">
                 {isFetching && !isLoading && (
-                  <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center z-10 rounded">
+                  <div className="absolute inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                    <Store className="w-4 h-4 text-primary" />
-                    {t("buyer.available")}
-                  </h2>
-                  <span className="text-sm text-muted-foreground font-medium">{totalItems} results</span>
+                <div className="mb-6 flex items-end justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight text-foreground">{t("buyer.available")}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{totalItems} {t("buyer.results")} open for bidding</p>
+                  </div>
                 </div>
 
-                <MarketplaceCardGrid
-                  listings={listings}
-                  onItemClick={handleItemClick}
-                />
+                <MarketplaceCardGrid listings={listings} onItemClick={handleItemClick} />
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between py-6 mt-4">
-                    <div className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages} ({totalItems} items)
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" disabled={!hasPrevPage || isFetching} onClick={() => handlePageChange(currentPage - 1)} className="h-9 w-9 p-0">
+                  <div className="mt-10 flex items-center justify-between border-t border-border/60 pt-6 text-sm text-muted-foreground">
+                    <span>Page {currentPage} of {totalPages} ({totalItems} items)</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={!hasPrevPage || isFetching}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
                         <ChevronLeft className="h-4 w-4" />
-                      </Button>
+                      </button>
                       {generatePageNumbers().map((p, i) =>
                         p === "..." ? (
-                          <span key={i} className="px-3 py-2 text-muted-foreground">...</span>
+                          <span key={i} className="px-3 py-2 text-muted-foreground">…</span>
                         ) : (
-                          <Button key={p} variant={currentPage === p ? "default" : "outline"} size="sm" disabled={isFetching} onClick={() => handlePageChange(p as number)} className="h-9 min-w-9">
+                          <button
+                            key={p}
+                            disabled={isFetching}
+                            onClick={() => handlePageChange(p as number)}
+                            className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                              currentPage === p
+                                ? "bg-primary text-primary-foreground"
+                                : "border border-border hover:bg-secondary"
+                            }`}
+                          >
                             {p}
-                          </Button>
+                          </button>
                         )
                       )}
-                      <Button variant="outline" size="sm" disabled={!hasNextPage || isFetching} onClick={() => handlePageChange(currentPage + 1)} className="h-9 w-9 p-0">
+                      <button
+                        disabled={!hasNextPage || isFetching}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
                         <ChevronRight className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 )}
 
-                {/* No results — empty state + modal request button */}
+                {/* Empty state */}
                 {listings.length === 0 && (
-                  <Card className="border-0 shadow-medium">
-                    <div className="py-14 px-6 text-center space-y-5">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted">
-                        <Store className="w-8 h-8 text-muted-foreground" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          {i18n.language === "zh" || i18n.language === "zh-TW"
-                            ? "未找到商品"
-                            : "No listings found"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {searchQuery || selectedCategory
-                            ? (i18n.language === "zh" || i18n.language === "zh-TW"
-                                ? "請嘗試調整搜尋條件"
-                                : "Try adjusting your search or filter criteria")
-                            : (i18n.language === "zh" || i18n.language === "zh-TW"
-                                ? "目前沒有可用的批次"
-                                : "There are currently no batches available")}
-                        </p>
-                      </div>
-
-                      {/* Request button — opens modal */}
-                      <ProductRequestForm
-                        searchQuery={searchQuery}
-                        categories={labCategories?.map((c) => ({ name: c.name, slug: c.slug })) || []}
-                      />
+                  <div className="py-14 px-6 text-center space-y-5">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+                      <Store className="w-8 h-8 text-muted-foreground" />
                     </div>
-                  </Card>
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {i18n.language === "zh" || i18n.language === "zh-TW" ? "未找到商品" : "No listings found"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {searchQuery || selectedCategory
+                          ? (i18n.language === "zh" || i18n.language === "zh-TW" ? "請嘗試調整搜尋條件" : "Try adjusting your search or filter criteria")
+                          : (i18n.language === "zh" || i18n.language === "zh-TW" ? "目前沒有可用的批次" : "There are currently no batches available")}
+                      </p>
+                    </div>
+                    <ProductRequestForm
+                      searchQuery={searchQuery}
+                      categories={labCategories?.map((c) => ({ name: c.name, slug: c.slug })) || []}
+                    />
+                  </div>
                 )}
               </div>
             )}

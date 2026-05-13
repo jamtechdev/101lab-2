@@ -1,11 +1,12 @@
 // @ts-nocheck
 import { useEffect, useState, useCallback } from "react";
-import { Clock, ShieldCheck, Gavel, ChevronLeft, ChevronRight, Store, Heart } from "lucide-react";
+import { Clock, ShieldCheck, Store, Heart, ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import axiosInstance from "@/rtk/api/axiosInstance";
 import { toastSuccess, toastError } from "@/helper/toasterNotification";
 import { useCategoryCache } from "@/hooks/useCategoryCache";
 import { pushAddToWishlistEvent } from "@/utils/gtm";
+import { cn } from "@/lib/utils";
 
 // ── Country ISO lookup ────────────────────────────────────────────────────────
 const COUNTRY_TO_ISO: Record<string, string> = {
@@ -41,10 +42,9 @@ const formatPrice = (amount: string | number, currency: string | null) => {
   }
 };
 
-// ── Live countdown (ticks every second) ──────────────────────────────────────
+// ── Live countdown ────────────────────────────────────────────────────────────
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
   const [timeLeft, setTimeLeft] = useState("");
-
   useEffect(() => {
     const calc = () => {
       const diff = new Date(endDate).getTime() - Date.now();
@@ -54,7 +54,7 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
       const s = Math.floor((diff % 60000) / 1000);
       if (h >= 24) {
         const d = Math.floor(h / 24);
-        setTimeLeft(`${d} ${d === 1 ? 'day' : 'days'}`);
+        setTimeLeft(`${d} ${d === 1 ? "day" : "days"}`);
       } else {
         setTimeLeft(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`);
       }
@@ -63,126 +63,53 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
     const id = setInterval(calc, 1000);
     return () => clearInterval(id);
   }, [endDate]);
-
   return (
-    <span className="inline-flex items-center gap-1 bg-primary/90 text-primary-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm">
+    <span className="inline-flex items-center gap-1 bg-background/90 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-medium text-foreground">
       <Clock className="h-3 w-3" />
       {timeLeft}
     </span>
   );
 };
 
-// ── "Opens in" for upcoming bids ──────────────────────────────────────────────
+// ── Opens-in badge ────────────────────────────────────────────────────────────
 const OpensInBadge = ({ startDate }: { startDate: string }) => {
   const [label, setLabel] = useState("");
-
   useEffect(() => {
     const calc = () => {
       const now = new Date();
       const start = new Date(startDate);
       const diff = start.getTime() - now.getTime();
       if (diff <= 0) { setLabel(""); return; }
-
       const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const startDay  = new Date(start.getFullYear(), start.getMonth(), start.getDate());
       const daysDiff  = Math.round((startDay.getTime() - todayDate.getTime()) / 86400000);
-
       if (daysDiff >= 1) {
-        // Tomorrow or later — show the actual date
         const formatted = start.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-        setLabel(`Opens in ${formatted}`);
+        setLabel(`Opens ${formatted}`);
       } else {
         const h = Math.floor(diff / 3600000);
-        if (h >= 1) {
-          setLabel(`Opens in ${h}h`);
-        } else {
-          const m = Math.floor(diff / 60000);
-          setLabel(`Opens in ${m}m`);
-        }
+        setLabel(h >= 1 ? `Opens in ${h}h` : `Opens in ${Math.floor(diff / 60000)}m`);
       }
     };
     calc();
     const id = setInterval(calc, 60000);
     return () => clearInterval(id);
   }, [startDate]);
-
   if (!label) return null;
   return (
-    <span className="inline-flex items-center gap-1 bg-accent/90 text-accent-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm">
+    <span className="inline-flex items-center gap-1 bg-background/90 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-medium text-foreground">
       <Clock className="h-3 w-3" />
       {label}
     </span>
   );
 };
 
-// ── Mosaic image area (same style as landing page) ────────────────────────────
-const MosaicImages = ({ images, itemId }: { images: string[]; itemId: any }) => {
-  const allImages = images.length > 0 ? images : [];
-  const mainImg = allImages[0];
-  const sideImgs = allImages.slice(1, 4);
-
-  if (!mainImg) {
-    return (
-      <div className="h-[260px] w-full flex items-center justify-center bg-muted">
-        <Store className="w-12 h-12 text-muted-foreground/40" />
-      </div>
-    );
-  }
-
-  if (sideImgs.length > 0) {
-    return (
-      <div className="flex h-[260px]">
-        <div className="flex-[3] min-w-0 overflow-hidden">
-          <img
-            src={mainImg}
-            alt="Product"
-            loading="lazy"
-            decoding="async"
-            width={380}
-            height={260}
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-          />
-        </div>
-        <div className="flex-[1] min-w-0 flex flex-col gap-[2px] ml-[2px]">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="flex-1 min-h-0 overflow-hidden">
-              <img
-                src={sideImgs[i] || mainImg}
-                alt="Product"
-                loading="lazy"
-                decoding="async"
-                width={100}
-                height={86}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-[260px] overflow-hidden">
-      <img
-        src={mainImg}
-        alt="Product"
-        loading="lazy"
-        decoding="async"
-        width={400}
-        height={260}
-        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-      />
-    </div>
-  );
-};
-
-// ── Bid status logic ───────────────────────────────────────────────────────────
+// ── Bid status ────────────────────────────────────────────────────────────────
 const getBidStatus = (item: any) => {
   const now = Date.now();
   if (item.bid_start_date && item.bid_end_date) {
     const start = new Date(item.bid_start_date).getTime();
-    const end = new Date(item.bid_end_date).getTime();
+    const end   = new Date(item.bid_end_date).getTime();
     if (now >= start && now <= end) return "live";
     if (now < start) return "upcoming";
     if (now > end) return "ended";
@@ -190,7 +117,7 @@ const getBidStatus = (item: any) => {
   return "none";
 };
 
-// ── Wishlist Heart Button ─────────────────────────────────────────────────────
+// ── Wishlist button ───────────────────────────────────────────────────────────
 const WishlistButton = ({
   productId,
   trackingTitle,
@@ -220,196 +147,173 @@ const WishlistButton = ({
 
   useEffect(() => {
     if (!userId || !productId) return;
-    axiosInstance
-      .get(`/wishlist/${userId}/${productId}`)
+    axiosInstance.get(`/wishlist/${userId}/${productId}`)
       .then((res) => {
         if (res.data?.data?.inWishlist !== undefined) setInWishlist(res.data.data.inWishlist);
       })
       .catch(() => {});
   }, [userId, productId]);
 
-  const handleToggle = useCallback(
-    async (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!userId) {
-        toastError("Please login to add to wishlist");
-        return;
+  const handleToggle = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!userId) { toastError("Please login to add to wishlist"); return; }
+    if (loading) return;
+    const prev = inWishlist;
+    setInWishlist(!prev);
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
+      const action = res.data?.data?.action;
+      if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
+      else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
+      if (action === "added") {
+        try {
+          pushAddToWishlistEvent({
+            listing_id:       productId,
+            listing_title:    trackingTitle ?? "",
+            listing_category: trackingCategory ?? "",
+            price:            trackingPrice,
+            currency:         trackingCurrency,
+          });
+        } catch { /* tracking errors must never affect UX */ }
       }
-      if (loading) return;
-      const prev = inWishlist;
-      setInWishlist(!prev);
-      setLoading(true);
-      try {
-        const res = await axiosInstance.post(`/wishlist/${userId}/toggle`, { productId });
-        const action = res.data?.data?.action;
-        if (action === "added") { setInWishlist(true); toastSuccess("Added to wishlist"); }
-        else if (action === "removed") { setInWishlist(false); toastSuccess("Removed from wishlist"); }
-        if (action === "added") {
-          try {
-            pushAddToWishlistEvent({
-              listing_id:       productId,
-              listing_title:    trackingTitle ?? "",
-              listing_category: trackingCategory ?? "",
-              price:            trackingPrice,
-              currency:         trackingCurrency,
-            });
-          } catch { /* tracking errors must never affect UX */ }
-        }
-        window.dispatchEvent(new Event("wishlist-changed"));
-      } catch {
-        setInWishlist(prev);
-        toastError("Failed to update wishlist");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [userId, productId, loading, inWishlist]
-  );
+      window.dispatchEvent(new Event("wishlist-changed"));
+    } catch {
+      setInWishlist(prev);
+      toastError("Failed to update wishlist");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, productId, loading, inWishlist]);
 
   return (
-    <button onClick={handleToggle} className="p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:bg-card transition-colors">
-      <Heart className={`h-4 w-4 transition-colors ${inWishlist ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+    <button
+      onClick={handleToggle}
+      aria-label="Add to favourites"
+      className="flex h-9 w-9 items-center justify-center rounded-full bg-background/90 backdrop-blur-md shadow-sm transition-all hover:scale-110 hover:bg-background"
+    >
+      <Heart className={cn("h-4 w-4 transition-colors", inWishlist ? "fill-primary text-primary" : "text-foreground/70")} />
     </button>
   );
 };
-// ── Status Badge (card details section) ──────────────────────────────────────
-const StatusBadge = ({ status }: { status: string }) => {
-  if (!status || status === "none") return null;
-  if (status === "live") {
+
+// ── Single image or placeholder ───────────────────────────────────────────────
+const CardImage = ({ images }: { images: string[] }) => {
+  const src = images[0];
+  if (!src) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-        Live
-      </span>
+      <div className="h-full w-full flex items-center justify-center bg-muted">
+        <Store className="w-10 h-10 text-muted-foreground/40" />
+      </div>
     );
   }
-  if (status === "upcoming") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-        Upcoming
-      </span>
-    );
-  }
-  if (status === "ended") {
-    return (
-      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
-        Ended
-      </span>
-    );
-  }
-  return null;
+  return (
+    <img
+      src={src}
+      alt="Product"
+      loading="lazy"
+      decoding="async"
+      width={800}
+      height={640}
+      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+    />
+  );
 };
 
-// ── Marketplace Card ──────────────────────────────────────────────────────────
+// ── Marketplace Card (Lovable 101LAB style) ───────────────────────────────────
 const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) => {
   const { i18n, t } = useTranslation();
-  const currentLang = (i18n.language as 'en' | 'zh' | 'ja' | 'th') || 'en';
+  const currentLang = (i18n.language as "en" | "zh" | "ja" | "th") || "en";
   const { getTranslatedCategory } = useCategoryCache();
-   
-
-
-  
-    
-  
-
 
   const images: string[] = item.images || (item.image ? [item.image] : []);
-  // Use pre-computed dynamicStatus if available, else compute on the fly
   const bidStatus = item.dynamicStatus || getBidStatus(item);
-  const bids: number = item.bids ?? 0;
-  const location: string = item.city && item.city !== "N/A" ? item.city : "";
 
-   
+  const translatedTitle = item[`title_${currentLang}`] || item.title || `Batch #${item.id}`;
+  const translatedCategory = currentLang === "zh"
+    ? getTranslatedCategory(item.category, "zh")
+    : item.category || "";
 
+  const priceLabel = (() => {
+    if (item.bid_type === "fixed_price" && item.target_price && Number(item.target_price) > 0)
+      return formatPrice(item.target_price, item.currency);
+    if (item.bid_type === "make_offer") return "Make Offer";
+    if (item.askingPrice && item.askingPrice !== "$0") return item.askingPrice;
+    return "Make Offer";
+  })();
 
-  // Get translated title from backend response
-  // Map language codes: 'zh' -> 'title_zh', 'en' -> 'title_en', 'ja' -> 'title_ja', 'th' -> 'title_th'
-  const translationKey = `title_${currentLang}`;
-
-
-
-  const translatedTitle = item[translationKey] || item.title || `Batch #${item.id}`;
-
-
-  
-
-  // Get translated description from backend response
-  const descriptionKey = `description_${currentLang}`;
-  const translatedDescription = item[descriptionKey] || item.description || "";
-
-  // Get translated category from cache (supports EN and ZH only)
-  const translatedCategory = currentLang === 'zh' ? getTranslatedCategory(item.category, 'zh') : item.category || "N/A";
-
-  
+  const daysLeft = (() => {
+    if (!item.bid_end_date) return null;
+    const diff = new Date(item.bid_end_date).getTime() - Date.now();
+    if (diff <= 0) return null;
+    return Math.ceil(diff / 86400000);
+  })();
 
   return (
-    <div
+    <article
       onClick={onClick}
-      className="cursor-pointer group border border-border rounded overflow-hidden bg-card hover:shadow-lg transition-shadow duration-200"
+      className="group relative flex flex-col overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:ring-primary/20 cursor-pointer"
     >
-      {/* Image area */}
-      <div className="relative overflow-hidden">
-        <MosaicImages images={images} itemId={item.id} />
+      {/* Image */}
+      <div className="relative aspect-[5/3] overflow-hidden bg-muted">
+        <CardImage images={images} />
 
-        {/* Wishlist heart — top left, always visible */}
-        {item.firstProductId && (
-          <div className="absolute top-2 left-2 z-10">
-            <WishlistButton productId={item.firstProductId} />
-          </div>
-        )}
+        {/* Gradient overlay on hover */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-foreground/30 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        {/* Bid status badge — bottom left */}
-        <div className="absolute bottom-2 left-2 z-10">
+        {/* Top row: wishlist left, LIVE badge right */}
+        <div className="absolute inset-x-3 top-3 flex items-start justify-between z-10">
+          {item.firstProductId && (
+            <WishlistButton
+              productId={item.firstProductId}
+              trackingTitle={translatedTitle}
+              trackingCategory={translatedCategory}
+            />
+          )}
+          {bidStatus === "live" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground shadow-md ml-auto">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+              </span>
+              Live
+            </span>
+          )}
+          {bidStatus === "upcoming" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent-foreground shadow-md ml-auto">
+              Upcoming
+            </span>
+          )}
+          {bidStatus === "ended" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground shadow-md ml-auto border border-border">
+              Ended
+            </span>
+          )}
+        </div>
+
+        {/* Bottom: countdown / days left */}
+        <div className="absolute bottom-3 left-3 z-10">
           {bidStatus === "live" && item.bid_end_date && (
             <CountdownTimer endDate={item.bid_end_date} />
           )}
           {bidStatus === "upcoming" && item.bid_start_date && (
             <OpensInBadge startDate={item.bid_start_date} />
           )}
-          {bidStatus === "ended" && (
-            <span className="inline-flex items-center gap-1 bg-muted text-muted-foreground text-[11px] font-bold px-2 py-0.5 rounded-sm border border-border">
+          {bidStatus !== "live" && bidStatus !== "upcoming" && daysLeft !== null && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/90 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-foreground">
               <Clock className="h-3 w-3" />
-              Bid Ended
+              {daysLeft} {daysLeft === 1 ? "day" : "days"}
             </span>
           )}
         </div>
-
-
-        {/* LIVE badge — top right */}
-        {bidStatus === "live" && (
-          <div className="absolute top-0 right-0 z-10">
-            <span className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-bl-lg uppercase tracking-wide">
-              LIVE
-            </span>
-          </div>
-        )}
-
-
-
       </div>
 
       {/* Details */}
-      <div className="px-4 pt-3 pb-3">
-        <h3 className="font-bold text-[15px] text-foreground leading-snug line-clamp-2 uppercase group-hover:text-primary transition-colors min-h-[2.5rem]">
-          {translatedTitle}
-        </h3>
-        <div className="mt-1 space-y-0.5 text-[12px] text-muted-foreground">
-          {location && (
-            <p className="flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3 text-primary flex-shrink-0" />
-              {location}
-            </p>
-          )}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              onClick={(e) => { e.stopPropagation(); window.location.href = `/buyer-marketplace/${item.id}`; }}
-              className="bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-sm cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              #{item.id}
-            </span>
-            {translatedCategory && translatedCategory !== "N/A" && (
-              <span className="truncate">{translatedCategory}</span>
-            )}
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
+        {/* Batch ID + category */}
+        <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+          <span>#{item.id}</span>
+          <div className="flex items-center gap-1.5">
             {item.country && getCountryIso(item.country) && (
               <img
                 src={`https://flagcdn.com/20x15/${getCountryIso(item.country)}.png`}
@@ -421,27 +325,34 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
                 height={15}
               />
             )}
-            <StatusBadge status={bidStatus} />
+            {translatedCategory && (
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground truncate max-w-[110px]">
+                {translatedCategory}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center justify-between mt-2">
-          {item.bid_type === "fixed_price" && item.target_price && Number(item.target_price) > 0 ? (
-            <span className="text-sm font-bold text-foreground">
-              {formatPrice(item.target_price, item.currency)}
-            </span>
-          ) : item.bid_type === "make_offer" ? (
-            <span className="text-[12px] text-muted-foreground italic">Make Offer</span>
-          ) : item.askingPrice && item.askingPrice !== "$0" ? (
-            <span className="text-sm font-bold text-foreground">{item.askingPrice}</span>
-          ) : (
-            <span />
-          )}
-          <span className="text-[11px] font-semibold text-primary-foreground bg-primary px-3 py-1 rounded uppercase tracking-wide">
+
+        {/* Title */}
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+          {translatedTitle}
+        </h3>
+
+        {/* CTA row */}
+        <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-3">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {priceLabel}
+          </button>
+          <button className="inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:gap-1.5 hover:opacity-90">
             {t("products.view")}
-          </span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
@@ -449,21 +360,22 @@ const MarketplaceCard = ({ item, onClick }: { item: any; onClick: () => void }) 
 interface MarketplaceCardGridProps {
   listings: any[];
   onItemClick: (item: any) => void;
-  getDynamicStatus?: (item: any) => string;
 }
 
 const MarketplaceCardGrid = ({ listings, onItemClick }: MarketplaceCardGridProps) => {
   const { i18n } = useTranslation();
-  // Force re-render when language changes
   const currentLang = i18n.language;
 
   if (listings.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       {listings.map((item) => (
-        // Use batchId as key for more stability, but add language to force re-render on language change
-        <MarketplaceCard key={`${item.batchId || item.id}-${currentLang}`} item={item} onClick={() => onItemClick(item)} />
+        <MarketplaceCard
+          key={`${item.batchId || item.id}-${currentLang}`}
+          item={item}
+          onClick={() => onItemClick(item)}
+        />
       ))}
     </div>
   );
