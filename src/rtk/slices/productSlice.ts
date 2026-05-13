@@ -18,6 +18,10 @@ interface BatchCreateRequest {
   type?: string;
   country?: string;
   groupId?: number | null;
+  start_date?: string;
+  end_date?: string;
+  bid_type?: string;
+  target_price?: string;
 }
 
 interface BatchCreateResponse {

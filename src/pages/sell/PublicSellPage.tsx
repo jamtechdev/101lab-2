@@ -683,6 +683,8 @@ export default function PublicSellPage() {
         type: "bidding",
         start_date,
         end_date,
+        bid_type: "fixed_price",
+        target_price: enableBuyNow && pricePerUnit ? String(pricePerUnit) : "0",
       }).unwrap();
 
       if (!batchRes?.success) throw new Error(batchRes?.message || "Failed to create listing");
@@ -727,6 +729,28 @@ export default function PublicSellPage() {
   }, [publish]);
 
   // ─── screens ──────────────────────────────────────────────────────────────
+
+  if (loading)
+    return (
+      <PageShell>
+        <div className="flex flex-col items-center gap-6 text-center">
+          {/* Spinning logo */}
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-t-primary animate-spin" />
+            <img src={logo} alt={SITE_NAME} className="absolute inset-0 m-auto h-10 w-10 rounded-lg" />
+          </div>
+          <div>
+            <p className="text-lg font-bold text-foreground">Publishing your listing…</p>
+            <p className="text-sm text-muted-foreground mt-1">Please wait, this may take a few seconds.</p>
+          </div>
+          {/* Progress bar */}
+          <div className="w-64 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-[progress_3s_ease-in-out_infinite]" style={{ width: "70%" }} />
+          </div>
+        </div>
+      </PageShell>
+    );
 
   if (screen === "auth")
     return <AuthGate onLoginSuccess={handleLoginSuccess} />;
