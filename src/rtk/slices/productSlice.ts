@@ -18,16 +18,32 @@ interface BatchCreateRequest {
   type?: string;
   country?: string;
   groupId?: number | null;
-  start_date?: string;
-  end_date?: string;
-  bid_type?: string;
-  target_price?: string;
 }
 
 interface BatchCreateResponse {
   success: boolean;
   message: string;
   data?: { batch_id: number };
+}
+
+// --- Bidding Create ---
+interface BiddingCreateRequest {
+  batch_id: number;
+  type?: string;           // "fixed_price" | "make_offer"
+  start_date: string;
+  end_date: string;
+  target_price?: string;
+  currency?: string;
+  isAuction?: boolean;
+  enableBidding?: boolean;
+  taxInclusive?: boolean;
+  allowWholePrice?: boolean;
+}
+
+interface BiddingCreateResponse {
+  success: boolean;
+  message: string;
+  data?: any;
 }
 
 // --- Generic Batch ---
@@ -240,6 +256,16 @@ export const productApiSlice = createApi({
       invalidatesTags: ["Batches"],
     }),
 
+    // --- Bidding Create (separate step after batch) ---
+    biddingCreate: builder.mutation<BiddingCreateResponse, BiddingCreateRequest>({
+      query: (body) => ({
+        url: `/bidding/create`,
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-system-key": "fa39812fec" },
+        data: body,
+      }),
+    }),
+
     // --- Fetch All Batches ---
     fetchBatches: builder.query<Batch[], void>({
       query: () => ({
@@ -387,6 +413,7 @@ export const productApiSlice = createApi({
 export const {
   useAddProductMutation,
   useBatchCreateMutation,
+  useBiddingCreateMutation,
   useFetchBatchesQuery,
   useCreateInspectionMutation,
   useUpdateInspectionMutation,

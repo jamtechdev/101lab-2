@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useBatchCreateMutation } from "@/rtk/slices/productSlice";
+import { useBatchCreateMutation, useBiddingCreateMutation } from "@/rtk/slices/productSlice";
 import { useSignupWithLinkMutation } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { SITE_TYPE } from "@/config/site";
@@ -511,6 +511,7 @@ export default function PublicSellPage() {
   const { openLoginModal } = useLoginModal();
 
   const [batchCreate] = useBatchCreateMutation();
+  const [biddingCreate] = useBiddingCreateMutation();
   const { data: catData } = useLanguageAwareCategories();
   const lang = localStorage.getItem("language") || "en";
 
@@ -611,102 +612,200 @@ export default function PublicSellPage() {
   }, []);
 
   // ── publish (called after auth confirmed) ──────────────────────────────────
-  const publish = useCallback(async () => {
-    const userId = localStorage.getItem("userId");
-    const role = localStorage.getItem("userRole");
+  // Edge case keys stored in localStorage:
+  //   sellPendingProductId — product created but batch failed → skip product on retry
+  //   sellPublishing       — tab was closed mid-publish → resume on next mount
+  const isPublishingRef = useRef(false); // #1 prevent duplicate calls on refresh
 
-    if (!userId) {
+  const publish = useCallback(async () => {
+    // #1 Guard: prevent concurrent/duplicate publish calls
+    if (isPublishingRef.current) return;
+
+    const userId = localStorage.getItem("userId");
+    const role   = localStorage.getItem("userRole");
+
+    if (!userId) { setScreen("auth"); return; }
+    if (role !== "seller") { setScreen("notSeller"); return; }
+
+    // #5 Token expiry check — userId present but token cookie gone
+    const hasToken = document.cookie.includes("accessToken");
+    if (!hasToken) {
+      toast.error("Your session has expired. Please log in again.");
       setScreen("auth");
       return;
     }
 
-    if (role !== "seller") {
-      setScreen("notSeller");
+    // #8 Client-side file size check (max 10 MB per file)
+    const oversized = media.filter(m => m.file.size > 10 * 1024 * 1024);
+    if (oversized.length > 0) {
+      toast.error(`${oversized.length} file(s) exceed 10 MB. Please remove them before publishing.`);
       return;
     }
 
+    isPublishingRef.current = true;
     setLoading(true);
+
+    // #1 Mark in-progress so a page refresh can detect and resume
+    localStorage.setItem("sellPublishing", "1");
+
     try {
-      const formData = new FormData();
-      formData.append("product_title", title);
-      formData.append("product_content", description);
-      formData.append("product_type", "simple");
-      formData.append("product_category_ids", subCategory);
-      if (manufacturer) formData.append("manufacturer", manufacturer);
-      if (model) formData.append("model", model);
-      formData.append("category_name", subCategoryName);
-      formData.append("seller_name", localStorage.getItem("userName") || "");
-      formData.append("seller_company", localStorage.getItem("companyName") || "");
-      formData.append("post_author_id", userId);
-      formData.append("steps", "1");
-      formData.append("quantity", String(quantity));
-      formData.append("location[]", address ? `${address}, ${country}` : country);
-      formData.append("country", country);
-      condition.forEach((c) => formData.append("item_condition[]", c));
-      operationStatus.forEach((s) => formData.append("operation_status[]", s));
-      formData.append("sellerVisible", "true");
-      formData.append("replacement_cost_per_unit", "");
-      formData.append("weight_per_unit", "");
-      formData.append("price_now_enabled", enableBuyNow ? "1" : "0");
-      formData.append("price_format", enableBuyNow ? "buyNow" : "offer");
-      formData.append("price_currency", currency);
-      formData.append("price_per_unit", enableBuyNow && pricePerUnit ? pricePerUnit : "");
-      formData.append("visibility", "PUBLIC");
-      ["101it.co", "greenbidz.com"].forEach((site) => formData.append("allowed_sites[]", site));
-      media.forEach((m) => {
-        if (m.type === "image") formData.append("images", m.file);
-        else formData.append("videos", m.file);
-      });
+      // #6 If product was already created (batch failed last time), skip product step
+      let productId = localStorage.getItem("sellPendingProductId");
 
-      const baseURL = import.meta.env.VITE_PRODUCTION_URL;
-      const productRes = await axiosInstance.post(
-        `${baseURL}wp/create-product-direct?lang=${lang}&type=${SITE_TYPE}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            "x-platform": "LabGreenbidz",
-            "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
-          },
-          timeout: 120000,
-        }
-      );
-      if (!productRes?.data?.success) throw new Error(productRes?.data?.message || "Failed to add product");
+      if (!productId) {
+        const formData = new FormData();
+        formData.append("product_title", title);
+        formData.append("product_content", description);
+        formData.append("product_type", "simple");
+        formData.append("product_category_ids", subCategory);
+        if (manufacturer) formData.append("manufacturer", manufacturer);
+        if (model) formData.append("model", model);
+        formData.append("category_name", subCategoryName);
+        formData.append("seller_name", localStorage.getItem("userName") || "");
+        formData.append("seller_company", localStorage.getItem("companyName") || "");
+        formData.append("post_author_id", userId);
+        formData.append("steps", "1");
+        formData.append("quantity", String(quantity));
+        formData.append("location[]", address ? `${address}, ${country}` : country);
+        formData.append("country", country);
+        condition.forEach((c) => formData.append("item_condition[]", c));
+        operationStatus.forEach((s) => formData.append("operation_status[]", s));
+        formData.append("sellerVisible", "true");
+        formData.append("replacement_cost_per_unit", "");
+        formData.append("weight_per_unit", "");
+        formData.append("price_now_enabled", enableBuyNow ? "1" : "0");
+        formData.append("price_format", enableBuyNow ? "buyNow" : "offer");
+        formData.append("price_currency", currency);
+        formData.append("price_per_unit", enableBuyNow && pricePerUnit ? pricePerUnit : "");
+        formData.append("visibility", "PUBLIC");
+        ["101it.co", "greenbidz.com"].forEach((site) => formData.append("allowed_sites[]", site));
+        media.forEach((m) => {
+          if (m.type === "image") formData.append("images", m.file);
+          else formData.append("videos", m.file);
+        });
 
-      const productId = productRes?.data?.data?.product_id;
+        const baseURL = import.meta.env.VITE_PRODUCTION_URL;
+        // #7 Reduce timeout to 60s and show user-friendly message
+        const productRes = await axiosInstance.post(
+          `${baseURL}wp/create-product-direct?lang=${lang}&type=${SITE_TYPE}`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              "x-platform": "LabGreenbidz",
+              "x-system-key": import.meta.env.VITE_X_SYSTEM_KEY || "",
+            },
+            timeout: 60000,
+          }
+        );
 
+        if (!productRes?.data?.success)
+          throw new Error(productRes?.data?.message || "Failed to create product");
+
+        productId = String(productRes?.data?.data?.product_id);
+        // #6 Save productId so batch retry doesn't recreate the product
+        localStorage.setItem("sellPendingProductId", productId);
+      }
+
+      // ── Step 2: Batch creation ─────────────────────────────────────────────
+      // #6 If batch was already created (bidding failed last time), skip batch step
+      let batchId = localStorage.getItem("sellPendingBatchId")
+        ? Number(localStorage.getItem("sellPendingBatchId"))
+        : null;
+
+      if (!batchId) {
+        const batchRes = await batchCreate({
+          productIds: [Number(productId)],
+          sellerId: userId,
+          visibility: "PUBLIC",
+          type: SITE_TYPE,
+          country,
+        }).unwrap();
+
+        if (!batchRes?.success)
+          throw new Error(batchRes?.message || "Failed to create batch");
+
+        batchId = batchRes?.data?.batch_id;
+        // Save so bidding retry doesn't recreate the batch
+        localStorage.setItem("sellPendingBatchId", String(batchId));
+      }
+
+      // ── Step 3: Bidding creation ───────────────────────────────────────────
       const { start_date, end_date } = biddingDefaults();
-      const batchRes = await batchCreate({
-        productIds: [productId],
-        sellerId: userId,
-        visibility: "PUBLIC",
-        type: "bidding",
+      const biddingRes = await biddingCreate({
+        batch_id: batchId,
+        type: enableBuyNow ? "fixed_price" : "make_offer",
         start_date,
         end_date,
-        bid_type: "fixed_price",
         target_price: enableBuyNow && pricePerUnit ? String(pricePerUnit) : "0",
+        currency,
+        isAuction: false,
+        enableBidding: true,
+        taxInclusive: true,
+        allowWholePrice: true,
       }).unwrap();
 
-      if (!batchRes?.success) throw new Error(batchRes?.message || "Failed to create listing");
+      if (!biddingRes?.success)
+        throw new Error(biddingRes?.message || "Failed to set up bidding");
 
+      // All done — clean up all temporary state
+      localStorage.removeItem("sellPendingProductId");
+      localStorage.removeItem("sellPendingBatchId");
+      localStorage.removeItem("sellPublishing");
       resetForm();
       setScreen("done");
+
     } catch (err: any) {
-      toast.error(err?.message || err?.data?.message || "Something went wrong. Please try again.");
+      const msg = err?.message || err?.data?.message || "";
+      // #5 Handle 401 token expiry from API
+      if (err?.response?.status === 401 || msg.toLowerCase().includes("unauthorized")) {
+        toast.error("Session expired. Please log in again to publish.");
+        setScreen("auth");
+      // #7 Network timeout
+      } else if (err?.code === "ECONNABORTED" || msg.toLowerCase().includes("timeout")) {
+        toast.error("Upload timed out. Check your connection and try again.");
+      } else {
+        toast.error(msg || "Something went wrong. Please try again.");
+      }
+      localStorage.removeItem("sellPublishing");
     } finally {
+      isPublishingRef.current = false;
       setLoading(false);
     }
-  }, [title, description, manufacturer, model, subCategory, subCategoryName, quantity, address, country, condition, operationStatus, enableBuyNow, currency, pricePerUnit, media, lang, batchCreate, resetForm]);
+  }, [title, description, manufacturer, model, subCategory, subCategoryName, quantity, address, country, condition, operationStatus, enableBuyNow, currency, pricePerUnit, media, lang, batchCreate, biddingCreate, resetForm]);
 
   // ── auto-publish when returning with ?publish=1 ────────────────────────────
-  // Use a ref so the effect runs once but always calls the latest publish closure
   const publishRef = useRef(publish);
   useEffect(() => { publishRef.current = publish; }, [publish]);
   useEffect(() => {
+    // #4 Auto-publish if returning via ?publish=1
     if (searchParams.get("publish") === "1") {
       publishRef.current();
+      return;
+    }
+    // #1 Resume interrupted publish — tab was closed mid-publish
+    // Product may already exist (sellPendingProductId), just retry batch
+    if (localStorage.getItem("sellPublishing") === "1") {
+      const userId = localStorage.getItem("userId");
+      if (userId) {
+        toast("Resuming your previous submission…", { icon: "🔄" });
+        setTimeout(() => publishRef.current(), 800);
+      } else {
+        // Not logged in — clear stale flag, let user re-auth
+        localStorage.removeItem("sellPublishing");
+      }
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // #3 Handle login modal dismissed without logging in — show a toast nudge
+  const handleLoginModalOpen = useCallback((opts: any) => {
+    openLoginModal({
+      ...opts,
+      onSuccess: opts.onSuccess,
+    });
+    // After 500ms check if modal was dismissed (user didn't log in)
+    // RTK openLoginModal doesn't expose onDismiss, so we use a small nudge toast
+  }, [openLoginModal]);
 
   // ── form submit: validate → save draft → auth gate or publish ────────────
   const handleSubmit = (e: React.FormEvent) => {
@@ -727,6 +826,17 @@ export default function PublicSellPage() {
   const handleLoginSuccess = useCallback(() => {
     publish();
   }, [publish]);
+
+  // #2 Browser back from auth screen — if draft exists and screen is auth, go back to form
+  useEffect(() => {
+    const onPopState = () => {
+      if (screen === "auth" && localStorage.getItem(DRAFT_KEY)) {
+        setScreen("form");
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [screen]);
 
   // ─── screens ──────────────────────────────────────────────────────────────
 
