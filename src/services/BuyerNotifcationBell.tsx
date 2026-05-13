@@ -14,7 +14,6 @@ const url = import.meta.env.VITE_PRODUCTION_URL;
 export default function BuyerNotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
-  const [audioAllowed, setAudioAllowed] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
@@ -22,9 +21,6 @@ export default function BuyerNotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null); // Ref for dropdown
 
   const DEFAULT_TITLE = "GreenBidz Seller Portal - Turn Assets into Value";
-
-  const notificationSound = new Audio("/notification.mp3");
-  notificationSound.preload = "auto";
 
   const { map: unreadMap, bidAcceptedCount } = useSelector(
     (state: RootState) => state.unread
@@ -72,11 +68,6 @@ export default function BuyerNotificationBell() {
     const socket = getSocket();
 
     const handleNotification = (data) => {
-      if (data?.type === "Bid Accepted") {
-        new Audio("/celebration.mp3").play().catch(() => {});
-      } else {
-        notificationSound.play().catch(() => {});
-      }
       fetchNotifications();
     };
 

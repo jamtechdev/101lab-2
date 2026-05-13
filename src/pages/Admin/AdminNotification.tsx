@@ -20,7 +20,6 @@ export default function NotificationBell() {
     const [notifications, setNotifications] = useState([]);
     const [platformFilter, setPlatformFilter] = useState<"all" | "recycle" | "greenbidz" | "LabGreenbidz">("all");
     const [open, setOpen] = useState(false);
-    const [audioAllowed, setAudioAllowed] = useState(false);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const rawUserId = localStorage.getItem("userId");
@@ -28,9 +27,6 @@ export default function NotificationBell() {
     // Backend stores admin notifications with user_id = 531
     const userId = userRole === "admin" ? "531" : rawUserId;
     const DEFAULT_TITLE = "GreenBidz Seller Portal - Turn Assets into Value";
-    const notificationSound = new Audio("/notification.mp3");
-    notificationSound.preload = "auto";
-
     // Fetch notifications API
     const fetchNotifications = async () => {
         if (!userId) return;
@@ -80,8 +76,6 @@ export default function NotificationBell() {
         const socket = getSocket();
 
         const handleNotification = (data) => {
-
-            notificationSound.play().catch((err) => console.log("Audio play error:", err));
             fetchNotifications();
 
             // const key = `${data.buyer_id}_${data.batch_id}`;
@@ -95,22 +89,6 @@ export default function NotificationBell() {
             socket.off("adminNotification", handleNotification);
         };
     }, [userId]);
-
-
-
-    useEffect(() => {
-        const unlockAudio = () => {
-            const sound = new Audio("/notification.mp3");
-            sound.play().finally(() => {
-                setAudioAllowed(true);
-            });
-            window.removeEventListener("click", unlockAudio);
-        };
-
-        // Wait for first user interaction
-        window.addEventListener("click", unlockAudio);
-        return () => window.removeEventListener("click", unlockAudio);
-    }, []);
 
 
 
