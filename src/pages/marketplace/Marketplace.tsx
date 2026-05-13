@@ -497,6 +497,17 @@ const Marketplace = () => {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Scale</div>
               </div>
             </div>
+
+            {/* Sell CTA */}
+            <div className="mt-5">
+              <a
+                href="/sell"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+              >
+                + List Your Machine for Free
+              </a>
+            </div>
+
             {groupTags.length > 0 && (
               <div className="mt-6 rounded-xl border border-border/70 bg-card overflow-hidden">
                 <div className="divide-y divide-border/60">
