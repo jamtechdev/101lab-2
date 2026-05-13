@@ -164,7 +164,7 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
 
     setSwitching(true);
     localStorage.setItem("activeView", targetRole);
-    const targetPath = "/dashboard";
+    const targetPath = targetRole === "buyer" ? "/buyer-dashboard" : "/dashboard";
 
     try {
       const socket = getSocket();
