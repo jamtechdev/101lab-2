@@ -145,6 +145,7 @@ import BatchGroups from "./pages/dashboard/BatchGroups";
 import BulkUpload from "./pages/dashboard/BulkUpload";
 import SEOAnalytics from "./pages/dashboard/SEOAnalytics";
 import MondaySalesSync from "./pages/dashboard/MondaySalesSync";
+import PublicSellPage from "./pages/sell/PublicSellPage";
 
 const queryClient = new QueryClient();
 
@@ -219,6 +220,7 @@ const App = () => {
                <Route path="/resellers" element={<Resellers />} />direct-sales
                <Route path="/sell-with-greenbidz" element={<SellerLandingPage/>} />
                <Route path="/direct-sales" element={<DirectSalesPage/>} />
+               <Route path="/sell" element={<PublicSellPage />} />
                <Route path="/contact-inquiry-test" element={<ContactInquiryTest />} />
 
               <Route element={<GuestRoute />}>

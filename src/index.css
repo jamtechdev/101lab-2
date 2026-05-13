@@ -99,7 +99,7 @@ html {
     --sidebar-foreground: 210 40% 96%;
     --sidebar-border: 222 40% 16%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%), hsl(210 20% 96%));
+    --gradient-hero: linear-gradient(135deg, hsl(155 72% 17%), hsl(155 55% 25%));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 98%));
     --gradient-sidebar: linear-gradient(180deg, hsl(222 47% 11%), hsl(222 47% 8%));
     --gradient-primary: linear-gradient(135deg, hsl(155 72% 17%), hsl(155 55% 25%));

@@ -269,7 +269,7 @@ const AdminBuyers = () => {
           {/* SUMMARY CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <StatCard title={t('admin.buyers.totalBuyers')} value={data.stats.total_buyers} icon={Users} color="bg-blue-500" />
-            <StatCard title={t('admin.buyers.activeBuyers')} value={data.stats.total_buyers} icon={CheckCircle2} color="bg-green-500" trend="100%" />
+            <StatCard title={t('admin.buyers.activeBuyers')} value={filteredBuyers.filter((b: any) => b.status !== "0" && b.status).length} icon={CheckCircle2} color="bg-green-500" />
             <StatCard title={t('admin.buyers.newThisMonth')} value={data.stats.new_this_month} icon={TrendingUp} color="bg-purple-500" />
             <StatCard title={t('admin.buyers.totalPurchases')} value={data.stats.total_purchases} icon={ShoppingCart} color="bg-amber-500" />
           </div>
@@ -432,8 +432,8 @@ const AdminBuyers = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                              {t('admin.status.active')}
+                            <Badge className={buyer.status === "0" || !buyer.status ? "bg-red-500 hover:bg-red-600 text-white border-0" : "bg-green-500 hover:bg-green-600 text-white border-0"}>
+                              {buyer.status === "0" || !buyer.status ? t('admin.status.inactive', 'Inactive') : t('admin.status.active')}
                             </Badge>
                           </TableCell>
                           <TableCell>
