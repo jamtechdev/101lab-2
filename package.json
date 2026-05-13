@@ -61,6 +61,7 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.38.0",
     "i18next": "^25.6.1",
+    "i18next-icu": "^2.3.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.462.0",
     "luxon": "^3.7.2",

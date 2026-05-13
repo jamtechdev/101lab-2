@@ -319,7 +319,10 @@ const AdminBatchDetails = () => {
                         {product.title}
                       </h3>
                       {product.description && (
-                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{product.description}</p>
+                        <div
+                          className="rich-content text-xs text-muted-foreground mb-2 line-clamp-2"
+                          dangerouslySetInnerHTML={{ __html: product.description }}
+                        />
                       )}
                       <Badge variant="outline" className="text-xs">
                         {product.category}

@@ -1,4 +1,5 @@
 import i18n from 'i18next';
+import ICU from 'i18next-icu';
 import { initReactI18next } from 'react-i18next';
 import { normalizeStoredLanguage } from '@/utils/languageUtils';
 import en from './locales/en.json';
@@ -9,6 +10,7 @@ import th from './locales/th.json';
 const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('language') : null;
 
 i18n
+  .use(ICU)
   .use(initReactI18next)
   .init({
     resources: {

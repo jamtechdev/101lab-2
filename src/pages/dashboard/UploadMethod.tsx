@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import SunEditor from "suneditor-react";
 import "suneditor/dist/css/suneditor.min.css";
+import Swal from "sweetalert2";
 import { useGetCategoriesQuery, useVerifyUserQuery, useGetUserProfileQuery } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 import { useGetUsersQuery } from "@/rtk/slices/adminApiSlice";
@@ -442,6 +443,46 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
     );
   };
 
+  const handleMultipleLocationsToggle = async (itemId: string, checked: boolean) => {
+    if (checked) {
+      setMultipleLocations((prev) => ({ ...prev, [itemId]: true }));
+      return;
+    }
+    const item = items.find((i) => i.id === itemId);
+    if (!item) {
+      setMultipleLocations((prev) => ({ ...prev, [itemId]: false }));
+      return;
+    }
+    const extras = item.locations.slice(1);
+    const hasFilledExtras = extras.some(
+      (loc) => loc.address?.trim() || loc.country?.trim()
+    );
+    if (hasFilledExtras) {
+      const result = await Swal.fire({
+        title: t("upload.removeExtraLocationsTitle", "Remove extra locations?"),
+        text: t("upload.removeExtraLocationsText", {
+          count: extras.length,
+          defaultValue: "Only the first address will be kept. {{count}} extra address(es) will be removed.",
+        }),
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: t("upload.removeExtraLocationsConfirm", "Yes, remove"),
+        cancelButtonText: t("common.cancel", "Cancel"),
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+      });
+      if (!result.isConfirmed) return;
+    }
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId
+          ? { ...i, locations: i.locations.slice(0, 1) }
+          : i
+      )
+    );
+    setMultipleLocations((prev) => ({ ...prev, [itemId]: false }));
+  };
+
   const handleFileUpload = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files ? Array.from(event.target.files) : [];
     if (!files.length) return;
@@ -693,7 +734,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
         formData.append("product_content", item.description || "");
         formData.append("product_type", "simple");
         formData.append("product_category_ids", item.category);
-        formData.append("seller_name", item.sellerName || "seller-name");
+        formData.append("seller_name", item.sellerName || sellerName || "");
         if (item.sellerCompany) formData.append("seller_company", item.sellerCompany);
         // formData.append("item_condition", item.condition);
         // formData.append("operation_status", item.operationStatus);
@@ -1326,7 +1367,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                       </Button>
 
 
-                    </div>s
+                    </div>
 
                     {/* File Upload Section */}
                     <div className="mb-6">
@@ -1990,10 +2031,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                   id={`multiple-${item.id}`}
                                   checked={multipleLocations[item.id] || false}
                                   onCheckedChange={(checked) =>
-                                    setMultipleLocations({
-                                      ...multipleLocations,
-                                      [item.id]: checked as boolean,
-                                    })
+                                    handleMultipleLocationsToggle(item.id, checked as boolean)
                                   }
                                 />
                                 <Label htmlFor={`multiple-${item.id}`} className="text-muted-foreground">
@@ -2012,7 +2050,7 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                                             errorsForItem.address && "text-destructive"
                                           )}
                                         >
-                                          {t("upload.addressLabel")} *
+                                          {t("upload.addressLabel", { index: locIndex + 1 })} *
                                         </Label>
                                         {savedAddress && location.address === savedAddress && (
                                           <span className="text-xs text-accent flex items-center gap-1">
@@ -2210,12 +2248,12 @@ const UploadMethod: React.FC<UploadMethodProps> = ({ onNext, onBatchCreated, sho
                       {item.media.length > 0 ? (
                         item.media[0].type === 'image' ? (
                           <img
-                            // src={item.media[0].url} 
+                            // src={item.media[0].url}
                             src={item.media[item.selectedMediaIndex].url}
-                            alt="Preview" className="w-full rounded-lg" />
+                            alt="Preview" className="w-full max-h-[400px] object-contain rounded-lg mx-auto" />
                         ) : (
                           <div className="relative">
-                            <video src={item.media[0].url} className="w-full rounded-lg" controls />
+                            <video src={item.media[0].url} className="w-full max-h-[400px] object-contain rounded-lg mx-auto" controls />
                           </div>
                         )
                       ) : (

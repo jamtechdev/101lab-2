@@ -679,10 +679,10 @@ const UploadMethod = () => {
                     <div className="bg-muted/30 rounded-lg p-8 text-center mb-4">
                       {item.media.length > 0 ? (
                         item.media[0].type === 'image' ? (
-                          <img src={item.media[0].url} alt="Preview" className="w-full rounded-lg" />
+                          <img src={item.media[0].url} alt="Preview" className="w-full max-h-[400px] object-contain rounded-lg mx-auto" />
                         ) : (
                           <div className="relative">
-                            <video src={item.media[0].url} className="w-full rounded-lg" controls />
+                            <video src={item.media[0].url} className="w-full max-h-[400px] object-contain rounded-lg mx-auto" controls />
                           </div>
                         )
                       ) : (
