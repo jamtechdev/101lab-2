@@ -259,7 +259,7 @@ export const productApiSlice = createApi({
     // --- Bidding Create (separate step after batch) ---
     biddingCreate: builder.mutation<BiddingCreateResponse, BiddingCreateRequest>({
       query: (body) => ({
-        url: `/bidding/create`,
+        url: `/bid/create`,
         method: "POST",
         headers: { "Content-Type": "application/json", "x-system-key": "fa39812fec" },
         data: body,
