@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -400,7 +401,7 @@ const BuyerSettingPage = () => {
                 id="phone"
                 placeholder="+886 912 345 678"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
                 className="border-border/50 focus:border-accent"
               />
             </div>

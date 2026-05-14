@@ -31,6 +31,13 @@ import {
   Heart,
   Info,
   ExternalLink,
+  Lock,
+  Building2,
+  ShoppingCart,
+  Minus,
+  Plus,
+  Shield,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -1707,7 +1714,12 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
 
         {/* Place Bid / Make Offer Dialog */}
         <Dialog open={showBidDialog} onOpenChange={(open) => { setShowBidDialog(open); if (!open) setPlaceBidStep("form"); }}>
-          <DialogContent className="max-h-[90vh] overflow-hidden">
+          <DialogContent className={cn(
+            "max-h-[90vh] overflow-hidden",
+            // Make the buy-now / bid dialog wider and stripped of default padding so we can
+            // build header / scrollable body / sticky footer ourselves.
+            bidDialogMode !== "make_offer" && "max-w-lg p-0 gap-0"
+          )}>
 
             {bidDialogMode === "make_offer" ? (
               /* ── Make Offer: 2-step flow ── */
@@ -1756,7 +1768,7 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
                       />
                       {products[0]?.quantity && products[0].quantity !== "N/A" && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t("auctionPage.maximumUnits", { count: products[0].quantity })}
+                          {t("browserListingDetail.maximumUnits", { count: products[0].quantity })}
                         </p>
                       )}
                     </div>
@@ -1892,270 +1904,460 @@ const SellerListingDetail = ({ hideLayout = false }: { hideLayout?: boolean }) =
             ) : (
               /* ── Place Bid / Buy Now: 2-step flow ── */
               <>
-                <DialogHeader>
-                  <DialogTitle>
-                    {placeBidStep === "review"
-                      ? bidDialogMode === "buy_now"
-                        ? (t("buyer.confirmBuyNow") || "Confirm your purchase")
-                        : (t("buyer.confirmBid") || "Confirm your bid")
-                      : bidDialogMode === "buy_now"
-                        ? (t("buyer.buyNowTitle") || "Buy Now")
-                        : t("buyer.placeBidTitle")}
-                  </DialogTitle>
-                  {placeBidStep === "review" && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Please double-check before submitting. This action cannot be undone.
-                    </p>
-                  )}
-                </DialogHeader>
-
                 {placeBidStep === "form" ? (
-                  /* ── Bid Form ── */
-                  <div className="overflow-y-auto max-h-[calc(90vh-80px)] pr-2">
-                    <div className="space-y-4 py-4">
+                  /* ── Bid Form (elegant redesign) ── */
+                  (() => {
+                    const cur = bidDetail?.currency || "USD";
+                    const maxQty = products[0]?.quantity && products[0].quantity !== "N/A" ? Number(products[0].quantity) : null;
+                    const qtyNum = Math.max(1, parseInt(bidQuantity) || 1);
+                    const baseAmount = Number(bidAmount) || 0;
+                    const premiumPct = batchCommission.percent ?? 0;
+                    const premiumAmt = premiumPct > 0 ? Math.round(baseAmount * premiumPct / 100 * 100) / 100 : 0;
+                    const totalAmount = baseAmount + premiumAmt;
+                    const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const isBuyNow = bidDialogMode === "buy_now";
 
-                      <div>
-                        <Label>{t("buyer.company")}</Label>
-                        <Input value={companyBuyerName} disabled />
-                      </div>
-
-                      <div>
-                        <Label>{t("buyer.contactPerson")}</Label>
-                        <Input value={contactPerson} disabled />
-                      </div>
-
-                      <div>
-                        <Label>{t("buyer.country")}</Label>
-                        <select
-                          value={bidCountry}
-                          onChange={(e) => setBidCountry(e.target.value)}
-                          className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          {ASIA_COUNTRIES.map((country) => (
-                            <option key={country} value={country}>{country}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Quantity */}
-                      <div>
-                        <Label>{t("makeOfferModal.offerQuantity") || "Quantity"}</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          max={products[0]?.quantity && products[0].quantity !== "N/A" ? Number(products[0].quantity) : undefined}
-                          step="1"
-                          value={bidQuantity}
-                          onChange={(e) => setBidQuantity(e.target.value)}
-                          onBlur={() => {
-                            const parsed = parseInt(bidQuantity);
-                            setBidQuantity(String(isNaN(parsed) || parsed < 1 ? 1 : parsed));
-                          }}
-                          placeholder="Enter quantity"
-                        />
-                        {products[0]?.quantity && products[0].quantity !== "N/A" && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {t("auctionPage.maximumUnits", { count: products[0].quantity })}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Bid Amount */}
-                      <div>
-                        <Label>{t("buyer.wholeItemPrice") || "Bid Amount"} ({bidDetail?.currency})</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={bidAmount}
-                          onChange={(e) => { if (bidDialogMode !== "buy_now") setBidAmount(e.target.value); }}
-                          placeholder={t("biddingStep.enterTotalPrice") || "Enter amount"}
-                          readOnly={bidDialogMode === "buy_now"}
-                          className={bidDialogMode === "buy_now" ? "bg-muted cursor-not-allowed" : ""}
-                        />
-                      </div>
-
-                      {/* Weight-based quotation type */}
-                      {allowWeightPrice && (
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" checked={useWeightPrice} onChange={(e) => setUseWeightPrice(e.target.checked)} />
-                          <span>{t("buyer.priceByWeight")}</span>
+                    return (
+                      <div className="flex flex-col max-h-[90vh]">
+                        {/* Sticky header */}
+                        <div className="px-6 py-4 border-b border-border/60 bg-card">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "p-2 rounded-lg flex-shrink-0",
+                              isBuyNow ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                            )}>
+                              {isBuyNow ? <ShoppingCart className="w-5 h-5" /> : <Gavel className="w-5 h-5" />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <DialogTitle className="text-lg font-bold leading-tight">
+                                {isBuyNow ? (t("buyer.buyNowTitle") || "Buy Now") : t("buyer.placeBidTitle")}
+                              </DialogTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {isBuyNow
+                                  ? (t("buyer.buyNowSubtitle") || "Complete your purchase in 2 quick steps")
+                                  : (t("buyer.placeBidSubtitle") || "Submit your bid in 2 quick steps")}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-muted text-muted-foreground whitespace-nowrap">
+                              Step 1 of 2
+                            </span>
+                          </div>
                         </div>
-                      )}
 
-                      {useWeightPrice && (
-                        <div className="space-y-3 border rounded-md p-3">
-                          <Label>{t("buyer.pricePerKg")}</Label>
-                          {WEIGHT_ITEMS.map((item) => (
-                            <div key={item.key} className="flex items-center gap-3">
-                              <input
-                                type="checkbox"
-                                checked={weightPrices[item.key] !== undefined}
-                                onChange={(e) => updateWeightPrice(e, item.key)}
-                              />
-                              <span className="w-40">{item.label}</span>
-                              {weightPrices[item.key] !== undefined && (
-                                <Input
-                                  type="number"
-                                  placeholder={t("buyer.pricePerKg")}
-                                  value={weightPrices[item.key]}
-                                  onChange={(e) => setWeightPrices((prev) => ({ ...prev, [item.key]: e.target.value }))}
-                                />
+                        {/* Scrollable body */}
+                        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+                          {/* Account block — read-only, styled as a card not disabled inputs */}
+                          <div className="rounded-lg border border-border/60 bg-muted/30 p-4 space-y-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                {t("buyer.yourAccount") || "Your Account"}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <Lock className="w-3 h-3" /> {t("buyer.fromProfile") || "From your profile"}
+                              </span>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <Building2 className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[11px] text-muted-foreground">{t("buyer.company") || "Company"}</p>
+                                <p className="text-sm font-semibold text-foreground truncate">{companyBuyerName || "—"}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <Users className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[11px] text-muted-foreground">{t("buyer.contactPerson") || "Contact Person"}</p>
+                                <p className="text-sm font-semibold text-foreground truncate">{contactPerson || "—"}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Order block */}
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {/* Country */}
+                              <div>
+                                <Label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                                  <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                  {t("buyer.country") || "Country"}
+                                </Label>
+                                <select
+                                  value={bidCountry}
+                                  onChange={(e) => setBidCountry(e.target.value)}
+                                  className="w-full h-10 border border-input rounded-md px-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                >
+                                  {ASIA_COUNTRIES.map((country) => (
+                                    <option key={country} value={country}>{country}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Quantity — stepper */}
+                              <div>
+                                <Label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                                  <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                                  {t("makeOfferModal.offerQuantity") || "Quantity"}
+                                </Label>
+                                <div className="flex items-center h-10 border border-input rounded-md overflow-hidden bg-background">
+                                  <button
+                                    type="button"
+                                    aria-label="decrease quantity"
+                                    onClick={() => setBidQuantity(String(Math.max(1, qtyNum - 1)))}
+                                    disabled={qtyNum <= 1}
+                                    className="px-3 h-full hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <Minus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={maxQty || undefined}
+                                    step="1"
+                                    value={bidQuantity}
+                                    onChange={(e) => setBidQuantity(e.target.value)}
+                                    onBlur={() => {
+                                      const parsed = parseInt(bidQuantity);
+                                      const clamped = isNaN(parsed) || parsed < 1 ? 1 : (maxQty ? Math.min(parsed, maxQty) : parsed);
+                                      setBidQuantity(String(clamped));
+                                    }}
+                                    className="flex-1 h-full text-center text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  />
+                                  <button
+                                    type="button"
+                                    aria-label="increase quantity"
+                                    onClick={() => setBidQuantity(String(maxQty ? Math.min(maxQty, qtyNum + 1) : qtyNum + 1))}
+                                    disabled={maxQty != null && qtyNum >= maxQty}
+                                    className="px-3 h-full hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                {maxQty != null && (
+                                  <p className="text-[11px] text-muted-foreground mt-1">
+                                    {maxQty} {t("buyer.available") || "available"}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Bid Amount — read-only badge for buy-now, input for bid */}
+                            <div>
+                              <Label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                                {isBuyNow
+                                  ? (t("buyer.itemPrice") || "Item Price")
+                                  : (t("buyer.wholeItemPrice") || "Bid Amount")} ({cur})
+                              </Label>
+                              {isBuyNow ? (
+                                <div className="flex items-center justify-between h-10 px-3 rounded-md bg-muted/40 border border-border/60">
+                                  <span className="text-sm font-semibold text-foreground">
+                                    {cur} {fmt(baseAmount)}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <Lock className="w-3 h-3" /> {t("buyer.fixedPrice") || "Fixed price"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+                                    {cur}
+                                  </span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={bidAmount}
+                                    onChange={(e) => setBidAmount(e.target.value)}
+                                    placeholder={t("biddingStep.enterTotalPrice") || "Enter amount"}
+                                    className="pl-14"
+                                  />
+                                </div>
                               )}
                             </div>
-                          ))}
-                        </div>
-                      )}
 
-                      <div>
-                        <Label>{t("buyer.notes")}</Label>
-                        <Textarea rows={3} value={bidNotes} onChange={(e) => setBidNotes(e.target.value)} />
-                      </div>
-
-                      {batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 && (
-                        <div className="rounded border border-border overflow-hidden text-sm">
-                          {(() => {
-                            const base = Number(bidAmount);
-                            const premiumAmt = Math.round(base * batchCommission.percent! / 100 * 100) / 100;
-                            const total = base + premiumAmt;
-                            const cur = bidDetail?.currency || "USD";
-                            return (
+                            {/* Weight-based quotation — only for bid mode */}
+                            {!isBuyNow && allowWeightPrice && (
                               <>
-                                <div className="flex items-center justify-between px-3 py-2 bg-muted/30">
-                                  <span className="text-muted-foreground">{bidDialogMode === "buy_now" ? (t("buyer.price") || "Price") : "Bid Amount"}</span>
-                                  <span className="font-semibold text-foreground">{cur} {base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex items-center justify-between px-3 py-2 border-t border-border bg-amber-50/50 dark:bg-amber-900/10">
-                                  <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
-                                  <span className="font-semibold text-amber-700 dark:text-amber-400">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex items-center justify-between px-3 py-2.5 border-t border-border bg-muted/50">
-                                  <span className="font-bold text-foreground">Total</span>
-                                  <span className="font-bold text-primary text-base">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
+                                <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={useWeightPrice}
+                                    onChange={(e) => setUseWeightPrice(e.target.checked)}
+                                    className="rounded"
+                                  />
+                                  <span className="text-foreground">{t("buyer.priceByWeight")}</span>
+                                </label>
+                                {useWeightPrice && (
+                                  <div className="space-y-3 border border-border/60 rounded-md p-4 bg-muted/20">
+                                    <Label className="text-xs font-semibold text-foreground">{t("buyer.pricePerKg")}</Label>
+                                    {WEIGHT_ITEMS.map((item) => (
+                                      <div key={item.key} className="flex items-center gap-3">
+                                        <input
+                                          type="checkbox"
+                                          checked={weightPrices[item.key] !== undefined}
+                                          onChange={(e) => updateWeightPrice(e, item.key)}
+                                          className="rounded"
+                                        />
+                                        <span className="w-40 text-sm">{item.label}</span>
+                                        {weightPrices[item.key] !== undefined && (
+                                          <Input
+                                            type="number"
+                                            placeholder={t("buyer.pricePerKg")}
+                                            value={weightPrices[item.key]}
+                                            onChange={(e) => setWeightPrices((prev) => ({ ...prev, [item.key]: e.target.value }))}
+                                            className="h-9"
+                                          />
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </>
-                            );
-                          })()}
-                        </div>
-                      )}
+                            )}
 
-                      <Button
-                        className="w-full"
-                        onClick={() => {
-                          if (selectedBid) {
-                            handleUpdateBid();
-                            return;
-                          }
-                          // Validate before showing review
-                          const hasWholeBid = useWholePrice && bidAmount && Number(bidAmount) > 0;
-                          const hasWeightBid = useWeightPrice && Object.values(weightPrices).some((v) => Number(v) > 0);
-                          if (!hasWholeBid && !hasWeightBid) {
-                            toast.error("Please provide at least one quotation");
-                            return;
-                          }
-                          setPlaceBidStep("review");
-                        }}
-                      >
-                        {bidDialogMode === "buy_now"
-                          ? (t("buyer.buyNow") || "Buy Now")
-                          : selectedBid
-                            ? t("buyer.updateBid")
-                            : "Review bid"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  /* ── Bid Review / Confirm ── */
-                  <div className="space-y-5 py-2">
-                    <div className="border border-border rounded-lg overflow-hidden text-sm">
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-                        <span className="text-muted-foreground">Company</span>
-                        <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{companyBuyerName}</span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-                        <span className="text-muted-foreground">Contact</span>
-                        <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{contactPerson}</span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-                        <span className="text-muted-foreground">Country</span>
-                        <span className="font-semibold text-foreground">{bidCountry}</span>
-                      </div>
-                      <div className="flex items-center justify-between px-4 py-3">
-                        <span className="text-muted-foreground">{t("makeOfferModal.quantity") || "Quantity"}</span>
-                        <span className="font-semibold text-foreground">{bidQuantity}</span>
-                      </div>
-                    </div>
-
-                    <div className="border border-amber-200 bg-amber-50/60 rounded-lg p-5">
-                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2 text-center">
-                        {bidDialogMode === "buy_now" ? (t("buyer.yourPrice") || "Your Price") : (t("buyer.yourBid") || "Your Bid")}
-                      </p>
-                      {useWeightPrice && Object.keys(weightPrices).length > 0 ? (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground font-semibold">Weight-based quotation:</p>
-                          {WEIGHT_ITEMS.map(({ key, label }) => {
-                            const val = weightPrices[key];
-                            return val ? (
-                              <div key={key} className="flex justify-between text-xs">
-                                <span className="text-muted-foreground">{label}</span>
-                                <span className="font-semibold text-foreground">{Number(val).toLocaleString()} {bidDetail?.currency || ""}</span>
-                              </div>
-                            ) : null;
-                          })}
+                            {/* Notes */}
+                            <div>
+                              <Label className="text-xs font-semibold text-foreground mb-1.5 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                                {t("buyer.notes", "Notes")}
+                                <span className="text-muted-foreground font-normal">{t("buyer.optional", "(optional)")}</span>
+                              </Label>
+                              <Textarea
+                                rows={3}
+                                value={bidNotes}
+                                onChange={(e) => setBidNotes(e.target.value)}
+                                placeholder={t("buyer.notesPlaceholder") || "Add a message to the seller — delivery timing, special requirements, etc."}
+                                className="resize-none text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
-                      ) : batchCommission.percent != null && batchCommission.percent > 0 && Number(bidAmount) > 0 ? (
-                        (() => {
-                          const basePrice = Number(bidAmount);
-                          const premiumAmt = Math.round(basePrice * batchCommission.percent! / 100 * 100) / 100;
-                          const total = basePrice + premiumAmt;
-                          const cur = bidDetail?.currency || "USD";
-                          return (
-                            <div className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{bidDialogMode === "buy_now" ? (t("buyer.price") || "Item Price") : "Bid Amount"}</span>
-                                <span className="font-semibold text-foreground">{cur} {basePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+
+                        {/* Sticky footer: itemized price + CTA */}
+                        <div className="border-t border-border/60 bg-card px-6 py-4 space-y-3">
+                          {premiumPct > 0 && baseAmount > 0 ? (
+                            <div className="text-sm space-y-1.5">
+                              <div className="flex items-center justify-between text-muted-foreground">
+                                <span>{isBuyNow ? (t("buyer.price") || "Item Price") : "Bid Amount"}</span>
+                                <span className="font-medium text-foreground">{cur} {fmt(baseAmount)}</span>
                               </div>
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({batchCommission.percent}%)</span>
-                                <span className="font-semibold text-amber-700">+ {cur} {premiumAmt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <div className="flex items-center justify-between text-muted-foreground">
+                                <span>{t("buyer.buyerPremium") || "Buyer Premium"} ({premiumPct}%)</span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400">+ {cur} {fmt(premiumAmt)}</span>
                               </div>
-                              <div className="flex justify-between text-sm border-t border-amber-200 pt-2 mt-1">
-                                <span className="font-bold text-foreground">Total</span>
-                                <span className="font-bold text-lg text-foreground">{cur} {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <div className="flex items-center justify-between pt-2 mt-1 border-t border-border/60">
+                                <span className="font-semibold text-foreground">{t("buyer.totalLabel", "Total")}</span>
+                                <span className="text-xl font-bold text-foreground">{cur} {fmt(totalAmount)}</span>
                               </div>
                             </div>
-                          );
-                        })()
-                      ) : (
-                        <p className="text-3xl font-bold text-foreground text-center">
-                          {bidDetail?.currency || "TWD"} {Number(bidAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                      )}
-                    </div>
+                          ) : baseAmount > 0 ? (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">{t("buyer.totalLabel", "Total")}</span>
+                              <span className="text-xl font-bold text-foreground">{cur} {fmt(baseAmount)}</span>
+                            </div>
+                          ) : null}
 
-                    <p className="text-sm text-center text-muted-foreground">
-                      {bidDialogMode === "buy_now"
-                        ? (t("buyer.confirmBuyNowDesc") || "Are you sure you want to buy this?")
-                        : (t("buyer.confirmBidDesc") || "Are you sure you want to place this bid?")}
-                    </p>
+                          {isBuyNow && (
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                              <Shield className="w-3 h-3" />
+                              {t("buyer.buyNowSafety") || "You'll review and confirm on the next step."}
+                            </p>
+                          )}
 
-                    <div className="flex gap-3">
-                      <Button type="button" variant="outline" className="flex-1" onClick={() => setPlaceBidStep("form")}>
-                        {t("buyer.goBack") || "Go back"}
-                      </Button>
-                      <Button
-                        type="button"
-                        className="flex-1 bg-[#1a3c2a] hover:bg-[#152e21] text-white"
-                        disabled={isPlacingBid}
-                        onClick={handlePlaceBid}
-                      >
-                        {isPlacingBid
-                          ? t("buyer.submitting")
-                          : bidDialogMode === "buy_now"
-                            ? (t("buyer.yesBuyNow") || "Yes, buy now")
-                            : (t("buyer.yesPlaceBid") || "Yes, place bid")}
-                      </Button>
-                    </div>
-                  </div>
+                          <Button
+                            className="w-full h-11 text-sm font-semibold bg-[#1a3c2a] hover:bg-[#152e21] text-white"
+                            onClick={() => {
+                              if (selectedBid) {
+                                handleUpdateBid();
+                                return;
+                              }
+                              const hasWholeBid = useWholePrice && bidAmount && Number(bidAmount) > 0;
+                              const hasWeightBid = useWeightPrice && Object.values(weightPrices).some((v) => Number(v) > 0);
+                              if (!hasWholeBid && !hasWeightBid) {
+                                toast.error("Please provide at least one quotation");
+                                return;
+                              }
+                              setPlaceBidStep("review");
+                            }}
+                          >
+                            {selectedBid ? (
+                              t("buyer.updateBid") || "Update bid"
+                            ) : isBuyNow ? (
+                              <>
+                                <ShoppingCart className="mr-2 h-4 w-4" />
+                                {(t("buyer.reviewPurchase") || "Review purchase")}
+                                {totalAmount > 0 && <span className="ml-1.5 opacity-90">• {cur} {fmt(totalAmount)}</span>}
+                              </>
+                            ) : (
+                              <>
+                                <Gavel className="mr-2 h-4 w-4" />
+                                Review bid
+                                {totalAmount > 0 && <span className="ml-1.5 opacity-90">• {cur} {fmt(totalAmount)}</span>}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  /* ── Bid Review / Confirm (matches new framed layout) ── */
+                  (() => {
+                    const cur = bidDetail?.currency || "USD";
+                    const baseAmount = Number(bidAmount) || 0;
+                    const premiumPct = batchCommission.percent ?? 0;
+                    const premiumAmt = premiumPct > 0 ? Math.round(baseAmount * premiumPct / 100 * 100) / 100 : 0;
+                    const totalAmount = baseAmount + premiumAmt;
+                    const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    const isBuyNow = bidDialogMode === "buy_now";
+
+                    return (
+                      <div className="flex flex-col max-h-[90vh]">
+                        {/* Sticky header with back arrow */}
+                        <div className="px-6 py-4 border-b border-border/60 bg-card">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => setPlaceBidStep("form")}
+                              className="p-1.5 -ml-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+                              aria-label="back"
+                            >
+                              <ArrowLeft className="w-4 h-4" />
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              <DialogTitle className="text-lg font-bold leading-tight">
+                                {isBuyNow ? (t("buyer.confirmBuyNow") || "Review your purchase") : (t("buyer.confirmBid") || "Review your bid")}
+                              </DialogTitle>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {t("buyer.reviewBeforeSubmit") || "Double-check before submitting — this can't be undone."}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 whitespace-nowrap">
+                              Step 2 of 2
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Scrollable body */}
+                        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                          {/* Order summary card */}
+                          <div className="rounded-lg border border-border/60 overflow-hidden text-sm">
+                            <div className="px-4 py-2.5 bg-muted/40 border-b border-border/60">
+                              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                {t("buyer.orderSummary") || "Order Details"}
+                              </span>
+                            </div>
+                            <div className="divide-y divide-border/50">
+                              <div className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-muted-foreground">{t("buyer.company") || "Company"}</span>
+                                <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{companyBuyerName || "—"}</span>
+                              </div>
+                              <div className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-muted-foreground">{t("buyer.contactPerson") || "Contact"}</span>
+                                <span className="font-semibold text-foreground text-right max-w-[60%] break-words">{contactPerson || "—"}</span>
+                              </div>
+                              <div className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-muted-foreground">{t("buyer.country") || "Country"}</span>
+                                <span className="font-semibold text-foreground">{bidCountry}</span>
+                              </div>
+                              <div className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-muted-foreground">{t("makeOfferModal.quantity") || "Quantity"}</span>
+                                <span className="font-semibold text-foreground">{bidQuantity}</span>
+                              </div>
+                              {bidNotes && (
+                                <div className="flex items-start justify-between px-4 py-2.5 gap-3">
+                                  <span className="text-muted-foreground flex-shrink-0">{t("buyer.notes") || "Notes"}</span>
+                                  <span className="text-foreground text-right max-w-[60%] break-words text-xs leading-relaxed">{bidNotes}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Price breakdown card */}
+                          <div className={cn(
+                            "rounded-lg border p-5",
+                            isBuyNow ? "border-emerald-200 bg-emerald-50/40" : "border-amber-200 bg-amber-50/60"
+                          )}>
+                            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-3 text-center font-semibold">
+                              {isBuyNow ? (t("buyer.yourPrice") || "Your Price") : (t("buyer.yourBid") || "Your Bid")}
+                            </p>
+                            {useWeightPrice && Object.keys(weightPrices).length > 0 ? (
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground font-semibold mb-2">Weight-based quotation:</p>
+                                {WEIGHT_ITEMS.map(({ key, label }) => {
+                                  const val = weightPrices[key];
+                                  return val ? (
+                                    <div key={key} className="flex justify-between text-xs">
+                                      <span className="text-muted-foreground">{label}</span>
+                                      <span className="font-semibold text-foreground">{Number(val).toLocaleString()} {cur}</span>
+                                    </div>
+                                  ) : null;
+                                })}
+                              </div>
+                            ) : premiumPct > 0 && baseAmount > 0 ? (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">{isBuyNow ? (t("buyer.price") || "Item Price") : "Bid Amount"}</span>
+                                  <span className="font-semibold text-foreground">{cur} {fmt(baseAmount)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">{t("buyer.buyerPremium") || "Buyer Premium"} ({premiumPct}%)</span>
+                                  <span className="font-semibold text-amber-700">+ {cur} {fmt(premiumAmt)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm border-t border-border/60 pt-2 mt-1">
+                                  <span className="font-bold text-foreground">{t("buyer.totalLabel", "Total")}</span>
+                                  <span className="font-bold text-2xl text-foreground">{cur} {fmt(totalAmount)}</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-3xl font-bold text-foreground text-center">
+                                {cur} {fmt(baseAmount)}
+                              </p>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1.5">
+                            <Shield className="w-3 h-3" />
+                            {isBuyNow
+                              ? (t("buyer.confirmBuyNowDesc") || "By confirming, you agree to purchase this item at the displayed price.")
+                              : (t("buyer.confirmBidDesc") || "Your bid is binding once submitted.")}
+                          </p>
+                        </div>
+
+                        {/* Sticky footer */}
+                        <div className="border-t border-border/60 bg-card px-6 py-4">
+                          <div className="flex gap-3">
+                            <Button type="button" variant="outline" className="flex-1 h-11" onClick={() => setPlaceBidStep("form")}>
+                              {t("buyer.goBack") || "Go back"}
+                            </Button>
+                            <Button
+                              type="button"
+                              className="flex-1 h-11 bg-[#1a3c2a] hover:bg-[#152e21] text-white font-semibold"
+                              disabled={isPlacingBid}
+                              onClick={handlePlaceBid}
+                            >
+                              {isPlacingBid ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  {t("buyer.submitting") || "Submitting…"}
+                                </>
+                              ) : isBuyNow ? (
+                                <>
+                                  <ShoppingCart className="mr-2 h-4 w-4" />
+                                  {(t("buyer.yesBuyNow") || "Confirm purchase")}
+                                </>
+                              ) : (
+                                <>
+                                  <Gavel className="mr-2 h-4 w-4" />
+                                  {(t("buyer.yesPlaceBid") || "Confirm bid")}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
                 )}
               </>
             )}

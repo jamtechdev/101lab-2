@@ -96,29 +96,53 @@ const CategoryAndRevenueCharts: React.FC<CategoryAndRevenueChartsProps> = ({
                     <CardTitle>{t('admin.analytics.categoryDistribution')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={220}>
                         <PieChart>
                             <Pie
                                 data={categoryData}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={120}
-                                innerRadius={50} // donut chart
-                                label={({ name, value }) =>
-                                    `${name.length > 27 ? name.slice(0, 12) + "…" : name} ${value}%`
-                                }
-                                labelLine={false}
+                                outerRadius={90}
+                                innerRadius={55}
+                                paddingAngle={1}
                                 dataKey="value"
+                                // No inline labels — keeps the donut clean and contained.
+                                // All numbers live in the legend below.
                             >
                                 {categoryData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="white" strokeWidth={2} />
                                 ))}
                             </Pie>
                             <Tooltip
                                 formatter={(value, name) => [`${value}%`, name]}
+                                contentStyle={{
+                                    backgroundColor: "hsl(var(--card))",
+                                    border: "1px solid hsl(var(--border))",
+                                    borderRadius: "8px",
+                                    fontSize: "12px",
+                                }}
                             />
                         </PieChart>
                     </ResponsiveContainer>
+
+                    {/* Custom legend below — full names truncate cleanly inside the card */}
+                    <ul className="mt-3 space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                        {categoryData.map((entry: any, index: number) => (
+                            <li key={index} className="flex items-center gap-2 text-xs">
+                                <span
+                                    aria-hidden
+                                    className="w-3 h-3 rounded-sm flex-shrink-0 border border-black/5"
+                                    style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="flex-1 truncate text-foreground" title={entry.name}>
+                                    {entry.name}
+                                </span>
+                                <span className="text-muted-foreground font-medium flex-shrink-0 tabular-nums">
+                                    {entry.value}%
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
                 </CardContent>
             </Card>
 

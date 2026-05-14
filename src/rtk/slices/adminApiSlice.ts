@@ -81,6 +81,7 @@ export interface SellerItem {
   company_name: string;
   email: string;
   phone: string | null;
+  user_status: "approved" | "pending";
   total_listings: number;
   total_sold: number;
   total_live: number;
@@ -116,6 +117,7 @@ export interface BuyerItem {
   email: string;
   phone: string | null;
   address: string | null;
+  status: "approved" | "pending";
   total_bids: number;
   pending_bids: number;
   accepted_bids: number;
@@ -859,14 +861,15 @@ export const adminApi = createApi({
     /* ---------------- GET SELLERS ---------------- */
     getSellers: builder.query<
       SellerResponse,
-      { page?: number; limit?: number; search?: string }
+      { page?: number; limit?: number; search?: string; userStatus?: "approved" | "pending" | "all" }
     >({
-      query: ({ page = 1, limit = 10, search }) => {
+      query: ({ page = 1, limit = 10, search, userStatus }) => {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
         });
         if (search) params.set("search", search);
+        if (userStatus) params.set("userStatus", userStatus);
         return {
           url: `/admin/seller?${params.toString()}`,
           method: "GET",
@@ -876,13 +879,14 @@ export const adminApi = createApi({
     }),
 
     /* ---------------- GET BUYERS ---------------- */
-    getBuyers: builder.query<BuyerResponse, { page?: number; limit?: number; search?: string }>({
-      query: ({ page = 1, limit = 10, search }) => {
+    getBuyers: builder.query<BuyerResponse, { page?: number; limit?: number; search?: string; userStatus?: "approved" | "pending" | "all" }>({
+      query: ({ page = 1, limit = 10, search, userStatus }) => {
         const params = new URLSearchParams({
           page: String(page),
           limit: String(limit),
         });
         if (search) params.set("search", search);
+        if (userStatus) params.set("userStatus", userStatus);
         return {
           url: `/admin/buyer?${params.toString()}`,
           method: "GET",

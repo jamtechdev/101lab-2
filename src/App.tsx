@@ -12,6 +12,7 @@ import { LoginModalProvider } from "./context/LoginModalContext";
 import './styles/smoothness.css';
 import { ScrollToTopButton } from "@/components/common/SmoothScroll";
 import { enableSmoothScroll } from "@/utils/smoothnessUtils";
+import TawkVisibilityController from "@/components/common/TawkVisibilityController";
 
 import Landing from "./pages/landing/Landing";
 import Factories from "./pages/landing/Factories";
@@ -210,6 +211,7 @@ const App = () => {
 
           <BrowserRouter>
             <RouteTracker />
+            <TawkVisibilityController />
             <ScrollToTopButton showAfter={300} />
             <BuyerRegistrationPopup />
             <LoginModalProvider>

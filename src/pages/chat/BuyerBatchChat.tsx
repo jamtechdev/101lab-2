@@ -1,74 +1,77 @@
 // @ts-nocheck
-import React, { useEffect, useRef, useState } from "react";
-import { Send, User, Package } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Send, MessageSquareText, Package, X, ShieldCheck, Loader2 } from "lucide-react";
 import { getSocket } from "@/services/socket";
 import axios from "axios";
-import { formatChatDateTime } from '../../utils/formatChatDateTime'
+import { formatChatDateTime } from "../../utils/formatChatDateTime";
 import { SITE_TYPE } from "@/config/site";
 
-export default function BuyerChatTest({ batchId, sellerId, userRole = "buyer" }: { batchId?: any; sellerId?: any; userRole?: string }) {
-  const socket = getSocket();
+type Props = {
+  batchId?: any;
+  sellerId?: any;
+  userRole?: "buyer" | "seller";
+  onClose?: () => void;
+};
 
+export default function BuyerChatTest({ batchId, sellerId, userRole = "buyer", onClose }: Props) {
+  const socket = getSocket();
   const loggedInUserId = localStorage.getItem("userId");
 
   const batch_id = batchId;
-  // sellerId prop always holds the "other party" ID:
-  //   buyer usage  → sellerId = the seller they're chatting with
-  //   seller usage → sellerId = the buyer they're chatting with (from selectedChatBid.buyer_id)
   const current_user_id = loggedInUserId;
   const other_party_id = sellerId;
-  const buyer_id  = userRole === "seller" ? other_party_id : current_user_id;
+  const buyer_id = userRole === "seller" ? other_party_id : current_user_id;
   const seller_id = userRole === "seller" ? current_user_id : other_party_id;
 
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
   const conversationIdRef = useRef(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const url = import.meta.env.VITE_SOCKET_URL;
   const apiUrl = import.meta.env.VITE_PRODUCTION_URL;
 
+  const otherPartyLabel = userRole === "seller" ? "Buyer" : "Seller";
+  const otherPartyInitial = (otherPartyLabel?.[0] || "?").toUpperCase();
+
+  const STARTER_PROMPTS = userRole === "seller"
+    ? [
+        "Thanks for your interest — happy to help.",
+        "Item is available. When can you pick up?",
+        "Could you share your company details?",
+      ]
+    : [
+        "Is this batch still available?",
+        "Can you share more photos or serial numbers?",
+        "What are the pickup / shipping terms?",
+      ];
+
   const fetchConversationMessages = async () => {
     try {
-      // Fetch messages for batch + seller
       const response = await axios.get(
         `${apiUrl}chat/buyer/${batch_id}/${buyer_id}/${seller_id}?platform=${SITE_TYPE}`
       );
-
       const conversationMessages = response.data;
-
-      if (conversationMessages.length > 0) {
-        // setConversationId(conversationMessages[0].conversation_id);
-        setMessages(conversationMessages);
-      }
+      if (conversationMessages.length > 0) setMessages(conversationMessages);
     } catch (err) {
       console.error("Error fetching seller messages:", err);
     }
   };
 
-  // useEffect(() => {
-  //   if (!batch_id || !buyer_id) return;
-  //   fetchConversationMessages();
-  // }, [batch_id, buyer_id]);
-
   useEffect(() => {
     if (!socket) return;
-    // Ensure socket is connected
-    if (!socket.connected) {
-      socket.connect();
-    }
+    if (!socket.connected) socket.connect();
 
-    // Component-specific chat listener
     const handleChatMessage = (msg) => {
-
-
       if (msg.conversation_id !== conversationIdRef.current) return;
       setMessages((prev) => [...prev, msg]);
     };
 
     socket.on("chat_message", handleChatMessage);
 
-    // Join rooms only once (when component mounts)
     if (current_user_id && batch_id && other_party_id) {
       socket.emit("joinRooms", { user_id: current_user_id, role: userRole });
       socket.emit(
@@ -84,58 +87,68 @@ export default function BuyerChatTest({ batchId, sellerId, userRole = "buyer" }:
           if (res.error) {
             console.log("Join error", res.error);
           } else {
-
             setConversationId(res.conversation_id);
             conversationIdRef.current = res.conversation_id;
-
-            fetchConversationMessages()
-
-            // setMessages(response.data || []);
+            fetchConversationMessages();
           }
         }
       );
     }
 
     return () => {
-      // Remove only component-specific listener
       socket.off("chat_message", handleChatMessage);
-      // Do NOT disconnect the global socket or remove 'connect' listener
     };
   }, [socket, batch_id, buyer_id, seller_id]);
 
+  // Auto-scroll to bottom on new message
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages.length]);
 
-  const sendMessage = () => {
-    const trimmedMessage = input.trim();
-    if (!trimmedMessage) return;
+  // Auto-grow textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 140) + "px";
+  }, [input]);
+
+  const sendMessage = (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
+    if (!text) return;
     if (!conversationId) {
       console.log("Cannot send: conversationId not ready");
       return;
     }
-
+    setSending(true);
     socket.emit("chat_message", {
       conversation_id: conversationId,
       batch_id: `batch-${batch_id}`,
       sender_id: current_user_id,
       receiver_id: other_party_id,
       sender_role: userRole,
-      message: trimmedMessage,
+      message: text,
       platform: SITE_TYPE,
     });
 
-    // Notify admin via email whenever a buyer sends a message to a seller
     axios.post(`${apiUrl}chat/notify-admin`, {
       conversation_id: conversationId,
       batch_id: batch_id,
       buyer_id: buyer_id,
       seller_id: seller_id,
       sender_role: userRole,
-      message: trimmedMessage,
+      message: text,
       platform: SITE_TYPE,
-    }).catch(() => {
-      // Fire-and-forget — don't block chat if notification fails
-    });
+    }).catch(() => {});
 
     setInput("");
+    // Reset the input height after clearing
+    requestAnimationFrame(() => {
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+      setSending(false);
+    });
   };
 
   const handleKeyPress = (e) => {
@@ -145,105 +158,164 @@ export default function BuyerChatTest({ batchId, sellerId, userRole = "buyer" }:
     }
   };
 
+  // Build a flat render list with date dividers interleaved.
+  const renderItems = useMemo(() => {
+    if (!Array.isArray(messages) || messages.length === 0) return [];
+    const items: any[] = [];
+    let lastKey = "";
+    const now = new Date();
+    const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    const dividerLabel = (d: Date) => {
+      const today = new Date();
+      const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+      if (isSameDay(d, today)) return "Today";
+      if (isSameDay(d, yesterday)) return "Yesterday";
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" });
+    };
+    for (const msg of messages) {
+      const d = new Date(msg.created_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      if (key !== lastKey) {
+        items.push({ type: "divider", id: `d-${key}`, label: dividerLabel(d) });
+        lastKey = key;
+      }
+      items.push({ type: "msg", ...msg });
+    }
+    return items;
+  }, [messages]);
 
-
+  const hasMessages = Array.isArray(messages) && messages.length > 0;
 
   return (
-    <div className="flex  justify-center h-full">
-      <div className=" w-full bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-              <User className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-lg">User Chat</h2>
-              <p className="text-sm text-blue-100">User ID: {seller_id}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full">
-            <Package className="w-4 h-4" />
-            <span className="text-sm font-medium">Batch #{batch_id}</span>
-          </div>
+    <div className="flex flex-col h-full bg-white">
+      {/* ── Header ───────────────────────────────────── */}
+      <header className="px-4 py-3 bg-[#0f4c2a] text-white flex items-center gap-3">
+        <div className="relative w-10 h-10 rounded-full bg-[#1a7a45] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+          {otherPartyInitial}
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-[#0f4c2a]" aria-label="online" />
         </div>
-
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
-          {Array.isArray(messages) && messages.length > 0 ? (
-            messages.map((msg) => (
-              <div
-                key={msg.message_id}
-                className={`flex ${String(msg.sender_id) === String(current_user_id) ? "justify-end" : "justify-start"
-                  }`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${String(msg.sender_id) === String(current_user_id)
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-br-sm"
-                    : "bg-white text-gray-800 rounded-bl-sm border border-gray-200"
-                    }`}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-xs font-semibold ${String(msg.sender_id) === String(current_user_id)
-                        ? "text-blue-100"
-                        : "text-gray-500"
-                        }`}
-                    >
-                      {String(msg.sender_id) === String(current_user_id) ? "You" : (userRole === "seller" ? "Buyer" : "Seller")}
-                    </span>
-                    <span
-                      className={`text-[11px] ${String(msg.sender_id) === String(current_user_id)
-                          ? "text-blue-100"
-                          : "text-gray-400"
-                        }`}
-                    >
-                      {formatChatDateTime(msg.created_at)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed break-words ">
-                    {msg.message}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              <div className="text-center">
-                <Package className="w-16 h-16 mx-auto mb-3 opacity-30" />
-                <p className="text-lg font-medium">No messages yet</p>
-                <p className="text-sm">Start the conversation!</p>
-              </div>
-            </div>
-          )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-tight truncate">{otherPartyLabel}</p>
+          <p className="text-[11px] text-emerald-100/80 leading-tight mt-0.5">Typically replies within a few hours</p>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 -mr-1 rounded-md hover:bg-white/10 transition-colors"
+            aria-label="Close chat"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </header>
 
-        {/* Input Area */}
-        <div className="border-t pb-[10rem] border-gray-200 bg-white p-4">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1 relative">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                rows="1"
-                className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
-                style={{ minHeight: "48px", maxHeight: "120px" }}
-              />
-            </div>
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim()}
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white p-3 rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:shadow-none"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
+      {/* ── Context strip ───────────────────────────── */}
+      <div className="px-4 py-2.5 bg-emerald-50/60 border-b border-emerald-100 flex items-center gap-2">
+        <div className="w-7 h-7 rounded-md bg-white border border-emerald-200 flex items-center justify-center flex-shrink-0">
+          <Package className="w-3.5 h-3.5 text-emerald-700" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-wider text-emerald-700/70 font-semibold leading-tight">Batch</p>
+          <p className="text-xs font-semibold text-emerald-900 leading-tight">#{batch_id}</p>
         </div>
       </div>
+
+      {/* ── Messages ─────────────────────────────────── */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 bg-slate-50/50 space-y-2">
+        {hasMessages ? (
+          <>
+            {renderItems.map((item) => {
+              if (item.type === "divider") {
+                return (
+                  <div key={item.id} className="flex items-center gap-3 py-2">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{item.label}</span>
+                    <div className="flex-1 h-px bg-slate-200" />
+                  </div>
+                );
+              }
+              const isOwn = String(item.sender_id) === String(current_user_id);
+              return (
+                <div key={item.message_id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[78%] flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`px-3.5 py-2 text-sm leading-snug whitespace-pre-wrap break-words shadow-sm ${
+                        isOwn
+                          ? "bg-[#0f4c2a] text-white rounded-2xl rounded-br-md"
+                          : "bg-white text-slate-900 border border-slate-200 rounded-2xl rounded-bl-md"
+                      }`}
+                    >
+                      {item.message}
+                    </div>
+                    <span className={`text-[10px] mt-1 px-1 ${isOwn ? "text-slate-400" : "text-slate-400"}`}>
+                      {formatChatDateTime(item.created_at)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        ) : (
+          /* ── Empty state ── */
+          <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+              <MessageSquareText className="w-7 h-7 text-emerald-700" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-900 mb-1">
+              Start a conversation with the {otherPartyLabel.toLowerCase()}
+            </h3>
+            <p className="text-xs text-slate-500 mb-5 max-w-[260px]">
+              Ask questions about this batch — pickup, condition, photos, or anything else.
+            </p>
+            <div className="flex flex-col gap-2 w-full max-w-[280px]">
+              {STARTER_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setInput(p);
+                    textareaRef.current?.focus();
+                  }}
+                  className="text-left text-xs px-3 py-2 rounded-lg bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 transition-colors text-slate-700"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <p className="mt-6 text-[10px] text-slate-400 flex items-center gap-1.5 max-w-[280px] leading-relaxed">
+              <ShieldCheck className="w-3 h-3 flex-shrink-0" />
+              Messages may be reviewed for trust &amp; safety.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Input (sticky footer) ────────────────────── */}
+      <div className="border-t border-slate-200 bg-white px-3 py-3">
+        <div className="flex items-end gap-2">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message…"
+            rows={1}
+            className="flex-1 resize-none px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700/40 focus:bg-white transition-colors"
+            style={{ minHeight: 44, maxHeight: 140 }}
+          />
+          <button
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || sending}
+            aria-label="Send message"
+            className="w-10 h-10 rounded-full bg-[#0f4c2a] hover:bg-[#1a3c2a] disabled:bg-emerald-900/30 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors flex-shrink-0"
+          >
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </div>
+        <p className="mt-1.5 px-1 text-[10px] text-slate-400">
+          <span className="font-medium">Enter</span> to send · <span className="font-medium">Shift + Enter</span> for new line
+        </p>
+      </div>
     </div>
-
-
   );
 }

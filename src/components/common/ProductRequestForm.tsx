@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { Send, Loader2, X, CheckCircle2, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -206,7 +207,7 @@ export default function ProductRequestForm({ searchQuery = "" }: ProductRequestF
                       id="pr-phone"
                       type="tel"
                       value={form.phone}
-                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                      onChange={(e) => setForm((p) => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
                       placeholder={isZh ? "您的電話" : "+886 or your number"}
                       className="h-9 text-sm w-full"
                     />

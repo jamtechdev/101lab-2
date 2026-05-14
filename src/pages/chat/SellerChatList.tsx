@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
-import { MessageSquare, Mail, Search, Send } from "lucide-react";
+import { Inbox, Package, Search, Send, MessageSquareText, Loader2, ShieldCheck } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { getSocket } from "@/services/socket";
 import { useLocation, useParams } from "react-router-dom";
@@ -8,7 +8,9 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/rtk/store";
 import { useSellerPermissions } from "@/hooks/useSellerPermissions";
 import { SITE_TYPE } from "@/config/site";
-import { formatChatDateTime } from '../../utils/formatChatDateTime'
+import { formatChatDateTime } from '../../utils/formatChatDateTime';
+import { avatarColor, avatarInitial, formatInboxTime, formatThreadDivider } from '../../utils/chatHelpers';
+import { Button } from "@/components/ui/button";
 
 export default function SellerChatPageList() {
     const { hasPermission } = useSellerPermissions();
@@ -273,8 +275,27 @@ export default function SellerChatPageList() {
     };
 
 
+    // Deduplicate by (buyer ID + batch ID). The backend may return multiple
+    // conversation rows for the same buyer/batch pair — keep the entry with
+    // the most recent activity.
+    const dedupedBuyers = (() => {
+        const map = new Map<string, any>();
+        for (const b of buyers) {
+            const key = `${b.ID}_${b.batch_id}`;
+            const existing = map.get(key);
+            if (!existing) {
+                map.set(key, b);
+            } else {
+                const t1 = new Date(existing.lastMessageAt || 0).getTime();
+                const t2 = new Date(b.lastMessageAt || 0).getTime();
+                if (t2 > t1) map.set(key, b);
+            }
+        }
+        return Array.from(map.values());
+    })();
+
     // Filter buyers
-    const filteredBuyers = buyers.filter((buyer) =>
+    const filteredBuyers = dedupedBuyers.filter((buyer) =>
         (buyer.display_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (buyer.user_email || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (buyer.user_login || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -318,194 +339,232 @@ export default function SellerChatPageList() {
 
 
 
+    const renderItems = useMemo(() => {
+        if (!Array.isArray(messages) || messages.length === 0) return [];
+        const items: any[] = [];
+        let lastKey = "";
+        for (const msg of messages) {
+            const d = new Date(msg.created_at);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            if (key !== lastKey) {
+                items.push({ type: "divider", id: `d-${key}`, label: formatThreadDivider(d) });
+                lastKey = key;
+            }
+            items.push({ type: "msg", ...msg });
+        }
+        return items;
+    }, [messages]);
+
+    const canSend = hasPermission("chat.send");
+
     return (
         <DashboardLayout>
-            <div className="flex h-screen bg-gray-50">
+            {/* Fixed-positioned chat shell — anchors below the sticky dashboard
+                header (~57px) and past the sidebar (224px on lg+) so the layout
+                never fights the parent padding. Only the messages area scrolls. */}
+            <div className="fixed top-[57px] left-0 lg:left-56 right-0 bottom-0 flex bg-white overflow-hidden z-10">
 
-                {/* LEFT SIDEBAR */}
-                <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-                    <div className="p-4 border-b">
-                        <h2 className="text-xl font-semibold flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-blue-600" />
-                            Conversations
-                        </h2>
-
-                        <div className="relative mt-3">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                {/* ── LEFT: INBOX LIST ───────────────────────────────── */}
+                <aside className="w-full sm:w-[360px] bg-white border-r border-zinc-200 flex flex-col min-h-0">
+                    <div className="px-4 pt-5 pb-3 border-b border-zinc-100">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Inbox className="w-5 h-5 text-[#0f4c2a]" />
+                            <h2 className="text-lg font-semibold text-zinc-900">Messages</h2>
+                            <span className="ml-auto text-xs text-zinc-500">{sortedBuyers.length}</span>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                             <input
                                 type="text"
-                                placeholder="Search buyers..."
+                                placeholder="Search by buyer, batch, email…"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                                className="w-full pl-9 pr-3 py-2 text-sm rounded-md bg-zinc-50 border border-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700/40 focus:bg-white transition-colors"
                             />
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto">
                         {loadingBuyers ? (
-                            <div className="flex items-center justify-center h-32">
-                                <div className="animate-spin h-8 w-8 border-b-2 border-blue-600 rounded-full"></div>
+                            <div className="flex items-center justify-center h-40">
+                                <Loader2 className="w-5 h-5 text-[#0f4c2a] animate-spin" />
                             </div>
-                        ) : filteredBuyers.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500">No buyers found</div>
+                        ) : sortedBuyers.length === 0 ? (
+                            <div className="px-6 py-12 text-center">
+                                <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+                                    <Inbox className="w-6 h-6 text-emerald-700" />
+                                </div>
+                                <p className="text-sm font-medium text-zinc-900">No conversations yet</p>
+                                <p className="text-xs text-zinc-500 mt-1 max-w-[230px] mx-auto">
+                                    Buyers will reach out once your batches are live and discoverable.
+                                </p>
+                            </div>
                         ) : (
-                            <div className="divide-y">
-                                {sortedBuyers.map((buyer, index) => (
-                                    <div
-                                        key={index + 1}
-                                        onClick={() => openConversation(buyer)}
-                                        className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                                                {buyer.display_name?.charAt(0).toUpperCase()}
-                                            </div>
-
-                                            <div className="flex-1">
-                                                <h3 className="font-medium truncate">{buyer.display_name}</h3>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <p className="text-xs text-gray-500 truncate">
-                                                        BatchId- #{buyer.batch_id}
-                                                    </p>
+                            <ul className="divide-y divide-zinc-100">
+                                {sortedBuyers.map((buyer) => {
+                                    const isSelected = selectedBuyer?.ID === buyer.ID && selectedBuyer?.batch_id === buyer.batch_id;
+                                    const unread = unreadMap1.map?.[`${buyer.ID}_${buyer.batch_id}`] || 0;
+                                    return (
+                                        <li key={`${buyer.ID}_${buyer.batch_id}`}>
+                                            <button
+                                                onClick={() => openConversation(buyer)}
+                                                className={`relative w-full text-left px-4 py-3 hover:bg-zinc-50 transition-colors flex gap-3 items-start ${isSelected ? "bg-emerald-50/50" : ""}`}
+                                            >
+                                                {/* Selected indicator only — never used for unread */}
+                                                <span
+                                                    aria-hidden
+                                                    className={`absolute left-0 top-0 bottom-0 w-[3px] ${isSelected ? "bg-[#0f4c2a]" : "bg-transparent"}`}
+                                                />
+                                                <div className={`w-10 h-10 rounded-full ${avatarColor(buyer.ID)} text-white flex items-center justify-center font-medium text-sm flex-shrink-0`}>
+                                                    {avatarInitial(buyer.display_name)}
                                                 </div>
-
-                                                {unreadMap1.map?.[`${buyer.ID}_${buyer.batch_id}`] > 0 && (
-                                                    <span className="ml-auto text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                                                        {unreadMap1.map[`${buyer.ID}_${buyer.batch_id}`]}
-                                                    </span>
-                                                )}
-
-                                                <p className="text-xs text-gray-500 truncate">@{buyer.user_login}</p>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    <Mail className="w-3 h-3 text-gray-400" />
-                                                    <p className="text-xs text-gray-500 truncate">{buyer.user_email}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-0.5">
+                                                        {/* Unread dot — distinct visual from the selected rail */}
+                                                        {unread > 0 && (
+                                                            <span aria-hidden className="w-2 h-2 rounded-full bg-[#0f4c2a] flex-shrink-0" />
+                                                        )}
+                                                        <h3 className={`text-sm truncate ${unread > 0 ? "font-semibold text-zinc-900" : "font-medium text-zinc-800"}`}>
+                                                            {buyer.display_name || "Buyer"}
+                                                        </h3>
+                                                        <span className="ml-auto text-[11px] text-zinc-500 flex-shrink-0">
+                                                            {formatInboxTime(buyer.lastMessageAt)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                                                            <Package className="w-2.5 h-2.5" /> #{buyer.batch_id}
+                                                        </span>
+                                                        {unread > 0 && (
+                                                            <span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-semibold rounded-full bg-[#0f4c2a] text-white">
+                                                                {unread}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                            </div>
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
                         )}
                     </div>
-                </div>
+                </aside>
 
-                {/* RIGHT CHAT WINDOW */}
-                <div className="flex-1 flex flex-col bg-white">
+                {/* ── RIGHT: THREAD ──────────────────────────────────── */}
+                <section className="flex-1 flex flex-col min-h-0 bg-white">
                     {selectedBuyer ? (
                         <>
-                            {/* Header */}
-                            <div className="p-4 border-b flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl">
-                                  {selectedBuyer?.display_name?.charAt(0)?.toUpperCase() || "?"}
-
+                            <header className="flex-shrink-0 px-5 py-3 border-b border-zinc-200 bg-white flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full ${avatarColor(selectedBuyer.ID)} text-white flex items-center justify-center font-medium text-sm flex-shrink-0`}>
+                                    {avatarInitial(selectedBuyer.display_name)}
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold">{selectedBuyer.display_name}</h3>
-                                    <p className="text-sm text-gray-500">BatchId:- #
-                                        {selectedBuyer.batch_id}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {selectedBuyer.user_email}
-                                    </p>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-sm font-semibold text-zinc-900 leading-tight truncate">{selectedBuyer.display_name}</h3>
+                                    <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">Buyer interested in your listing</p>
                                 </div>
-                            </div>
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium">
+                                    <Package className="w-3 h-3" /> Batch #{selectedBuyer.batch_id}
+                                </span>
+                            </header>
 
-                            {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-
-                                {/* LOAD OLDER */}
+                            <div className="flex-1 overflow-y-auto min-h-0 px-5 py-4 bg-zinc-50/40 space-y-2">
                                 {hasMore && !loadingMessages && (
                                     <div className="text-center mb-3">
-                                        <button
-                                            onClick={loadOlderMessages}
-                                            disabled={loadingOlder}
-                                            className="text-xs text-blue-600 hover:underline disabled:text-gray-400"
-                                        >
-                                            {loadingOlder ? "Loading..." : "Load older messages"}
+                                        <button onClick={loadOlderMessages} disabled={loadingOlder} className="text-xs text-[#0f4c2a] hover:underline disabled:text-zinc-400 font-medium">
+                                            {loadingOlder ? "Loading…" : "Load older messages"}
                                         </button>
                                     </div>
                                 )}
 
                                 {loadingMessages ? (
                                     <div className="flex items-center justify-center h-full">
-                                        <div className="animate-spin h-10 w-10 border-b-2 border-blue-600 rounded-full"></div>
+                                        <Loader2 className="w-6 h-6 text-[#0f4c2a] animate-spin" />
                                     </div>
                                 ) : messages.length === 0 ? (
-                                    <div className="flex items-center justify-center h-full text-gray-500">
-                                        <div className="text-center">
-                                            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-                                            <p>No messages yet</p>
-                                            <p className="text-sm">Start the conversation!</p>
+                                    <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
+                                        <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+                                            <MessageSquareText className="w-7 h-7 text-emerald-700" />
                                         </div>
+                                        <h3 className="text-base font-semibold text-zinc-900 mb-1">No messages yet</h3>
+                                        <p className="text-xs text-zinc-500 max-w-[260px]">
+                                            This buyer hasn't sent a message yet. You can send the first reply here.
+                                        </p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
-                                        {Array.isArray(messages) && messages.map((msg) => (
-                                            <div
-                                                key={msg.message_id}
-                                                className={`flex ${msg.sender_role === "seller"
-                                                    ? "justify-end"
-                                                    : "justify-start"
-                                                    }`}
-                                            >
-                                                <div
-                                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${msg.sender_role === "seller"
-                                                        ? "bg-blue-600 text-white"
-                                                        : "bg-white border text-gray-900"
-                                                        }`}
-                                                >
-                                                    <p className="text-sm">{msg.message}</p>
-                                                    <span
-                                                        className={`text-[11px] ${msg.sender_role === "buyer"
-                                                            ? "text-[#808080]"
-                                                            : "text-gray-400"
+                                    renderItems.map((item) => {
+                                        if (item.type === "divider") {
+                                            return (
+                                                <div key={item.id} className="flex items-center gap-3 py-2">
+                                                    <div className="flex-1 h-px bg-zinc-200" />
+                                                    <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">{item.label}</span>
+                                                    <div className="flex-1 h-px bg-zinc-200" />
+                                                </div>
+                                            );
+                                        }
+                                        const isOwn = item.sender_role === "seller";
+                                        return (
+                                            <div key={item.message_id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                                                <div className={`max-w-[78%] flex flex-col ${isOwn ? "items-end" : "items-start"}`}>
+                                                    <div
+                                                        className={`px-3.5 py-2 text-sm leading-snug whitespace-pre-wrap break-words shadow-sm ${isOwn
+                                                            ? "bg-[#0f4c2a] text-white rounded-2xl rounded-br-md"
+                                                            : "bg-white text-zinc-900 border border-zinc-200 rounded-2xl rounded-bl-md"
                                                             }`}
                                                     >
-                                                        {msg?.created_at ? formatChatDateTime(msg.created_at) : ""}
+                                                        {item.message}
+                                                    </div>
+                                                    <span className="text-[10px] mt-1 px-1 text-zinc-400">
+                                                        {item?.created_at ? formatChatDateTime(item.created_at) : ""}
                                                     </span>
-
                                                 </div>
-                                                <div ref={bottomRef} />
                                             </div>
-                                        ))}
-                                    </div>
+                                        );
+                                    })
                                 )}
+                                <div ref={bottomRef} />
                             </div>
 
-
-                            {/* Input */}
-                            <div className="p-4 border-t flex gap-2 bg-white">
-                                <input
-                                    type="text"
-                                    value={newMessage}
-                                    placeholder="Type your message..."
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && hasPermission("chat.send") && handleSendMessage()}
-                                    disabled={!hasPermission("chat.send")}
-                                    className="flex-1 px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
-
-                                <button
-                                    onClick={handleSendMessage}
-                                    disabled={!hasPermission("chat.send")}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Send className="w-4 h-4" /> Send
-                                </button>
+                            <div className="flex-shrink-0 border-t border-zinc-200 bg-white px-3 py-3">
+                                {!canSend && (
+                                    <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5 mb-2 flex items-center gap-1.5">
+                                        <ShieldCheck className="w-3 h-3" />
+                                        You don't have permission to send messages. Ask your company admin.
+                                    </p>
+                                )}
+                                <div className="flex items-end gap-2">
+                                    <input
+                                        type="text"
+                                        value={newMessage}
+                                        placeholder={canSend ? "Type a message…" : "Sending disabled"}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && canSend && handleSendMessage()}
+                                        disabled={!canSend}
+                                        className="flex-1 h-11 px-3.5 text-sm rounded-xl border border-zinc-200 bg-zinc-50 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700/40 focus:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                    />
+                                    <button
+                                        onClick={handleSendMessage}
+                                        disabled={!canSend || !newMessage.trim()}
+                                        aria-label="Send message"
+                                        className="w-10 h-10 rounded-full bg-[#0f4c2a] hover:bg-[#1a3c2a] disabled:bg-emerald-900/30 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors flex-shrink-0"
+                                    >
+                                        <Send className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </>
                     ) : (
-                        <div className="flex-1 flex items-center justify-center text-gray-500 bg-gray-50">
-                            <div className="text-center">
-                                <MessageSquare className="w-16 h-16 mx-auto mb-3 text-gray-400" />
-                                <h3 className="text-lg font-medium">Select a conversation</h3>
-                                <p className="text-sm">Choose a buyer to start messaging</p>
+                        <div className="flex-1 flex items-center justify-center bg-zinc-50/30">
+                            <div className="text-center max-w-[300px] px-6">
+                                <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+                                    <MessageSquareText className="w-8 h-8 text-emerald-700" />
+                                </div>
+                                <h3 className="text-base font-semibold text-zinc-900">Select a conversation</h3>
+                                <p className="text-sm text-zinc-500 mt-1">Pick a buyer from the list to view your message thread.</p>
                             </div>
                         </div>
                     )}
-                </div>
+                </section>
             </div>
         </DashboardLayout>
     );

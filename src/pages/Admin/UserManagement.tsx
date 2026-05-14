@@ -312,14 +312,19 @@ const AdminUsersAntd = () => {
                                 <ClockCircleOutlined className="text-yellow-500" />
                                 <span className="text-sm font-semibold text-yellow-700">{pendingCount} Pending</span>
                             </div>
-                            <Button
-                                icon={<DownloadOutlined />}
-                                loading={exporting}
-                                onClick={handleExport}
-                                className="rounded-xl font-semibold border-green-300 text-green-700 hover:bg-green-50 hover:border-green-500"
-                            >
-                                Export Excel
-                            </Button>
+                            <div className="relative inline-block">
+                                <Button
+                                    icon={<DownloadOutlined />}
+                                    disabled
+                                    onClick={handleExport}
+                                    className="rounded-xl font-semibold border-green-300 text-green-700 opacity-70 cursor-not-allowed"
+                                >
+                                    Export Excel
+                                </Button>
+                                <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow whitespace-nowrap">
+                                    Coming Soon
+                                </span>
+                            </div>
                         </div>
                     </div>
 
