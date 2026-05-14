@@ -196,9 +196,9 @@ function AuthGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
             Your account has been created. Please log in to publish your listing and access your dashboard.
           </p>
           <div className="flex flex-col gap-3 pt-2">
-            <Button className="bg-green-600 hover:bg-green-700 text-white w-full" onClick={handleLogin}>
+            <Button className="bg-green-600 hover:bg-green-700 text-white w-full" onClick={() => navigate("/auth?mode=signin&type=seller")}>
               <LogIn className="h-4 w-4 mr-2" />
-              Log in to publish your listing
+              Go to Dashboard
             </Button>
             <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
               <Home className="h-4 w-4 mr-2" />
@@ -824,6 +824,27 @@ export default function PublicSellPage() {
     }
   }, [title, description, manufacturer, model, subCategory, subCategoryName, quantity, address, country, condition, operationStatus, enableBuyNow, currency, pricePerUnit, media, lang, batchCreate, biddingCreate, resetForm]);
 
+  // On mount: if no sessionStorage flag the tab was previously closed → clear stale draft.
+  // sessionStorage is wiped automatically by the browser when the tab closes.
+  useEffect(() => {
+    const tabWasOpen = sessionStorage.getItem("sellTabOpen");
+    if (!tabWasOpen) {
+      // Fresh tab — clear any leftover localStorage from a previous closed session
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem("sellPublishing");
+      localStorage.removeItem("sellPendingProductId");
+      localStorage.removeItem("sellPendingBatchId");
+      localStorage.removeItem("sellRegistrationSession");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("companyName");
+    }
+    sessionStorage.setItem("sellTabOpen", "1");
+  }, []);
+
   // ── auto-publish when returning with ?publish=1 ────────────────────────────
   const publishRef = useRef(publish);
   useEffect(() => { publishRef.current = publish; }, [publish]);
@@ -894,7 +915,7 @@ export default function PublicSellPage() {
     publish();
   }, [publish]);
 
-  // #2 Browser back from auth screen — if draft exists and screen is auth, go back to form
+  // Browser back from auth screen — if draft exists and screen is auth, go back to form
   useEffect(() => {
     const onPopState = () => {
       if (screen === "auth" && localStorage.getItem(DRAFT_KEY)) {
@@ -904,6 +925,39 @@ export default function PublicSellPage() {
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [screen]);
+
+  // Warn user before refresh/tab close if publishing is in progress or form has data
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isPublishing = loading || localStorage.getItem("sellPublishing") === "1";
+      const hasDraft = !!title.trim() || !!localStorage.getItem(DRAFT_KEY);
+      if (isPublishing || hasDraft) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    // pagehide fires only when user actually confirmed leave / closed the tab.
+    // Clear all sell-related localStorage so next visit starts fresh.
+    const onPageHide = () => {
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem("sellPublishing");
+      localStorage.removeItem("sellPendingProductId");
+      localStorage.removeItem("sellPendingBatchId");
+      localStorage.removeItem("sellRegistrationSession");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("companyName");
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [loading, title]);
 
   // ─── screens ──────────────────────────────────────────────────────────────
 
@@ -954,6 +1008,7 @@ export default function PublicSellPage() {
       <div className="bg-white border-b py-4 text-center">
         <img src={logo} alt={SITE_NAME} className="h-10 mx-auto cursor-pointer" onClick={() => navigate("/")} />
       </div>
+
 
       <div className="max-w-6xl mx-auto px-4 py-8 flex gap-8 items-start">
 
