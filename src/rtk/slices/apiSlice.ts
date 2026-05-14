@@ -239,7 +239,7 @@ export const apiSlice = createApi({
         data: body,
       }),
     }),
-    signupWithLink: builder.mutation<{ success: boolean; message: string }, {
+    signupWithLink: builder.mutation<{ success: boolean; message: string; data?: { userId: number; role: string } }, {
       email: string; password: string; role?: string;
       first_name: string; last_name: string; phone?: string;
       company?: string; company_tax_id?: string;
