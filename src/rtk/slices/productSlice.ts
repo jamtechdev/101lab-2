@@ -254,7 +254,9 @@ export const productApiSlice = createApi({
         data: body,
       }),
       invalidatesTags: ["Batches"],
-    }),
+    }),      
+
+    
 
     // --- Bidding Create (separate step after batch) ---
     biddingCreate: builder.mutation<BiddingCreateResponse, BiddingCreateRequest>({

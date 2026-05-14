@@ -1282,7 +1282,12 @@ const AdminAuctionGroups = () => {
                                 {group.featured_type !== "none" ? "Remove Featured" : "Mark Featured"}
                               </Button>
                             )}
-                            <EditGroupButton group={group} onEdit={openEdit} />
+                            <Button size="sm" variant="outline"
+                              className="gap-1.5 border-blue-300 text-blue-600 hover:bg-blue-50"
+                              onClick={() => openEdit(group)}>
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
                             <Button size="sm" variant="outline"
                               className="gap-1.5 border-red-300 text-red-600 hover:bg-red-50"
                               onClick={() => handleDelete(group.group_id)} disabled={deletingId === group.group_id}>
