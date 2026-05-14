@@ -16,7 +16,7 @@ import { SITE_NAME } from "@/config/branding";
 import { CountrySelectItems, CountrySelect } from "@/components/common/CountrySelect";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight, Check } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";   
 import SunEditor from "suneditor-react";
 import "suneditor/dist/css/suneditor.min.css";
 import toast from "react-hot-toast";
@@ -144,16 +144,36 @@ function AuthGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     if (form.password !== form.confirmPassword) { toast.error("Passwords do not match."); return; }
     setIsSubmitting(true);
     try {
-      await signupWithLink({
+      // Register — backend now returns userId directly, no login needed
+      const signupRes = await signupWithLink({
         email: form.email, password: form.password, role: "seller",
         first_name: form.first_name, last_name: form.last_name,
         phone: form.phone ? `${form.phoneCode}${form.phone}` : "",
         company: form.company, country: form.country,
         interests: selectedInterests,
       }).unwrap();
-      setView("check_email");
+
+      const userId = signupRes?.data?.userId;
+      if (!userId) throw new Error("Registration succeeded but no user ID was returned.");
+
+      // Store just enough for publish() to run — no token, no real session
+      localStorage.setItem("userId", userId.toString());
+      localStorage.setItem("userRole", "seller");
+      localStorage.setItem("userName", `${form.first_name} ${form.last_name}`);
+      localStorage.setItem("companyName", form.company || "");
+      // Flag so publish() cleans all this up on completion
+      localStorage.setItem("sellRegistrationSession", "1");
+
+      // Publish immediately
+      onLoginSuccess();
     } catch (err: any) {
-      toast.error(err?.data?.message || "Registration failed. Please try again.");
+      const msg = err?.data?.message || err?.message || "";
+      if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("exists")) {
+        toast.error("An account with this email already exists. Please log in instead.");
+        setView("choice");
+      } else {
+        toast.error(msg || "Registration failed. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -172,19 +192,18 @@ function AuthGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
           <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-11 h-11 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold">Registration Successful!</h2>
+          <h2 className="text-2xl font-bold">Account Created!</h2>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Welcome to {SITE_NAME}! Your account has been created and your listing details have been saved.
-            Our team will review and approve your seller account shortly.
+            Your account has been created. Please log in to publish your listing and access your dashboard.
           </p>
           <div className="flex flex-col gap-3 pt-2">
-            <Button className="bg-green-600 hover:bg-green-700 text-white w-full" onClick={handleLogin}>
+            <Button className="bg-green-600 hover:bg-green-700 text-white w-full" onClick={() => navigate("/auth?mode=signin&type=seller")}>
               <LogIn className="h-4 w-4 mr-2" />
-              Log in to publish your listing
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => navigate("/dashboard")}>
-              <LayoutDashboard className="h-4 w-4 mr-2" />
               Go to Dashboard
+            </Button>
+            <Button variant="outline" className="w-full" onClick={() => navigate("/")}>
+              <Home className="h-4 w-4 mr-2" />
+              Back to Home
             </Button>
           </div>
         </div>
@@ -620,24 +639,30 @@ export default function PublicSellPage() {
   const isPublishingRef = useRef(false); // #1 prevent duplicate calls on refresh
 
   const publish = useCallback(async () => {
-    // #1 Guard: prevent concurrent/duplicate publish calls
+    // Guard: prevent concurrent/duplicate publish calls
     if (isPublishingRef.current) return;
 
     const userId = localStorage.getItem("userId");
     const role   = localStorage.getItem("userRole");
 
     if (!userId) { setScreen("auth"); return; }
-    if (role !== "seller") { setScreen("notSeller"); return; }
+    // New sellers registered via sell page may not have role set yet — treat as seller
+    if (role && role !== "seller") { setScreen("notSeller"); return; }
 
-    // #5 Token expiry check — userId present but token cookie gone
-    const hasToken = document.cookie.includes("accessToken");
-    if (!hasToken) {
-      toast.error("Your session has expired. Please log in again.");
-      setScreen("auth");
-      return;
+    // Registration-session users have no token — they use userId only to publish
+    const isRegSession = localStorage.getItem("sellRegistrationSession") === "1";
+    if (!isRegSession) {
+      const hasToken =
+        !!localStorage.getItem("accessToken") ||
+        document.cookie.includes("accessToken");
+      if (!hasToken) {
+        toast.error("Your session has expired. Please log in again.");
+        setScreen("auth");
+        return;
+      }
     }
 
-    // #8 Client-side file size check (max 10 MB per file)
+    // Client-side file size check (max 10 MB per file)
     const oversized = media.filter(m => m.file.size > 10 * 1024 * 1024);
     if (oversized.length > 0) {
       toast.error(`${oversized.length} file(s) exceed 10 MB. Please remove them before publishing.`);
@@ -750,20 +775,45 @@ export default function PublicSellPage() {
       if (!biddingRes?.success)
         throw new Error(biddingRes?.message || "Failed to set up bidding");
 
-      // All done — clean up all temporary state
+      // All done — clean up all temporary publish state
       localStorage.removeItem("sellPendingProductId");
       localStorage.removeItem("sellPendingBatchId");
       localStorage.removeItem("sellPublishing");
+      // If session was created by the registration flow (not a real login),
+      // clear auth so a back/refresh doesn't try to re-publish with stale data.
+      if (localStorage.getItem("sellRegistrationSession") === "1") {
+        localStorage.removeItem("sellRegistrationSession");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("companyName");
+        window.dispatchEvent(new Event("auth-changed"));
+      }
       resetForm();
       setScreen("done");
 
     } catch (err: any) {
       const msg = err?.message || err?.data?.message || "";
-      // #5 Handle 401 token expiry from API
+      const isRegSession = localStorage.getItem("sellRegistrationSession") === "1";
+
+      // Always clean up the reg-session on any error — it cannot be resumed
+      // because media files are held in React state and lost on refresh
+      if (isRegSession) {
+        localStorage.removeItem("sellRegistrationSession");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("companyName");
+        window.dispatchEvent(new Event("auth-changed"));
+      }
+
       if (err?.response?.status === 401 || msg.toLowerCase().includes("unauthorized")) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         toast.error("Session expired. Please log in again to publish.");
         setScreen("auth");
-      // #7 Network timeout
       } else if (err?.code === "ECONNABORTED" || msg.toLowerCase().includes("timeout")) {
         toast.error("Upload timed out. Check your connection and try again.");
       } else {
@@ -776,6 +826,27 @@ export default function PublicSellPage() {
     }
   }, [title, description, manufacturer, model, subCategory, subCategoryName, quantity, address, country, condition, operationStatus, enableBuyNow, currency, pricePerUnit, media, lang, batchCreate, biddingCreate, resetForm]);
 
+  // On mount: if no sessionStorage flag the tab was previously closed → clear stale draft.
+  // sessionStorage is wiped automatically by the browser when the tab closes.
+  useEffect(() => {
+    const tabWasOpen = sessionStorage.getItem("sellTabOpen");
+    if (!tabWasOpen) {
+      // Fresh tab — clear any leftover localStorage from a previous closed session
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem("sellPublishing");
+      localStorage.removeItem("sellPendingProductId");
+      localStorage.removeItem("sellPendingBatchId");
+      localStorage.removeItem("sellRegistrationSession");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("companyName");
+    }
+    sessionStorage.setItem("sellTabOpen", "1");
+  }, []);
+
   // ── auto-publish when returning with ?publish=1 ────────────────────────────
   const publishRef = useRef(publish);
   useEffect(() => { publishRef.current = publish; }, [publish]);
@@ -785,15 +856,32 @@ export default function PublicSellPage() {
       publishRef.current();
       return;
     }
-    // #1 Resume interrupted publish — tab was closed mid-publish
-    // Product may already exist (sellPendingProductId), just retry batch
+    // Resume interrupted publish — tab was closed mid-publish
     if (localStorage.getItem("sellPublishing") === "1") {
       const userId = localStorage.getItem("userId");
-      if (userId) {
+      const isRegSession = localStorage.getItem("sellRegistrationSession") === "1";
+      const productAlreadyCreated = !!localStorage.getItem("sellPendingProductId");
+
+      if (isRegSession && !productAlreadyCreated) {
+        // Reg-session + product not yet created = media files are gone from memory,
+        // cannot resume step 1. Clear everything and let user re-submit the form.
+        localStorage.removeItem("sellPublishing");
+        localStorage.removeItem("sellRegistrationSession");
+        localStorage.removeItem("sellPendingProductId");
+        localStorage.removeItem("sellPendingBatchId");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("companyName");
+        window.dispatchEvent(new Event("auth-changed"));
+        toast.error("Your session was interrupted. Please fill the form and try again.");
+      } else if (userId) {
+        // Either a real logged-in user, or reg-session where product was already created
+        // (batch/bid failed) — safe to resume since product step will be skipped
         toast("Resuming your previous submission…", { icon: "🔄" });
         setTimeout(() => publishRef.current(), 800);
       } else {
-        // Not logged in — clear stale flag, let user re-auth
+        // No userId at all — clear stale flag
         localStorage.removeItem("sellPublishing");
       }
     }
@@ -829,7 +917,7 @@ export default function PublicSellPage() {
     publish();
   }, [publish]);
 
-  // #2 Browser back from auth screen — if draft exists and screen is auth, go back to form
+  // Browser back from auth screen — if draft exists and screen is auth, go back to form
   useEffect(() => {
     const onPopState = () => {
       if (screen === "auth" && localStorage.getItem(DRAFT_KEY)) {
@@ -839,6 +927,39 @@ export default function PublicSellPage() {
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, [screen]);
+
+  // Warn user before refresh/tab close if publishing is in progress or form has data
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isPublishing = loading || localStorage.getItem("sellPublishing") === "1";
+      const hasDraft = !!title.trim() || !!localStorage.getItem(DRAFT_KEY);
+      if (isPublishing || hasDraft) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    // pagehide fires only when user actually confirmed leave / closed the tab.
+    // Clear all sell-related localStorage so next visit starts fresh.
+    const onPageHide = () => {
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem("sellPublishing");
+      localStorage.removeItem("sellPendingProductId");
+      localStorage.removeItem("sellPendingBatchId");
+      localStorage.removeItem("sellRegistrationSession");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("userName");
+      localStorage.removeItem("companyName");
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [loading, title]);
 
   // ─── screens ──────────────────────────────────────────────────────────────
 
@@ -889,6 +1010,7 @@ export default function PublicSellPage() {
       <div className="bg-white border-b py-4 text-center">
         <img src={logo} alt={SITE_NAME} className="h-10 mx-auto cursor-pointer" onClick={() => navigate("/")} />
       </div>
+
 
       <div className="max-w-6xl mx-auto px-4 py-8 flex gap-8 items-start">
 

@@ -45,7 +45,7 @@ const PHONE_CODES = [
 const API_BASE = "https://api.101recycle.greenbidz.com";
 
 const CompleteGoogleProfile = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -119,6 +119,7 @@ const CompleteGoogleProfile = () => {
         country:    form.country,
         interests:  selectedInterests,
         role:       wantToSell ? "seller" : undefined,
+        lang:       i18n.language || "en",
       };
       if (form.password) payload.password = form.password;
 
