@@ -9,8 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   Save,
-  User
+  User,
+  Globe
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import i18n from "@/i18n/config";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -48,6 +57,7 @@ const AdminSettings = () => {
 
   // -------------------- Loading States --------------------
   const [loadingPersonal, setLoadingPersonal] = useState(false);
+  const [loadingLanguage, setLoadingLanguage] = useState(false);
 
   // -------------------- Fetch Profile --------------------
   const { data: profileData, isLoading: loadingProfile, refetch } = useGetUserProfileQuery(userId);
@@ -93,6 +103,25 @@ const AdminSettings = () => {
     }
   };
 
+
+  const handleSaveLanguageRegion = async () => {
+    setLoadingLanguage(true);
+    try {
+      const response = await updateUserSettings({ language, timezone, currency, userId }).unwrap();
+      if (response.success) {
+        toast.success("Preferences updated successfully");
+        const i18nLang = language === "zh-TW" ? "zh" : language;
+        i18n.changeLanguage(i18nLang);
+        localStorage.setItem("language", i18nLang);
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update preferences");
+    } finally {
+      setLoadingLanguage(false);
+    }
+  };
 
   if (loadingProfile) {
     return (
@@ -222,6 +251,71 @@ const AdminSettings = () => {
                     >
                       <Save className="w-4 h-4 mr-2" />
                       {loadingPersonal ? t("settings.saving") : t("settings.savePreferences")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Language & Region */}
+              <Card className="border-border/50">
+                <CardHeader className="border-b border-border/50 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-info/10 text-info">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-bold">{t("settings.languageRegion")}</CardTitle>
+                      <CardDescription className="mt-1">{t("settings.languageRegionDesc")}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="language" className="text-sm font-medium">{t("settings.language")}</Label>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger id="language" className="border-border/50 focus:border-accent">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="zh-TW">{t("settings.traditionalChinese")}</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone" className="text-sm font-medium">{t("settings.timezone")}</Label>
+                    <Select value={timezone} onValueChange={setTimezone}>
+                      <SelectTrigger id="timezone" className="border-border/50 focus:border-accent">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Asia/Taipei">台北 (GMT+8)</SelectItem>
+                        <SelectItem value="Asia/Hong_Kong">香港 (GMT+8)</SelectItem>
+                        <SelectItem value="Asia/Shanghai">上海 (GMT+8)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency" className="text-sm font-medium">{t("settings.currency")}</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger id="currency" className="border-border/50 focus:border-accent">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TWD">{t("settings.twd")}</SelectItem>
+                        <SelectItem value="USD">{t("settings.usd")}</SelectItem>
+                        <SelectItem value="HKD">{t("settings.hkd")}</SelectItem>
+                        <SelectItem value="CNY">{t("settings.cny")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      onClick={handleSaveLanguageRegion}
+                      disabled={loadingLanguage}
+                      className="bg-gradient-to-r from-accent to-accent-light text-white hover:shadow-accent transition-all duration-300"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {loadingLanguage ? t("settings.saving") : t("settings.savePreferences")}
                     </Button>
                   </div>
                 </CardContent>
