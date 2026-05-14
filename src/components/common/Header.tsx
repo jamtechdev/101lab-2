@@ -474,14 +474,14 @@ const Header = () => {
                   {t("publicHeader.directSales")}
                 </Button>
               </Link>
-              <a href="http://localhost:8080/sell" target="_blank" rel="noopener noreferrer">
+              <Link to="/sell" target="_blank" rel="noopener noreferrer">
                 <Button
                   size="sm"
                   className="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs h-7 rounded px-3"
                 >
-                  {t("publicHeader.startSelling", "Start Selling")}
+                  {t("publicHeader.startSelling", "Add Machines")}
                 </Button>
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -615,7 +615,7 @@ const Header = () => {
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold h-9"
                     onClick={() => setOpenMenu(false)}
                   >
-                    {t("publicHeader.startSelling", "Start Selling")}
+                    {t("publicHeader.startSelling", "Add Machines")}
                   </Button>
                 </a>
 
