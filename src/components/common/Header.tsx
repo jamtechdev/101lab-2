@@ -474,6 +474,14 @@ const Header = () => {
                   {t("publicHeader.directSales")}
                 </Button>
               </Link>
+              <a href="http://localhost:8080/sell" target="_blank" rel="noopener noreferrer">
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs h-7 rounded px-3"
+                >
+                  {t("publicHeader.startSelling", "Start Selling")}
+                </Button>
+              </a>
             </div>
           </div>
         </div>
@@ -601,6 +609,15 @@ const Header = () => {
                 >
                   {t("publicHeader.sellWithGreenBidz")}
                 </Button>
+                <a href="http://localhost:8080/sell" target="_blank" rel="noopener noreferrer" className="block">
+                  <Button
+                    size="sm"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold h-9"
+                    onClick={() => setOpenMenu(false)}
+                  >
+                    {t("publicHeader.startSelling", "Start Selling")}
+                  </Button>
+                </a>
 
                 {userId ? (
                   <>
