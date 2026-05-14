@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import i18n from "@/i18n/config";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -110,9 +109,6 @@ const AdminSettings = () => {
       const response = await updateUserSettings({ language, timezone, currency, userId }).unwrap();
       if (response.success) {
         toast.success("Preferences updated successfully");
-        const i18nLang = language === "zh-TW" ? "zh" : language;
-        i18n.changeLanguage(i18nLang);
-        localStorage.setItem("language", i18nLang);
       } else {
         toast.error(response.message);
       }

@@ -17,7 +17,6 @@ import {
 
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import i18n from "@/i18n/config";
 import { User, Bell, Lock, Globe, CreditCard, FileText, Save, Shield, Settings as SettingsIcon, MapPin, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import PhoneInput from "react-phone-number-input";
@@ -294,11 +293,6 @@ const Settings = () => {
 
       if (response.success) {
         toast.success("Preferences updated successfully");
-        // Apply language change immediately in the app
-        // Settings stores "zh-TW", i18n uses "zh"
-        const i18nLang = language === "zh-TW" ? "zh" : language;
-        i18n.changeLanguage(i18nLang);
-        localStorage.setItem("language", i18nLang);
       } else {
         toast.error(response.message);
       }
