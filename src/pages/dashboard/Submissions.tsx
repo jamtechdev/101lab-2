@@ -45,6 +45,7 @@ import axios from "axios";
 import { subscribeBuyerEvents } from "@/socket/buyerEvents";
 import { SITE_TYPE } from "@/config/site";
 import AdminEditListingDialog from "@/pages/Admin/AdminEditListingDialog";
+import ProductThumbnail from "@/components/common/ProductThumbnail";
 
 // ─── Status style map ─────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, { dot: string; badge: string }> = {
@@ -128,9 +129,12 @@ function ExpandedImages({ images }: { images: string[] }) {
   return (
     <div className="flex gap-3 flex-wrap">
       {images.map((src, i) => (
-        <div key={i} className="w-24 h-24 rounded-lg overflow-hidden border border-border/50 bg-muted flex-shrink-0">
-          <img src={src} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-        </div>
+        <ProductThumbnail
+          key={i}
+          src={src}
+          className="w-24 h-24 rounded-lg border border-border/50 flex-shrink-0"
+          iconClassName="w-6 h-6"
+        />
       ))}
     </div>
   );
@@ -149,15 +153,10 @@ function BatchRow({ batch, onView, onChat, onHighlight, onDeactivate, onEdit, on
         onClick={() => onView(batch)}
       >
         {/* Thumbnail */}
-        <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-muted border border-border/50">
-          {batch?.firstProductImages?.[0] ? (
-            <img src={batch.firstProductImages[0]} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Package className="w-5 h-5 text-muted-foreground" />
-            </div>
-          )}
-        </div>
+        <ProductThumbnail
+          src={batch?.firstProductImages?.[0]}
+          className="flex-shrink-0 w-12 h-12 rounded-lg border border-border/50"
+        />
 
         {/* ID + Title */}
         <div className="flex-1 min-w-0">
@@ -208,7 +207,7 @@ function BatchRow({ batch, onView, onChat, onHighlight, onDeactivate, onEdit, on
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1.5 w-[224px] flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={() => onChat(batch)}
             title={t("submissions.chat")}
@@ -291,16 +290,14 @@ function BatchCard({ batch, onView, onChat, onHighlight, onDeactivate, onEdit, o
     <div className="group relative rounded-xl border border-border/50 bg-card hover:border-border hover:shadow-sm transition-all duration-200 overflow-hidden">
       {/* Top image strip */}
       <div
-        className="h-36 bg-muted overflow-hidden relative cursor-pointer"
+        className="h-36 overflow-hidden relative cursor-pointer"
         onClick={() => onView(batch)}
       >
-        {batch?.firstProductImages?.[0] ? (
-          <img src={batch.firstProductImages[0]} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-muted">
-            <Package className="w-10 h-10 text-muted-foreground/40" />
-          </div>
-        )}
+        <ProductThumbnail
+          src={batch?.firstProductImages?.[0]}
+          className="w-full h-full group-hover:scale-105 transition-transform duration-300"
+          iconClassName="w-10 h-10 text-muted-foreground/40"
+        />
         <button
           onClick={(e) => { e.stopPropagation(); onHighlight(batch.batchId, batch.is_highlighted); }}
           title={batch.is_highlighted ? t("submissions.removeHighlight") : t("submissions.highlight")}
@@ -795,7 +792,7 @@ const Submissions = () => {
               <div className="hidden md:block w-36 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("submissions.category")}</div>
               <div className="hidden lg:block w-28 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("submissions.posted")}</div>
               <div className="hidden sm:block w-28 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("submissions.stats")}</div>
-              <div className="w-40 flex-shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wide text-right">{t("submissions.actions")}</div>
+              <div className="w-[224px] flex-shrink-0 text-xs font-medium text-muted-foreground uppercase tracking-wide text-right pr-2">{t("submissions.actions")}</div>
             </div>
             {filteredBatches.map((batch) => (
               <BatchRow

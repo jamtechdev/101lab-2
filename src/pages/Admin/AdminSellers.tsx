@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useGetSellersQuery, useLazyGetSellersQuery, useDeleteUsersMutation } from "@/rtk/slices/adminApiSlice";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { exportToExcel } from "@/utils/exportToExcel";
@@ -144,6 +145,7 @@ const AdminSellers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
+  const [userStatusFilter, setUserStatusFilter] = useState<"approved" | "pending" | "all">("approved");
   const limit = 10;
 
   const navigate = useNavigate();
@@ -156,7 +158,9 @@ const AdminSellers = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit, search: debouncedSearch || undefined });
+  useEffect(() => { setPage(1); }, [userStatusFilter]);
+
+  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: userStatusFilter });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllSellers, { isLoading: exporting }] = useLazyGetSellersQuery();
 
@@ -213,7 +217,7 @@ const AdminSellers = () => {
   const totalPages = data?.pagination?.totalPages || data?.data?.pagination?.totalPages || 1;
   const sellers = data?.data?.data || data?.data || [];
   const stats = data?.stats || data?.data?.stats || {};
-  const verifiedCount = sellers.filter((seller: any) => seller.total_sold > 0 || seller.total_live > 0).length;
+  const verifiedCount = sellers.filter((seller: any) => seller.user_status === "approved").length;
 
   const filteredSellers = sellers;
 
@@ -358,16 +362,21 @@ const AdminSellers = () => {
               <h1 className="text-3xl font-bold tracking-tight">{t('admin.sellers.titleFull')}</h1>
               <p className="text-muted-foreground mt-1">{t('admin.sellers.subtitle')}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={exporting}
-              onClick={handleExport}
-              className="flex items-center gap-2 border-green-300 text-green-700 hover:bg-green-50 hover:border-green-500"
-            >
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="text-base">⬇</span>}
-              {exporting ? "Exporting..." : "Export Excel"}
-            </Button>
+            <div className="relative inline-block">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                onClick={handleExport}
+                className="flex items-center gap-2 border-green-300 text-green-700 opacity-70 cursor-not-allowed"
+              >
+                <span className="text-base">⬇</span>
+                Export Excel
+              </Button>
+              <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow whitespace-nowrap">
+                Coming Soon
+              </span>
+            </div>
           </div>
 
           {/* ---------------- SUMMARY CARDS ---------------- */}
@@ -399,28 +408,40 @@ const AdminSellers = () => {
             />
           </div>
 
-          {/* ---------------- SEARCH ---------------- */}
+          {/* ---------------- SEARCH + FILTER ---------------- */}
           <Card className="shadow-sm border-0 bg-gradient-to-r from-background to-muted/30">
             <CardContent className="p-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder={t('admin.sellers.searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-11 border-2 focus:border-primary/50"
-                />
-                {searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder={t('admin.sellers.searchPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-11 border-2 focus:border-primary/50"
+                  />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <Select value={userStatusFilter} onValueChange={(v) => setUserStatusFilter(v as "approved" | "pending" | "all")}>
+                  <SelectTrigger className="w-full sm:w-[200px] h-11 border-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">{t('admin.sellers.statusApproved', 'Approved')}</SelectItem>
+                    <SelectItem value="pending">{t('admin.sellers.statusPending', 'Pending Review')}</SelectItem>
+                    <SelectItem value="all">{t('admin.sellers.statusAll', 'All')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -582,9 +603,15 @@ const AdminSellers = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                              {t('admin.sellers.verified')}
-                            </Badge>
+                            {seller.user_status === "approved" ? (
+                              <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                                {t('admin.sellers.verified')}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
+                                {t('admin.usersPage.pendingReview', 'Pending Review')}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

@@ -1,5 +1,7 @@
 ﻿// @ts-nocheck
 import { useState, useEffect, useRef } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
+import PhoneInput from "react-phone-number-input";
 import authLogo from "@/assets/lablogo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,7 +193,7 @@ const Auth = () => {
       await signupWithLink({
         email: form.email, password: form.password, role: wantToSell ? "seller" : "buyer",
         first_name: form.first_name, last_name: form.last_name,
-        phone: form.phone ? `${form.phoneCode}${form.phone}` : "",
+        phone: form.phone || "",
         company: form.company, country: form.country,
         // industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
         interests: selectedInterests,
@@ -267,30 +269,32 @@ const Auth = () => {
   return (
     <>
     <SEOMeta {...getSEO('auth')} />
-    <div className="min-h-screen overflow-hidden bg-gradient-lab px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-7xl  items-center justify-center">
-        <div className="grid w-full items-center gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+    <div className="h-[100dvh] flex bg-gradient-lab overflow-hidden">
 
-          {/* â”€â”€ Left branding aside â”€â”€ */}
-          <aside className="hidden lg:block">
-            <div className="mb-10 inline-flex rounded-2xl bg-card/80 px-6 py-4 shadow-panel backdrop-blur">
-              <img src={authLogo} alt="101LAB" className="h-20 w-auto object-contain" />
-            </div>
-            <h1 className="max-w-xl text-5xl font-extrabold leading-tight text-brand-navy">
-              Welcome to a smarter lab equipment marketplace.
-            </h1>
-            <p className="mt-5 max-w-lg text-xl leading-8 text-muted-foreground">
-              Build your account, tune your equipment interests, and unlock bidding-ready verification.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              {["Infrastructure", "Biotech", "Pharma", "T&M"].map(pill => (
-                <span key={pill} className="rounded-full px-4 py-2 text-sm font-bold text-white" style={{ backgroundColor: "#2ec99a" }}>{pill}</span>
-              ))}
-            </div>
-          </aside>
+      {/* ── Left branding aside — stays fixed, vertically centered ── */}
+      <aside className="hidden lg:flex flex-col justify-center flex-shrink-0 lg:w-[44%] xl:w-[42%] px-10 lg:px-14 xl:px-20 py-12 overflow-hidden">
+        <div className="mb-10 inline-flex rounded-2xl bg-card/80 px-6 py-4 shadow-panel backdrop-blur self-start">
+          <img src={authLogo} alt="101LAB" className="h-16 w-auto object-contain" />
+        </div>
+        <h1 className="max-w-xl text-4xl xl:text-5xl font-extrabold leading-tight text-brand-navy">
+          Welcome to a smarter lab equipment marketplace.
+        </h1>
+        <p className="mt-5 max-w-lg text-lg xl:text-xl leading-7 text-muted-foreground">
+          Build your account, tune your equipment interests, and unlock bidding-ready verification.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {["Infrastructure", "Biotech", "Pharma", "T&M"].map(pill => (
+            <span key={pill} className="rounded-full px-4 py-2 text-sm font-bold text-white" style={{ backgroundColor: "#2ec99a" }}>{pill}</span>
+          ))}
+        </div>
+      </aside>
+
+      {/* ── Right scrollable form column ── */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="min-h-full flex items-center justify-center px-4 py-10 sm:px-6 lg:px-12">
 
           {/* card â”€â”€ */}
-          <div className={authMode === "signup" ? "rounded-3xl bg-card shadow-panel ring-1 ring-border/70" : "w-full"}>
+          <div className={authMode === "signup" ? "w-full max-w-xl rounded-3xl bg-card shadow-panel ring-1 ring-border/70" : "w-full max-w-md"}>
 
             {/* â•â• SIGN IN â•â• */}
             {authMode === "signin" && (
@@ -504,66 +508,62 @@ const Auth = () => {
 
                       {/* First Name | Last Name */}
                       <label className="block">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>First Name</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>First Name</span>
                         <input placeholder="First Name" value={form.first_name} onChange={setF("first_name")} required
-                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
                       </label>
                       <label className="block">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Last Name</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Last Name</span>
                         <input placeholder="Last Name" value={form.last_name} onChange={setF("last_name")} required
-                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
                       </label>
 
                       {/* Email */}
                       <label className="block sm:col-span-2">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Email</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Email</span>
                         <input type="email" placeholder="name@company.com" value={form.email}
                           onChange={setF("email")} onFocus={() => { try { pushFormInteractEvent('registration', 'email'); } catch { } }} required
-                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
                       </label>
 
                       {/* Phone Number */}
                       <label className="block">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Phone Number</span>
-                        <div className="flex h-14 rounded-2xl border border-gray-200 bg-white focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 overflow-hidden">
-                          <select
-                            value={form.phoneCode}
-                            onChange={e => setForm(p => ({ ...p, phoneCode: e.target.value }))}
-                            className="h-full pl-3 pr-1 text-base bg-muted border-r border-input text-foreground focus:outline-none cursor-pointer shrink-0"
-                          >
-                            {PHONE_CODES.map(({ code, label }) => (
-                              <option key={code} value={code}>{label} {code}</option>
-                            ))}
-                          </select>
-                          <input type="tel" placeholder="+1 555 000 0000" value={form.phone} onChange={setF("phone")}
-                            className="flex-1 h-full px-4 text-xl font-medium bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground/55" />
-                        </div>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Phone Number</span>
+                        <PhoneInput
+                          international
+                          defaultCountry="CN"
+                          value={form.phone as any}
+                          onChange={(value) => setForm(p => ({ ...p, phone: (value || "") as any }))}
+                          placeholder="Enter phone number"
+                          className="phone-input-themed"
+                          limitMaxLength
+                        />
                       </label>
 
                       {/* Company Name */}
                       <label className="block">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Company Name</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Company Name</span>
                         <input placeholder="Your company / lab" value={form.company} onChange={setF("company")}
-                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
                       </label>
 
                       {/* Country */}
                       <label className="block">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Country</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Country</span>
                         <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))}
-                          className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 text-sm" />
+                          className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm" />
                       </label>
 
                       {/* Equipment Interest */}
                       <div className="block" ref={dropdownRef}>
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Equipment Interest</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Equipment Interest</span>
                         <div className="relative">
                           <button
                             type="button"
                             onClick={() => setInterestDropdownOpen(v => !v)}
                             className={cn(
-                              "w-full h-14 px-5 rounded-2xl border border-gray-200 bg-white text-sm flex items-center justify-between transition-all",
-                              interestDropdownOpen ? "border-indigo-500 ring-2 ring-indigo-100" : "border-gray-200 hover:border-gray-300"
+                              "w-full h-11 px-3.5 rounded-lg border bg-white text-sm flex items-center justify-between transition-all",
+                              interestDropdownOpen ? "border-emerald-700 ring-2 ring-emerald-700/20" : "border-gray-200 hover:border-gray-300"
                             )}
                           >
                             <span className={selectedInterests.length === 0 ? "text-muted-foreground/55" : "text-foreground"}>
@@ -621,25 +621,25 @@ const Auth = () => {
 
                       {/* Password */}
                       <label className="block sm:col-span-2">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Password</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Password</span>
                         <div className="relative">
                           <input type={showPassword ? "text" : "password"} placeholder="Enter password"
                             value={form.password} onChange={setF("password")} required
-                            className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
-                          <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
-                            {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 pr-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
+                          <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowPassword(v => !v)}>
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
-                        <span className="mt-3 block text-lg font-semibold text-muted-foreground">At least 8 characters, a capital letter and a special character</span>
+                        <span className="mt-1.5 block text-xs text-muted-foreground">At least 8 characters, a capital letter and a special character</span>
                       </label>
 
                       {/* Confirm Password */}
                       <label className="block sm:col-span-2">
-                        <span className="mb-2 block text-base font-bold text-gray-900"><span className="text-destructive mr-1">*</span>Confirm Password</span>
+                        <span className="mb-1.5 block text-sm font-semibold text-gray-700"><span className="text-destructive mr-1">*</span>Confirm Password</span>
                         <div className="relative">
                           <input type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password"
                             value={form.confirmPassword} onChange={setF("confirmPassword")} required
-                            className="h-14 w-full rounded-2xl border border-gray-200 bg-white px-5 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                            className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 pr-11 text-sm text-gray-900 placeholder:text-gray-400 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-700/20" />
                           <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowConfirmPassword(v => !v)}>
                             {showConfirmPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                           </button>
@@ -647,22 +647,24 @@ const Auth = () => {
                       </label>
 
                       {/* Become a Seller */}
-                      <label className="flex items-center gap-3 cursor-pointer p-4 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors sm:col-span-2">
+                      <label className="flex items-center gap-3 cursor-pointer p-3.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors sm:col-span-2">
                         <input
                           type="checkbox"
                           checked={wantToSell}
                           onChange={e => setWantToSell(e.target.checked)}
-                          className="w-5 h-5 accent-primary flex-shrink-0"
+                          className="w-4 h-4 accent-emerald-700 flex-shrink-0"
                         />
                         <div className="flex-1">
-                          <span className="text-base font-bold text-foreground">Become a Seller</span>
-                          <p className="text-sm text-muted-foreground mt-0.5">Register as a seller to list and auction your items. Requires admin approval.</p>
+                          <span className="text-sm font-semibold text-foreground">Become a Seller</span>
+                          <p className="text-xs text-muted-foreground mt-0.5">Register as a seller to list and auction your items. Requires admin approval.</p>
                         </div>
                       </label>
 
-                      <button type="submit" disabled={isSignupLoading}
-                        className="sm:col-span-2 mt-2 w-full rounded-2xl px-6 py-4 text-base font-bold text-white shadow-sm transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-                        style={{ background: "linear-gradient(135deg, hsl(215,60%,18%), hsl(180,65%,40%))" }}>
+                      <button
+                        type="submit"
+                        disabled={isSignupLoading}
+                        className="sm:col-span-2 mt-2 inline-flex w-full h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold text-white bg-[#0f4c2a] hover:bg-[#1a3c2a] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
                         {isSignupLoading ? "Creating Accountâ€¦" : "Create Account"}
                       </button>
                     </form>
@@ -680,9 +682,9 @@ const Auth = () => {
               </div>
             )}
 
-          </div>{/* end right card */}
-        </div>{/* end grid */}
-      </div>{/* end centered section */}
+          </div>{/* end card */}
+        </div>{/* end center wrapper */}
+      </main>{/* end scrollable right column */}
 
       {/* â”€â”€ Unverified / Pending account overlay modal â”€â”€ */}
       {unverifiedModal && (

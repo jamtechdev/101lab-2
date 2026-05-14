@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 import { User, Bell, Lock, Globe, CreditCard, FileText, Save, Shield, Settings as SettingsIcon, MapPin, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
 import {
@@ -396,16 +397,8 @@ const Settings = () => {
                 placeholder="+886 912 345 678"
                 value={phone}
                 onChange={(e) => {
-                  // Hard limit input length to 20 characters
-                  const next = e.target.value;
-                  if (next.length > 20) {
-                    setPhone(next.slice(0, 20));
-                  } else {
-                    setPhone(next);
-                  }
-                  if (phoneError) {
-                    setPhoneError(null);
-                  }
+                  setPhone(sanitizePhoneInput(e.target.value, 20));
+                  if (phoneError) setPhoneError(null);
                 }}
                 className={cn(
                   "border-border/50 focus:border-accent",

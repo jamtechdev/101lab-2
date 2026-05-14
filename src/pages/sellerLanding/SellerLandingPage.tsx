@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Header from "@/components/common/Header";
@@ -311,7 +312,9 @@ const SellerLandingPage = () => {
                         <option key={c.code} value={c.code}>{c.label}</option>
                       ))}
                     </select>
-                    <Input name="phone" type="tel" placeholder="Phone number" value={form.phone} onChange={handleChange} required className="border-border flex-1" />
+                    <Input name="phone" type="tel" placeholder="Phone number" value={form.phone}
+                      onChange={(e) => setForm((p: any) => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
+                      required className="border-border flex-1" />
                   </div>
                 </div>
 
