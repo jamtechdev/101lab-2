@@ -81,7 +81,7 @@ const PHONE_CODES = [
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -174,7 +174,7 @@ const Auth = () => {
     const clientId = "471881848291-9vg48o19oonnstms9hoj7c8noi2ab0ps.apps.googleusercontent.com";
     const redirectUri = encodeURIComponent("https://api.101recycle.greenbidz.com/auth/google/callback");
     const scope = encodeURIComponent("openid email profile");
-    const state = encodeURIComponent(JSON.stringify({ mode: authMode, type: userType }));
+    const state = encodeURIComponent(JSON.stringify({ mode: authMode, type: userType, lang: i18n.language || "en" }));
     window.location.href =
       `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&access_type=offline&prompt=select_account`;
   };
@@ -195,6 +195,7 @@ const Auth = () => {
         company: form.company, country: form.country,
         // industry: form.industry === "Other" ? `Other: ${form.industryOther}` : form.industry,
         interests: selectedInterests,
+        lang: i18n.language || "en",
       }).unwrap();
       try { pushRoleSelectedEvent(userType); } catch { }
       try { pushSignupEvent(userType); } catch { }

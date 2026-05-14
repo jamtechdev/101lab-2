@@ -247,6 +247,7 @@ export const apiSlice = createApi({
       postal_code?: string; country?: string;
       interests?: string[];
       industry?: string;
+      lang?: string;
     }>({
       query: (body) => ({
         url: `/user/signup-with-link?type=${SITE_TYPE_PROFILE}`,
