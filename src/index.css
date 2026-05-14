@@ -23,6 +23,13 @@
   border-color: #047857;        /* emerald-700 */
   box-shadow: 0 0 0 2px rgb(4 120 87 / 0.2);
 }
+.phone-input-themed-error {
+  border-color: hsl(var(--destructive)) !important;
+}
+.phone-input-themed-error:focus-within {
+  border-color: hsl(var(--destructive)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--destructive) / 0.2) !important;
+}
 .phone-input-themed .PhoneInputCountry {
   margin-right: 0.5rem;
 }
