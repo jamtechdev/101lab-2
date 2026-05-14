@@ -12,7 +12,7 @@ import {
   Eye, EyeOff,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SITE_TYPE_PROFILE } from "@/config/site";
+import { SITE_TYPE_PROFILE } from "@/config/site";   
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 const PHONE_CODES = [
