@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useGetBuyersQuery, useLazyGetBuyersQuery, useDeleteUsersMutation } from "@/rtk/slices/adminApiSlice";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { exportToExcel } from "@/utils/exportToExcel";
@@ -110,6 +111,7 @@ const AdminBuyers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
+  const [userStatusFilter, setUserStatusFilter] = useState<"approved" | "pending" | "all">("approved");
   const limit = 10;
   const navigate = useNavigate();
 
@@ -121,7 +123,9 @@ const AdminBuyers = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit, search: debouncedSearch || undefined });
+  useEffect(() => { setPage(1); }, [userStatusFilter]);
+
+  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: userStatusFilter });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllBuyers, { isLoading: exporting }] = useLazyGetBuyersQuery();
 
@@ -254,37 +258,54 @@ const AdminBuyers = () => {
               <h1 className="text-3xl font-bold tracking-tight">{t('admin.buyers.titleFull')}</h1>
               <p className="text-muted-foreground mt-1">{t('admin.buyers.subtitle')}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={exporting}
-              onClick={handleExport}
-              className="flex items-center gap-2 border-green-300 text-green-700 hover:bg-green-50 hover:border-green-500"
-            >
-              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <span className="text-base">⬇</span>}
-              {exporting ? "Exporting..." : "Export Excel"}
-            </Button>
+            <div className="relative inline-block">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                onClick={handleExport}
+                className="flex items-center gap-2 border-green-300 text-green-700 opacity-70 cursor-not-allowed"
+              >
+                <span className="text-base">⬇</span>
+                Export Excel
+              </Button>
+              <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow whitespace-nowrap">
+                Coming Soon
+              </span>
+            </div>
           </div>
 
           {/* SUMMARY CARDS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             <StatCard title={t('admin.buyers.totalBuyers')} value={data.stats.total_buyers} icon={Users} color="bg-blue-500" />
-            <StatCard title={t('admin.buyers.activeBuyers')} value={filteredBuyers.filter((b: any) => b.status !== "0" && b.status).length} icon={CheckCircle2} color="bg-green-500" />
+            <StatCard title={t('admin.buyers.activeBuyers')} value={filteredBuyers.filter((b: any) => b.status === "approved").length} icon={CheckCircle2} color="bg-green-500" />
             <StatCard title={t('admin.buyers.newThisMonth')} value={data.stats.new_this_month} icon={TrendingUp} color="bg-purple-500" />
             <StatCard title={t('admin.buyers.totalPurchases')} value={data.stats.total_purchases} icon={ShoppingCart} color="bg-amber-500" />
           </div>
 
-          {/* SEARCH */}
+          {/* SEARCH + FILTER */}
           <Card className="shadow-sm border-0 bg-gradient-to-r from-background to-muted/30">
             <CardContent className="p-5">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="text" placeholder={t('admin.buyers.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11 border-2 focus:border-primary/50" />
-                {searchQuery && (
-                  <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7" onClick={() => setSearchQuery("")}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input type="text" placeholder={t('admin.buyers.searchPlaceholder')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-11 border-2 focus:border-primary/50" />
+                  {searchQuery && (
+                    <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 w-7" onClick={() => setSearchQuery("")}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <Select value={userStatusFilter} onValueChange={(v) => setUserStatusFilter(v as "approved" | "pending" | "all")}>
+                  <SelectTrigger className="w-full sm:w-[200px] h-11 border-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="approved">{t('admin.buyers.statusApproved', 'Approved')}</SelectItem>
+                    <SelectItem value="pending">{t('admin.buyers.statusPending', 'Pending Review')}</SelectItem>
+                    <SelectItem value="all">{t('admin.buyers.statusAll', 'All')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -432,9 +453,15 @@ const AdminBuyers = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge className={buyer.status === "0" || !buyer.status ? "bg-red-500 hover:bg-red-600 text-white border-0" : "bg-green-500 hover:bg-green-600 text-white border-0"}>
-                              {buyer.status === "0" || !buyer.status ? t('admin.status.inactive', 'Inactive') : t('admin.status.active')}
-                            </Badge>
+                            {buyer.status === "approved" ? (
+                              <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                                {t('admin.status.active', 'Active')}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
+                                {t('admin.usersPage.pendingReview', 'Pending Review')}
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

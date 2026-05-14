@@ -1,9 +1,47 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'react-phone-number-input/style.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Phone input theming (react-phone-number-input) ─────────────────── */
+/* Wraps the whole field in our standard h-11 rounded-lg box so it matches
+   every other input on the auth pages. */
+.phone-input-themed {
+  height: 2.75rem;             /* h-11 */
+  border-radius: 0.5rem;       /* rounded-lg */
+  border: 1px solid rgb(229 231 235);  /* border-gray-200 */
+  background: #fff;
+  padding: 0 0.25rem 0 0.75rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.phone-input-themed:focus-within {
+  border-color: #047857;        /* emerald-700 */
+  box-shadow: 0 0 0 2px rgb(4 120 87 / 0.2);
+}
+.phone-input-themed .PhoneInputCountry {
+  margin-right: 0.5rem;
+}
+.phone-input-themed .PhoneInputCountrySelect {
+  font-size: 0.875rem;
+}
+.phone-input-themed .PhoneInputInput {
+  flex: 1 1 0%;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0 !important;
+  background: transparent;
+  font-size: 0.875rem;
+  color: rgb(17 24 39);
+}
+.phone-input-themed .PhoneInputInput::placeholder {
+  color: rgb(156 163 175);
+}
 
 /* ✨ Rich text display — used wherever SunEditor HTML is rendered on buyer/seller pages */
 .rich-content {

@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,7 +150,8 @@ const CompleteProfileForm = ({ onSuccess }: Props) => {
               </select>
               <input
                 type="tel" placeholder={t("auth.phonePlaceholder")}
-                value={form.phone} onChange={setF("phone")}
+                value={form.phone}
+                onChange={(e) => setForm(prev => ({ ...prev, phone: sanitizePhoneInput(e.target.value) }))}
                 className="flex-1 h-full px-3 text-sm bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground"
               />
             </div>

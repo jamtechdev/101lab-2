@@ -82,6 +82,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">
   var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  // Hide widget by default on first load so it doesn't flash on dashboard / admin pages.
+  // TawkVisibilityController (React) will reveal it on allowed public routes.
+  Tawk_API.onLoad = function() {
+    try { Tawk_API.hideWidget(); } catch (e) {}
+  };
   (function(){
   var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
   s1.async=true;

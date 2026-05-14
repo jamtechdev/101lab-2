@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef, useCallback } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Search, Star, Clock, BadgeCheck, X, Send, Loader2, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -193,7 +194,7 @@ function RequestModal({
                 <Input
                   type="tel"
                   value={form.phone}
-                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
                   placeholder={t("wanted.postModal.phonePlaceholder")}
                   className="h-9 text-sm"
                 />

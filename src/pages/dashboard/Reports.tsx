@@ -5,11 +5,86 @@ import DashboardLayout from "@/components/layouts/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, Download, FileText, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FileText, TrendingUp, Loader2 } from "lucide-react";
 import { useLazyGetBatchExcelQuery } from "@/rtk/slices/bidApiSlice";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import axios from "axios";
+
+// Map raw batch statuses → human label + on-brand color theme.
+// Any unknown status falls back to the "default" entry below.
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; dot: string; border: string }> = {
+  publish: {
+    label: "Published",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+    border: "border-emerald-200",
+  },
+  published: {
+    label: "Published",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    dot: "bg-emerald-500",
+    border: "border-emerald-200",
+  },
+  live_for_bids: {
+    label: "Live for Bids",
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    dot: "bg-blue-500",
+    border: "border-blue-200",
+  },
+  sold: {
+    label: "Sold",
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    dot: "bg-purple-500",
+    border: "border-purple-200",
+  },
+  inspection_schedule: {
+    label: "Inspection Scheduled",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    dot: "bg-amber-500",
+    border: "border-amber-200",
+  },
+  deactivated: {
+    label: "Deactivated",
+    bg: "bg-gray-100",
+    text: "text-gray-600",
+    dot: "bg-gray-400",
+    border: "border-gray-200",
+  },
+  pending: {
+    label: "Pending",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    dot: "bg-amber-500",
+    border: "border-amber-200",
+  },
+};
+const DEFAULT_STATUS = {
+  label: "Unknown",
+  bg: "bg-gray-50",
+  text: "text-gray-600",
+  dot: "bg-gray-400",
+  border: "border-gray-200",
+};
+
+const getStatusConfig = (status: string | undefined | null) => {
+  if (!status) return DEFAULT_STATUS;
+  return STATUS_CONFIG[String(status).toLowerCase()] || DEFAULT_STATUS;
+};
+
+const formatReportDate = (raw: string | undefined | null) => {
+  if (!raw) return "—";
+  const first = String(raw).split(",")[0]?.trim();
+  if (!first) return "—";
+  const d = new Date(first);
+  if (isNaN(d.getTime())) return first;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+};
 
 const Reports = () => {
   const { t } = useTranslation();
@@ -17,6 +92,7 @@ const Reports = () => {
   // Use companySellerId for data (company-level), fallback to userId
   const companySellerId = localStorage.getItem("companySellerId") || localStorage.getItem("userId");
   const [page, setPage] = useState(1);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const limit = 10;
 
   const { data: reportData, isLoading, isFetching, isError } = useGetSellerReportQuery({
@@ -27,19 +103,16 @@ const Reports = () => {
 
 
   const downloadExcel = async (batchId: number) => {
+    setDownloadingId(batchId);
     try {
       const baseUrl = import.meta.env.VITE_PRODUCTION_URL || "";
       const url = `${baseUrl}reports/batch/${batchId}/excel?type=${SITE_TYPE}`;
-
-      const response = await axios.get(url, {
-        responseType: "blob", // important: tells Axios to treat response as binary
-      });
-
-      // Save file using file-saver
+      const response = await axios.get(url, { responseType: "blob" });
       saveAs(response.data, `batch-${batchId}-report.xlsx`);
-
     } catch (err) {
       console.error("Error downloading Excel:", err);
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -101,8 +174,13 @@ const Reports = () => {
     );
   }
 
-  const completedReports = reports.filter(r => r.status === "Completed").length;
-  const pendingReports = reports.filter(r => r.status === "Pending").length;
+  // Real status breakdown across the current page (instead of the broken
+  // "Completed / Pending" counters that never matched any actual status value).
+  const statusBreakdown = reports.reduce<Record<string, number>>((acc, r) => {
+    const key = String(r.status || "unknown").toLowerCase();
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   const totalPages = reportData?.pagination?.total_pages || 1;
 
@@ -136,8 +214,23 @@ const Reports = () => {
                 <TrendingUp className="w-5 h-5 text-accent" />
                 {t("reports.overview")}
               </CardTitle>
-              <div className="text-sm text-muted-foreground">
-                {completedReports} {t("reports.completed")}, {pendingReports} {t("reports.pending")}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {Object.entries(statusBreakdown).length === 0 ? (
+                  <span className="text-xs text-muted-foreground">{t("reports.noReports")}</span>
+                ) : (
+                  Object.entries(statusBreakdown).map(([statusKey, count]) => {
+                    const cfg = getStatusConfig(statusKey);
+                    return (
+                      <span
+                        key={statusKey}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                        {count} {cfg.label}
+                      </span>
+                    );
+                  })
+                )}
               </div>
             </div>
           </CardHeader>
@@ -147,14 +240,15 @@ const Reports = () => {
               <table className="w-full">
                 <thead className="bg-muted/50 border-b-2 border-border">
                   <tr>
-                    <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide">
-                      {t('reports.reportId')}
-                    </th>
+                    <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide w-14">#</th>
                     <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide">
                       {t('submissions.batchId')}
                     </th>
                     <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide">
                       {t('submissions.category')}
+                    </th>
+                    <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide">
+                      {t('submissions.posted', 'Date')}
                     </th>
                     <th className="text-left py-4 px-6 font-semibold text-foreground text-sm tracking-wide">
                       {t('submissions.status')}
@@ -165,57 +259,71 @@ const Reports = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {reports.map((report, index) => (
-                    <tr
-                      key={report.id}
-                      className="hover:bg-muted/20 transition-all duration-200 group"
-                    >
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-semibold text-sm">
-                            {index + 1}
+                  {reports.map((report, index) => {
+                    const cfg = getStatusConfig(report.status);
+                    const rowNumber = (page - 1) * limit + index + 1;
+                    const isDownloading = downloadingId === report.batch_id;
+                    return (
+                      <tr
+                        key={report.id}
+                        className="hover:bg-muted/20 transition-all duration-200 group"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground font-semibold text-xs">
+                            {rowNumber}
                           </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="font-mono text-sm font-medium text-foreground">
-                          {report.batchId}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-muted-foreground">
-                          {report.category || "N/A"}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${report.status === "Completed"
-                            ? "bg-accent/15 text-accent border border-accent/30"
-                            : "bg-muted text-muted-foreground border border-border"
-                            }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full mr-2 ${report.status === "live_for_bids" ? "bg-accent" : "bg-muted-foreground"
-                            }`}></span>
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex justify-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadExcel(report.batch_id)}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-mono text-sm font-medium text-foreground">
+                            {report.batchId}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 max-w-[260px]">
+                          <span className="text-sm text-muted-foreground block truncate" title={report.category || "N/A"}>
+                            {report.category || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm text-muted-foreground tabular-nums">
+                            {formatReportDate(report.postDate)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border}`}
                           >
-                            <Download className="w-4 h-4" />
-                            {t('reports.download')}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex justify-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={isDownloading}
+                              onClick={() => downloadExcel(report.batch_id)}
+                            >
+                              {isDownloading ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  {t('reports.downloading', 'Downloading…')}
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4" />
+                                  {t('reports.download')}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {reports.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-12">
+                      <td colSpan={6} className="text-center py-12">
                         <div className="flex flex-col items-center gap-3">
                           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
                             <FileText className="w-8 h-8 text-muted-foreground" />
@@ -225,7 +333,7 @@ const Reports = () => {
                               {t('reports.noReports')}
                             </p>
                             <p className="text-sm text-muted-foreground/70 mt-1">
-                              Reports will appear here once they are generated
+                              {t('reports.noReportsHint', 'Reports will appear here once they are generated')}
                             </p>
                           </div>
                         </div>
@@ -236,24 +344,26 @@ const Reports = () => {
               </table>
             </div>
 
-            <div className="flex justify-end items-center gap-2 mt-4">
+            <div className="flex justify-end items-center gap-2 p-4 border-t border-border">
               <Button
                 size="sm"
+                variant="outline"
                 disabled={page <= 1}
                 onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
               >
                 <ChevronLeft className="w-4 h-4" />
-                Prev
+                {t('reports.prev', 'Prev')}
               </Button>
-              <span className="text-sm">
-                Page {page} of {totalPages}
+              <span className="text-sm text-muted-foreground tabular-nums px-2">
+                {t('reports.pageOf', { page, total: totalPages, defaultValue: 'Page {page} of {total}' })}
               </span>
               <Button
                 size="sm"
+                variant="outline"
                 disabled={page >= totalPages}
                 onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
               >
-                Next
+                {t('reports.next', 'Next')}
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

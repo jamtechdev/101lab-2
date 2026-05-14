@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -209,7 +210,7 @@ const AdminSettings = () => {
                       id="phone"
                       placeholder="+886 912 345 678"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
                       className="border-border/50 focus:border-accent"
                     />
                   </div>

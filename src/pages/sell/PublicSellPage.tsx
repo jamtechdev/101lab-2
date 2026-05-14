@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useRef, useCallback, useEffect } from "react";
+import { sanitizePhoneInput } from "@/utils/phoneInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -257,7 +258,8 @@ function AuthGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
                         <option key={code} value={code}>{label} {code}</option>
                       ))}
                     </select>
-                    <input type="tel" placeholder="555 000 0000" value={form.phone} onChange={setF("phone")}
+                    <input type="tel" placeholder="555 000 0000" value={form.phone}
+                      onChange={(e) => setForm(p => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
                       className="flex-1 h-full px-4 text-sm font-medium bg-transparent focus:outline-none text-foreground placeholder:text-muted-foreground/55" />
                   </div>
                 </label>
