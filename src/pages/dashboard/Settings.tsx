@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/i18n/config";
 import { User, Bell, Lock, Globe, CreditCard, FileText, Save, Shield, Settings as SettingsIcon, MapPin, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sanitizePhoneInput } from "@/utils/phoneInput";
+import PhoneInput from "react-phone-number-input";
 import { useLanguageAwareCategories } from "@/hooks/useLanguageAwareCategories";
 
 import {
@@ -392,18 +392,21 @@ const Settings = () => {
               >
                 {t("settings.phoneNumber")}
               </Label>
-              <Input
+              <PhoneInput
                 id="phone"
-                placeholder="+886 912 345 678"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(sanitizePhoneInput(e.target.value, 20));
+                international
+                defaultCountry="TW"
+                placeholder="Enter phone number"
+                value={phone as any}
+                onChange={(value) => {
+                  setPhone((value || "") as any);
                   if (phoneError) setPhoneError(null);
                 }}
                 className={cn(
-                  "border-border/50 focus:border-accent",
-                  phoneError && "border-destructive focus-visible:ring-destructive"
+                  "phone-input-themed",
+                  phoneError && "phone-input-themed-error"
                 )}
+                limitMaxLength
               />
               {phoneError && (
                 <p className="text-xs text-destructive">{phoneError}</p>
