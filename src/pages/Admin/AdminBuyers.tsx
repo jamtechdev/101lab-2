@@ -36,7 +36,6 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useGetBuyersQuery, useLazyGetBuyersQuery, useDeleteUsersMutation } from "@/rtk/slices/adminApiSlice";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { exportToExcel } from "@/utils/exportToExcel";
@@ -104,6 +103,19 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string; v
   </Card>
 );
 
+const BuyerStatusBadge = ({ status }: { status: string }) => {
+  const s = status?.toLowerCase();
+  if (s === "approved" || s === "active")
+    return <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">Active</Badge>;
+  if (s === "pending" || s === "profile_incomplete")
+    return <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">Pending</Badge>;
+  if (s === "suspended")
+    return <Badge className="bg-red-500 hover:bg-red-600 text-white border-0">Suspended</Badge>;
+  if (s === "deactive" || s === "inactive")
+    return <Badge className="bg-slate-400 hover:bg-slate-500 text-white border-0">Inactive</Badge>;
+  return <Badge variant="outline" className="capitalize">{status || "—"}</Badge>;
+};
+
 const AdminBuyers = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
@@ -111,7 +123,6 @@ const AdminBuyers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
-  const [userStatusFilter, setUserStatusFilter] = useState<"approved" | "pending" | "all">("approved");
   const limit = 10;
   const navigate = useNavigate();
 
@@ -123,9 +134,7 @@ const AdminBuyers = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => { setPage(1); }, [userStatusFilter]);
-
-  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: userStatusFilter });
+  const { data, isLoading, isFetching, isError, refetch } = useGetBuyersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: "all" });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllBuyers, { isLoading: exporting }] = useLazyGetBuyersQuery();
 
@@ -296,16 +305,6 @@ const AdminBuyers = () => {
                     </Button>
                   )}
                 </div>
-                <Select value={userStatusFilter} onValueChange={(v) => setUserStatusFilter(v as "approved" | "pending" | "all")}>
-                  <SelectTrigger className="w-full sm:w-[200px] h-11 border-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved">{t('admin.buyers.statusApproved', 'Approved')}</SelectItem>
-                    <SelectItem value="pending">{t('admin.buyers.statusPending', 'Pending Review')}</SelectItem>
-                    <SelectItem value="all">{t('admin.buyers.statusAll', 'All')}</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>
@@ -453,15 +452,7 @@ const AdminBuyers = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {buyer.status === "approved" ? (
-                              <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                                {t('admin.status.active', 'Active')}
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
-                                {t('admin.usersPage.pendingReview', 'Pending Review')}
-                              </Badge>
-                            )}
+                            <BuyerStatusBadge status={buyer.status} />
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

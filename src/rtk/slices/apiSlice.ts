@@ -517,11 +517,19 @@ export const apiSlice = createApi({
       }),
     }),
 
-    getSellerUpgradeRequests: builder.query<{ success: boolean; data: any[] }, { status?: string }>({
-      query: ({ status } = {}) => ({
-        url: `/seller-upgrade/requests${status ? `?status=${status}` : ""}`,
-        method: "GET",
-      }),
+    getSellerUpgradeRequests: builder.query<
+      { success: boolean; data: any[]; total: number; page: number; limit: number; totalPages: number; pendingCount: number; approvedCount: number; rejectedCount: number },
+      { status?: string; search?: string; page?: number; limit?: number }
+    >({
+      query: ({ status, search, page = 1, limit = 15 } = {}) => {
+        const params = new URLSearchParams();
+        if (status)           params.set("status", status);
+        if (search)           params.set("search", search);
+        if (page  !== 1)      params.set("page",   String(page));
+        if (limit !== 15)     params.set("limit",  String(limit));
+        const qs = params.toString();
+        return { url: `/seller-upgrade/requests${qs ? `?${qs}` : ""}`, method: "GET" };
+      },
     }),
 
     approveSellerUpgradeRequest: builder.mutation<
