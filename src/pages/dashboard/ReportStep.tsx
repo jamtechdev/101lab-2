@@ -276,7 +276,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
         completePickup: true,
       }).unwrap();
 
-      toast.success(t('steps.step5.transactionCompletedSuccess') || "Transaction completed successfully! All parties have been notified.");
+      toast.success(t('steps.step5.transactionCompletedSuccess'));
 
       // Refetch report to get updated status
       refetch();
@@ -385,7 +385,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                 {t('steps.step5.paymentConfirmedTitle')}
               </h2>
               <p className="text-muted-foreground mt-1">
-                付款已收到，現在可以安排取貨時間 (Payment received, you can now arrange pickup)
+                {t('steps.step5.paymentReceivedDesc')}
               </p>
             </div>
           </div>
@@ -394,22 +394,20 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
         {/* --------------------- INSPECTION TABLE -------------------------- */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>查驗參與公司 (Inspection Participants)</CardTitle>
+            <CardTitle>{t('steps.step5.inspectionParticipants')}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              ({companiesRegistered} companies registered, {companiesAttended} attended inspection)
-              {/* 共 {companiesRegistered} 家公司註冊，{companiesAttended} 家完成查驗 */}
+              {t('steps.step5.companiesStats', { registered: companiesRegistered, attended: companiesAttended })}
             </p>
 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>公司名稱 (Company)</TableHead>
-                  {/* <TableHead>國家 (Country)</TableHead> */}
-                  <TableHead>聯絡人 (Name)</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>狀態 (Status)</TableHead>
+                  <TableHead>{t('steps.step5.columnCompany')}</TableHead>
+                  <TableHead>{t('steps.step5.columnName')}</TableHead>
+                  <TableHead>{t('steps.step5.columnEmail')}</TableHead>
+                  <TableHead>{t('steps.step5.columnStatus')}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -423,10 +421,10 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                     <TableCell>
                       {company.attended ? (
                         <Badge className="bg-green-500">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />   已查驗 (Attended)
+                          <CheckCircle2 className="w-3 h-3 mr-1" />{t('steps.step5.badgeAttended')}
                         </Badge>
                       ) : (
-                        <Badge variant="outline">未出席 (Not Attended)</Badge>
+                        <Badge variant="outline">{t('steps.step5.badgeNotAttended')}</Badge>
                       )}
                     </TableCell>
                   </TableRow>
@@ -440,7 +438,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
         <Card className="mb-8">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>所有出價紀錄 (All Bids Received)</CardTitle>
+              <CardTitle>{t('steps.step5.allBids')}</CardTitle>
               {/* <Button variant="outline" onClick={handleDownloadReport}>
                 <Download className="w-4 h-4 mr-2" />       下載報告 (Download)
               </Button> */}
@@ -452,11 +450,10 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Bid ID</TableHead>
-                  <TableHead>公司名稱 (Company)</TableHead>
-                  <TableHead>聯絡人 (Contact)</TableHead>
-                  {/* <TableHead>國家 (Country)</TableHead> */}
-                  <TableHead className="text-right">出價 (Amount)</TableHead>
-                  <TableHead>狀態 (Status)</TableHead>
+                  <TableHead>{t('steps.step5.columnCompany')}</TableHead>
+                  <TableHead>{t('steps.step5.columnContact')}</TableHead>
+                  <TableHead className="text-right">{t('steps.step5.columnAmount')}</TableHead>
+                  <TableHead>{t('steps.step5.columnStatus')}</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -481,10 +478,10 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                         <TableCell>
                           {isWinner ? (
                             <Badge className="bg-accent text-white">
-                              <Award className="w-3 h-3 mr-1" />      得標 (Winner)
+                              <Award className="w-3 h-3 mr-1" />{t('steps.step5.badgeWinner')}
                             </Badge>
                           ) : (
-                            <Badge variant="outline">未得標 (Not Selected)</Badge>
+                            <Badge variant="outline">{t('steps.step5.badgeNotSelected')}</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -500,21 +497,21 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
           <Card className="mb-8 border-accent">
             <CardHeader className="bg-accent/5">
               <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-accent" />得標詳情 (Winner Details)
+                <Award className="w-5 h-5 text-accent" />{t('steps.step5.winnerDetails')}
               </CardTitle>
             </CardHeader>
 
             <CardContent className="space-y-4 pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">公司名稱 (Company Name)</p>
+                  <p className="text-sm text-muted-foreground">{t('steps.step5.labelCompanyName')}</p>
                   <p className="font-semibold text-lg">
                     {winningBid.companyName}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">聯絡人 (Contact Person)</p>
+                  <p className="text-sm text-muted-foreground">{t('steps.step5.labelContactPerson')}</p>
                   <p className="font-semibold text-lg">
                     {winningBid.contactName}
                   </p>
@@ -522,7 +519,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
 
 
                 <div>
-                  <p className="text-sm text-muted-foreground">電子郵件 (Email)</p>
+                  <p className="text-sm text-muted-foreground">{t('steps.step5.labelEmail')}</p>
                   <p className="font-semibold text-lg">
                     {winningBid.email}
                   </p>
@@ -530,14 +527,14 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
 
 
                 <div>
-                  <p className="text-sm text-muted-foreground">國家 (Country)</p>
+                  <p className="text-sm text-muted-foreground">{t('steps.step5.labelCountry')}</p>
                   <p className="font-semibold text-lg">
                     {winningBid.country}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">得標金額 (Winning Amount)</p>
+                  <p className="text-sm text-muted-foreground">{t('steps.step5.labelWinningAmount')}</p>
                   <p className="font-semibold text-accent text-2xl">
                     {formatCurrency(winningBid.amount, winningBid.currency)}
                   </p>
@@ -645,7 +642,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                         <div className="mt-2 p-3 border border-input rounded-md bg-muted/30 space-y-2">
                           {/* Start time */}
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground w-10">From</span>
+                            <span className="text-xs text-muted-foreground w-10">{t('steps.step5.fromTime')}</span>
                             <select
                               value={customStart.hour}
                               onChange={(e) => setCustomStart(p => ({ ...p, hour: e.target.value }))}
@@ -669,13 +666,13 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                               onChange={(e) => setCustomStart(p => ({ ...p, period: e.target.value }))}
                               className="flex-1 px-2 py-1.5 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                             >
-                              <option value="AM">AM</option>
-                              <option value="PM">PM</option>
+                              <option value="AM">{t('time.AM')}</option>
+                              <option value="PM">{t('time.PM')}</option>
                             </select>
                           </div>
                           {/* End time */}
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground w-10">To</span>
+                            <span className="text-xs text-muted-foreground w-10">{t('steps.step5.toTime')}</span>
                             <select
                               value={customEnd.hour}
                               onChange={(e) => {
@@ -708,8 +705,8 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                               }}
                               className="flex-1 px-2 py-1.5 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                             >
-                              <option value="AM">AM</option>
-                              <option value="PM">PM</option>
+                              <option value="AM">{t('time.AM')}</option>
+                              <option value="PM">{t('time.PM')}</option>
                             </select>
                           </div>
                           {/* Save custom slot */}
@@ -723,7 +720,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
                               setIsCustomSlot(false);
                             }}
                           >
-                            Use this time
+                            {t('steps.step5.useThisTime')}
                           </Button>
                         </div>
                       )}
@@ -902,7 +899,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
 
               <div className="pt-4 border-t">
                 <p className="text-sm text-muted-foreground mb-4">
-                  {t('steps.step5.confirmTransactionCompletionDesc') || "Click the button below to confirm that the transaction is completed. This will notify the buyer, 101Recycle, and administrators."}
+                  {t('steps.step5.confirmTransactionCompletionDesc')}
                 </p>
                 <Button
                   onClick={handleConfirmTransactionCompleted}
@@ -938,28 +935,28 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
         {/* ------------------------ SUMMARY ------------------------ */}
         <Card className="mb-8 bg-muted/30">
           <CardHeader>
-            <CardTitle>交易摘要 (Transaction Summary)</CardTitle>
+            <CardTitle>{t('steps.step5.transactionSummary')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
-                <p className="text-sm text-muted-foreground">查驗參與數</p>
+                <p className="text-sm text-muted-foreground">{t('steps.step5.statInspectionAttended')}</p>
                 <p className="text-2xl font-bold">{companiesAttended}</p>
-                <p className="text-xs text-muted-foreground">companies attended</p>
+                <p className="text-xs text-muted-foreground">{t('steps.step5.statCompaniesAttended')}</p>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">總出價數</p>
+                <p className="text-sm text-muted-foreground">{t('steps.step5.statTotalBids')}</p>
                 <p className="text-2xl font-bold">{totalBids}</p>
-                <p className="text-xs text-muted-foreground">total bids received</p>
+                <p className="text-xs text-muted-foreground">{t('steps.step5.statTotalBidsReceived')}</p>
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground">成交金額</p>
+                <p className="text-sm text-muted-foreground">{t('steps.step5.statFinalAmount')}</p>
                 <p className="text-2xl font-bold text-accent">
                   {winningAmount ? formatCurrency(Number(winningAmount), "USD") : "-"}
                 </p>
-                <p className="text-xs text-muted-foreground">winning amount</p>
+                <p className="text-xs text-muted-foreground">{t('steps.step5.statWinningAmount')}</p>
               </div>
             </div>
           </CardContent>
@@ -990,7 +987,7 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
               className="bg-accent"
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
-              Deal Done
+              {t('steps.step5.dealDone')}
             </Button>
           )}
 
