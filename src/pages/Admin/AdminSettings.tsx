@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
@@ -33,7 +32,7 @@ import {
 const AdminSettings = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+  const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [autoApprove, setAutoApprove] = useState(false);
@@ -137,13 +136,7 @@ const AdminSettings = () => {
       <AdminSidebar activePath="/admin/settings" />
 
       <div
-        className={cn(
-          "transition-all duration-300 min-h-screen flex flex-col overflow-hidden",
-          // Desktop: margin based on sidebar collapsed state
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-          // Mobile: no margin (sidebar is overlay)
-          "ml-0"
-        )}
+        className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-56 ml-0"
       >
         {/* Mobile header with menu button */}
         <header className="sticky top-0 z-30 bg-card border-b border-border shadow-sm lg:hidden">

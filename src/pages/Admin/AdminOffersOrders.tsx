@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
-import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { cn } from "@/lib/utils";
 import { SITE_TYPE } from "@/config/site";
 import {
@@ -368,7 +367,6 @@ function TableSkeleton({ cols }: { cols: number }) {
 /* ── Page ─────────────────────────────────────────────── */
 export default function AdminOffersOrders() {
   const navigate = useNavigate();
-  const { sidebarCollapsed } = useAdminSidebar();
 
   const [section, setSection] = useState<"offers" | "buynow">("offers");
   const [platform, setPlatform] = useState<string>(SITE_TYPE);
@@ -431,7 +429,7 @@ export default function AdminOffersOrders() {
   return (
     <div className="flex min-h-screen bg-gray-50/60">
       <AdminSidebar activePath="/admin/offers" />
-      <main className={cn("flex-1 transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+      <main className="flex-1 transition-all duration-300 lg:pl-56">
         <AdminHeader />
         <div className="p-6 max-w-[1700px] mx-auto space-y-5">
 

@@ -26,7 +26,7 @@ import {
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { Menu } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 
 import {
     ArrowLeft,
@@ -266,7 +266,7 @@ export default function BuyerDetails() {
         setInspectionPage(1);
     };
 
-    const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+    const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
     return (
         <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
@@ -275,13 +275,7 @@ export default function BuyerDetails() {
 
             {/* --- MAIN CONTENT --- */}
             <div
-                className={cn(
-                    "transition-all duration-300 p-4 lg:p-6 space-y-4 animate-in   fade-in-50 duration-500",
-                    // Desktop: margin based on sidebar collapsed state
-                    sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-                    // Mobile: no margin (sidebar is overlay)
-                    "ml-0"
-                )}
+                className="transition-all duration-300 p-4 lg:p-6 space-y-4 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
             >
 
                 <AdminHeader />

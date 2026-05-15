@@ -242,7 +242,7 @@ const AdminSellers = () => {
   
 
 
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+  const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
   // ---------------- Loading States ----------------
   if (isLoading) {
@@ -250,11 +250,7 @@ const AdminSellers = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <AdminSidebar activePath="/admin/sellers" />
         <div
-          className={cn(
-            "transition-all duration-300 min-h-screen overflow-y-auto",
-            sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-            "ml-0"
-          )}
+          className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
         >
           <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
             <div className="space-y-2">
@@ -296,11 +292,7 @@ const AdminSellers = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-background">
         <AdminSidebar activePath="/admin/sellers" />
         <div
-          className={cn(
-            "transition-all duration-300 min-h-screen flex justify-center items-center",
-            sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-            "ml-0"
-          )}
+          className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0"
         >
           <Card className="border-destructive">
             <CardHeader>
@@ -334,13 +326,7 @@ const AdminSellers = () => {
       <AdminSidebar activePath="/admin/sellers" />
 
       <div
-        className={cn(
-          "transition-all duration-300 min-h-screen overflow-y-auto",
-          // Desktop: margin based on sidebar collapsed state
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-          // Mobile: no margin (sidebar is overlay)
-          "ml-0"
-        )}
+        className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
       >
         {/* Mobile header with menu button */}
         {false &&
@@ -537,7 +523,7 @@ const AdminSellers = () => {
                         <TableRow
                           key={seller.seller_id}
                           className={`hover:bg-muted/30 transition-colors cursor-pointer ${selectedIds.includes(seller.seller_id) ? "bg-red-50/40" : ""}`}
-                          onClick={() => navigate(`/admin/sellers/${seller.seller_id}`)}
+                          onClick={() => navigate(`/admin/users/${seller.seller_id}`)}
                         >
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <input
@@ -609,7 +595,7 @@ const AdminSellers = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/admin/sellers/${seller.seller_id}`)}
+                                onClick={() => navigate(`/admin/users/${seller.seller_id}`)}
                               >
                                 {t('admin.common.details', 'Details')}
                               </Button>

@@ -4,7 +4,6 @@ import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
 import AdminHeader from "./AdminHeader";
 import { Loader } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
@@ -28,7 +27,7 @@ export default function AdminSellerList() {
     const [error, setError] = useState("");
 
     const { t } = useTranslation();
-    const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+    const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
     const dispatch = useDispatch()
 
@@ -111,13 +110,7 @@ export default function AdminSellerList() {
             <AdminSidebar activePath="/admin/sellers/chat" />
 
             <div
-                className={cn(
-                    "transition-all duration-300 min-h-screen flex flex-col overflow-hidden",
-                    // Desktop: margin based on sidebar collapsed state
-                    sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-                    // Mobile: no margin (sidebar is overlay)
-                    "ml-0"
-                )}
+                className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-56 ml-0"
             >
 
                 {loading &&

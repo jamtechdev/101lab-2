@@ -203,7 +203,7 @@ const AdminSellersDetails = () => {
             .slice(0, 2);
     };
 
-    const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+    const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
     // ---- Loading UI ----
     if (batchLoading) {
@@ -211,11 +211,7 @@ const AdminSellersDetails = () => {
             <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
                 <AdminSidebar activePath="/admin/sellers" />
                 <div
-                    className={cn(
-                        "transition-all duration-300 min-h-screen flex justify-center items-center",
-                        sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-                        "ml-0"
-                    )}
+                    className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0"
                 >
                     <div className="w-16 h-16 border-4 border-accent/20 border-t-accent rounded-full animate-spin"></div>
                 </div>
@@ -228,13 +224,7 @@ const AdminSellersDetails = () => {
             <AdminSidebar activePath="/admin/sellers" />
 
             <div
-                className={cn(
-                    "transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500",
-                    // Desktop: margin based on sidebar collapsed state
-                    sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-                    // Mobile: no margin (sidebar is overlay)
-                    "ml-0"
-                )}
+                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
             >
                 {/* Mobile header with menu button */}
                 {false &&

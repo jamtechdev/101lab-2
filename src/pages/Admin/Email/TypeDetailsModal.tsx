@@ -162,19 +162,11 @@ const EmailTypeDetailsPage: React.FC = () => {
     toast.success("Message activated");
   };
 
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
-
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
+    <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar activePath="/admin/settings/email" />
 
-      <div
-        className={cn(
-          "transition-all duration-300 p-4 lg:px-8 animate-in fade-in-50 duration-500",
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-          "ml-0"
-        )}
-      >
+      <div className="lg:pl-56">
         <AdminHeader />
         <Toaster position="top-right" toastOptions={{
           className: 'font-medium',

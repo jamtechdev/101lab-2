@@ -20,7 +20,7 @@ export default function AdminChat() {
     const userId = localStorage.getItem("userId")
 
     const numericSellerId = sellerId ? Number(sellerId) : null;
-    const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+    const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
     const [hasMore, setHasMore] = useState(true);
     const [loadingOlder, setLoadingOlder] = useState(false);
@@ -272,11 +272,7 @@ export default function AdminChat() {
         <div className="min-h-screen w-full overflow-x-hidden bg-background">
             <AdminSidebar activePath="/admin/sellers/chat" />
             <div
-                className={cn(
-                    "transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500",
-                    sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-                    "ml-0"
-                )}
+                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
             >
                 <AdminHeader />
 

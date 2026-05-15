@@ -203,13 +203,13 @@ const AdminBuyers = () => {
     return unsub;
   }, []);
 
-  const { sidebarCollapsed } = useAdminSidebar();
+  useAdminSidebar();
 
   if (isLoading) {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <AdminSidebar activePath="/admin/buyers" />
-        <div className={cn("transition-all duration-300 min-h-screen overflow-y-auto", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
+        <div className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0">
           <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
             <div className="space-y-2">
               <Skeleton className="h-10 w-64" />
@@ -239,7 +239,7 @@ const AdminBuyers = () => {
     return (
       <div className="min-h-screen w-full overflow-x-hidden bg-background">
         <AdminSidebar activePath="/admin/buyers" />
-        <div className={cn("transition-all duration-300 min-h-screen flex justify-center items-center", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
+        <div className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0">
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="text-destructive">{t('admin.common.error')}</CardTitle>
@@ -257,7 +257,7 @@ const AdminBuyers = () => {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
       <AdminSidebar activePath="/admin/buyers" />
 
-      <div className={cn("transition-all duration-300 min-h-screen overflow-y-auto", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64", "ml-0")}>
+      <div className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0">
         <AdminHeader />
 
         <div className="p-4 lg:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -390,7 +390,7 @@ const AdminBuyers = () => {
                         <TableRow
                           key={buyer.buyer_id}
                           className={`hover:bg-muted/30 transition-colors cursor-pointer ${selectedIds.includes(buyer.buyer_id) ? "bg-red-50/40" : ""}`}
-                          onClick={() => navigate(`/admin/buyers/${buyer.buyer_id}`)}
+                          onClick={() => navigate(`/admin/users/${buyer.buyer_id}`)}
                         >
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <input
@@ -459,7 +459,7 @@ const AdminBuyers = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/admin/buyers/${buyer.buyer_id}`)}
+                                onClick={() => navigate(`/admin/users/${buyer.buyer_id}`)}
                               >
                                 {t('admin.common.details', 'Details')}
                               </Button>
