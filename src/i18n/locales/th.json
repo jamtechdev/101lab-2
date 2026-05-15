@@ -751,164 +751,164 @@
       "subtitle": "See how 101Recycle helps factories sell surplus faster, invite more buyers, and recover more profit — with full traceability from inspection to CO₂ reporting."
     }
   },
-  "resellers": {
-    "hero": {
-      "title": "Get direct access to factory surplus — in one digital pipeline.",
-      "subtitle": "101Recycle connects recyclers and resellers to surplus lots from factories, with clear specs, photos, and digital bidding — so you can find better material, faster, and win more deals.",
-      "joinBuyer": "Join as a Buyer",
-      "viewListings": "View Sample Listings"
+"resellers": {
+  "hero": {
+    "title": "เข้าถึงสต็อกส่วนเกินจากโรงงานโดยตรง — ในระบบดิจิทัลเดียว",
+    "subtitle": "101Recycle เชื่อมต่อผู้รีไซเคิลและผู้ค้าปลีกกับล็อตส่วนเกินจากโรงงาน พร้อมสเปค รูปภาพ และการประมูลดิจิทัลที่ชัดเจน — เพื่อให้คุณหาวัสดุที่ดีกว่า เร็วกว่า และชนะดีลได้มากขึ้น",
+    "joinBuyer": "สมัครเป็นผู้ซื้อ",
+    "viewListings": "ดูรายการตัวอย่าง"
+  },
+  "problem": {
+    "title": "เบื่อกับการรอโทรศัพท์จากซัพพลายเออร์แบบสุ่มหรือไม่?",
+    "intro": "สำหรับผู้รีไซเคิลและผู้ค้าปลีกหลายราย สต็อกส่วนเกินจากโรงงานมาผ่านทาง:",
+    "point1": "โทรศัพท์และข้อความแชทเป็นครั้งคราว",
+    "point2": "รูปภาพหรือสเปคที่ไม่ครบถ้วน",
+    "point3": "ไม่มีวิธีมาตรฐานในการเปรียบเทียบล็อตหรือติดตามรายการที่รอดำเนินการ",
+    "point4": "การรีบเร่งในนาทีสุดท้ายโดยไม่มีกำหนดเวลาที่ชัดเจน",
+    "result": "เป็นเรื่องยากที่จะวางแผน ยากที่จะขยายธุรกิจ และพลาดวัสดุดีๆ ได้ง่ายเพราะไม่เคยมีการแชร์ข้อมูลอย่างเหมาะสม"
+  },
+  "solution": {
+    "title": "101Recycle มอบระบบดิจิทัลสำหรับสต็อกส่วนเกินที่สม่ำเสมอให้คุณ",
+    "intro": "101Recycle คือแพลตฟอร์มที่โรงงานลงรายการส่วนเกินและเศษวัสดุในรูปแบบดิจิทัล — และผู้ซื้ออย่างคุณสามารถ:",
+    "point1": "เรียกดูล็อตที่มีอยู่พร้อมสเปคและรูปภาพที่ชัดเจน",
+    "point2": "ดูกำหนดเวลาและเงื่อนไขล่วงหน้า",
+    "point3": "ยื่นราคาประมูลดิจิทัลและติดตามสถานะ",
+    "point4": "สร้างความสัมพันธ์ต่อเนื่องกับโรงงานหลายแห่ง ไม่ใช่แค่หนึ่งหรือสองผู้ติดต่อ",
+    "summary": "แทนที่จะรอโทรศัพท์ครั้งต่อไป คุณจะเห็นโอกาสใหม่ทันทีที่โรงงานอัปโหลดรายการ"
+  },
+  "video": {
+    "title": "ดูวิธีที่ผู้ซื้อใช้งาน 101Recycle",
+    "subtitle": "ดูวิธีที่ผู้รีไซเคิลและผู้ค้าปลีกเข้าถึงโอกาสสต็อกส่วนเกินจากโรงงานได้มากขึ้นผ่านแพลตฟอร์มของเรา"
+  },
+  "dailyRequests": {
+    "title": "ดูคำขอหลายรายการต่อวันจากโรงงานในไต้หวัน",
+    "subtitle": "โอกาสสต็อกส่วนเกินใหม่ถูกโพสต์ทุกวันจากโรงงานทั่วไต้หวัน เรียกดู ประมูล และชนะดีลจากระบบส่วนเกินอุตสาหกรรมที่มีอย่างต่อเนื่อง",
+    "viewAll": "ดูรายการทั้งหมด",
+    "newToday": "ใหม่วันนี้"
+  },
+  "benefits": {
+    "title": "ประโยชน์หลักสำหรับผู้รีไซเคิลและผู้ค้าปลีก",
+    "moreDealFlow": {
+      "title": "ดีลมากขึ้น",
+      "desc": "เข้าถึงส่วนเกินจากโรงงานหลายแห่ง ไม่ใช่แค่ผู้ติดต่อที่มีอยู่ของคุณ"
     },
-    "problem": {
-      "title": "Tired of waiting for random calls from suppliers?",
-      "intro": "For many recyclers and resellers, factory surplus comes through:",
-      "point1": "Occasional phone calls and chat messages",
-      "point2": "Incomplete photos or specs",
-      "point3": "No standard way to compare lots or track what's pending",
-      "point4": "Last-minute rushes with unclear timelines",
-      "result": "It's hard to plan, hard to scale, and easy to miss good material because it was never shared properly."
+    "betterInfo": {
+      "title": "ข้อมูลต่อล็อตที่ดีกว่า",
+      "desc": "รับรูปภาพ สเปค ปริมาณ และสภาพในรูปแบบมาตรฐาน — เดาน้อยลง เซอร์ไพรส์น้อยลง"
     },
-    "solution": {
-      "title": "101Recycle gives you a consistent, digital surplus pipeline.",
-      "intro": "101Recycle is a platform where factories list surplus and scrap digitally — and buyers like you can:",
-      "point1": "Browse available lots with clear specs and photos",
-      "point2": "See deadlines and conditions upfront",
-      "point3": "Submit bids digitally and track status",
-      "point4": "Build ongoing relationships with multiple factories, not just one or two contacts",
-      "summary": "Instead of waiting for the next phone call, you see new opportunities as soon as factories upload them."
+    "digitalBidding": {
+      "title": "การประมูลดิจิทัลและประวัติ",
+      "desc": "ยื่นข้อเสนอออนไลน์ ติดตามล็อตที่ชนะหรือแพ้ และเรียนรู้ว่าราคาใดที่สามารถแข่งขันได้"
     },
-    "video": {
-      "title": "See How Buyers Use 101Recycle",
-      "subtitle": "Watch how recyclers and resellers are accessing more factory surplus opportunities through our platform"
+    "fasterDecisions": {
+      "title": "ตัดสินใจเร็วขึ้น",
+      "desc": "กระบวนการทำงานของโรงงานเป็นดิจิทัล ดังนั้นการอนุมัติและการตัดสินจึงเกิดขึ้นเร็วขึ้น"
     },
-    "dailyRequests": {
-      "title": "See Multiple Requests Daily from Taiwan Factories",
-      "subtitle": "New surplus opportunities are posted every day from factories across Taiwan. Browse, bid, and win deals from a steady pipeline of industrial surplus.",
-      "viewAll": "View All Listings",
-      "newToday": "New Today"
-    },
-    "benefits": {
-      "title": "Key Benefits for Recyclers & Resellers",
-      "moreDealFlow": {
-        "title": "More deal flow",
-        "desc": "Access surplus from multiple factories, not just your existing contacts."
-      },
-      "betterInfo": {
-        "title": "Better information per lot",
-        "desc": "Get photos, specs, quantities, and conditions in a standardized format — less guesswork, fewer surprises."
-      },
-      "digitalBidding": {
-        "title": "Digital bidding & history",
-        "desc": "Submit offers online, track which lots you won or lost, and learn what price points are competitive."
-      },
-      "fasterDecisions": {
-        "title": "Faster decisions",
-        "desc": "Factory workflows are digital, so approvals and awards happen faster."
-      },
-      "trust": {
-        "title": "Trust & traceability",
-        "desc": "Work with verified factories; get digital records and certificates for your own reporting and compliance."
-      }
-    },
-    "howItWorks": {
-      "title": "How 101Recycle works for recyclers & resellers",
-      "step1": {
-        "title": "Sign up as a buyer",
-        "desc": "Create your profile, specify materials and regions you're interested in."
-      },
-      "step2": {
-        "title": "Browse or get alerts",
-        "desc": "See live lots or receive notifications when new relevant lots go live."
-      },
-      "step3": {
-        "title": "Review full details",
-        "desc": "Check specs, photos, quantities, location, and closing time."
-      },
-      "step4": {
-        "title": "Submit your bid",
-        "desc": "Enter your price and terms digitally; no need for long email threads."
-      },
-      "step5": {
-        "title": "Win lots & build relationships",
-        "desc": "If your bid is selected, coordinate pickup and payment with the factory — and become a preferred buyer over time."
-      }
-    },
-    "positioning": {
-      "title": "Built to help serious buyers grow their business",
-      "intro": "101Recycle isn't a public classifieds site. It's built for professional recyclers, traders, and resellers who want:",
-      "point1": "Consistent access to industrial surplus",
-      "point2": "Better information and less guesswork",
-      "point3": "A transparent way to compete and win more deals"
-    },
-    "finalCta": {
-      "title": "Get a steady stream of factory surplus opportunities.",
-      "subtitle": "Join 101Recycle as a verified buyer and start receiving structured, trackable surplus listings from factories — instead of waiting for the next random call."
+    "trust": {
+      "title": "ความน่าเชื่อถือและการติดตาม",
+      "desc": "ทำงานกับโรงงานที่ได้รับการยืนยัน รับบันทึกดิจิทัลและใบรับรองสำหรับการรายงานและการปฏิบัติตามกฎระเบียบของคุณเอง"
     }
   },
-  "dashboard": {
-    "title": "แดชบอร์ด",
-    "subtitle": "Manage your procurement and asset lifecycle",
-    "newSubmission": "New Submission",
-    "activeSubmissions": "Active Submissions",
-    "activeBids": "Active Bids",
-    "pendingReview": "Pending Review",
-    "completed": "Completed",
-    "recentActivity": "Recent Activity",
-    "viewAll": "ดูสินค้าทั้งหมด",
-    "quickActions": "Quick Actions",
-    "submitScrap": "Submit Scrap",
-    "sourceEquipment": "Source Equipment",
-    "viewReports": "View Reports",
-    "backToDashboard": "Back to Dashboard",
-    "welcomeBack": "Welcome back, {user}",
-    "logout": "Logout",
-    "roleSwitcher": {
-      "currentMode": "Current Mode",
-      "switchTo": "Switch to {role} Dashboard",
-      "switching": "Switching...",
-      "sellerDashboard": "Seller Dashboard",
-      "buyerDashboard": "Buyer Dashboard"
+  "howItWorks": {
+    "title": "วิธีที่ 101Recycle ทำงานสำหรับผู้รีไซเคิลและผู้ค้าปลีก",
+    "step1": {
+      "title": "สมัครเป็นผู้ซื้อ",
+      "desc": "สร้างโปรไฟล์ของคุณ ระบุวัสดุและภูมิภาคที่คุณสนใจ"
+    },
+    "step2": {
+      "title": "เรียกดูหรือรับการแจ้งเตือน",
+      "desc": "ดูล็อตที่มีอยู่แบบเรียลไทม์หรือรับการแจ้งเตือนเมื่อมีล็อตใหม่ที่เกี่ยวข้องเปิดตัว"
+    },
+    "step3": {
+      "title": "ตรวจสอบรายละเอียดทั้งหมด",
+      "desc": "ตรวจสอบสเปค รูปภาพ ปริมาณ ตำแหน่งที่ตั้ง และเวลาปิด"
+    },
+    "step4": {
+      "title": "ยื่นราคาประมูลของคุณ",
+      "desc": "ป้อนราคาและเงื่อนไขในรูปแบบดิจิทัล ไม่จำเป็นต้องมีอีเมลยาวๆ"
+    },
+    "step5": {
+      "title": "ชนะล็อตและสร้างความสัมพันธ์",
+      "desc": "หากราคาประมูลของคุณได้รับการคัดเลือก ประสานงานการรับและการชำระเงินกับโรงงาน — และกลายเป็นผู้ซื้อที่ได้รับความนิยมเมื่อเวลาผ่านไป"
     }
   },
-  "sellerDashboard": {
-    "title": "User Dashboard",
-    "subtitle": "Monitor your performance and manage your listings",
-    "newSubmission": "New Submission",
-    "recentActivity": "Recent Activity",
-    "viewAll": "ดูสินค้าทั้งหมด",
-    "noRecentActivity": "No recent activity",
-    "quickActions": "Quick Actions",
-    "actions": {
-      "submitScrap": "Submit Scrap",
-      "sourceEquipment": "Source Equipment",
-      "viewReports": "View Reports"
-    },
-    "stats": {
-      "totalSubmissions": "Total Submissions",
-      "totalInspections": "Total Inspections",
-      "activeBids": "Active Bids",
-      "closedBids": "Closed Bids",
-      "totalCurrentInspectionBids": "Current Inspection Bids",
-      "totalCurrentLiveBids": "Current Live Bids",
-      "totalCurrentClosedBids": "Current Closed Bids",
-      "totalEmbodiedCarbonAvoided": "TotalEmbodiedCarbonAvoided"
-    },
-    "status": {
-      "title": "Status",
-      "pending": "Pending",
-      "approved": "Approved",
-      "rejected": "Rejected",
-      "inProgress": "In Progress",
-      "completed": "Completed"
-    },
-    "inspectionSchedule": {
-      "title": "Inspection Schedule",
-      "upcoming": "Upcoming Inspections",
-      "past": "Past Inspections",
-      "scheduledOn": "Scheduled On",
-      "inspector": "Inspector",
-      "noSchedule": "No inspection scheduled"
-    }
+  "positioning": {
+    "title": "สร้างขึ้นเพื่อช่วยผู้ซื้อที่จริงจังขยายธุรกิจของตน",
+    "intro": "101Recycle ไม่ใช่เว็บไซต์ประกาศสาธารณะ สร้างขึ้นสำหรับผู้รีไซเคิล ผู้ค้า และผู้ค้าปลีกมืออาชีพที่ต้องการ:",
+    "point1": "การเข้าถึงส่วนเกินอุตสาหกรรมอย่างสม่ำเสมอ",
+    "point2": "ข้อมูลที่ดีกว่าและการเดาน้อยลง",
+    "point3": "วิธีที่โปร่งใสในการแข่งขันและชนะดีลมากขึ้น"
   },
+  "finalCta": {
+    "title": "รับกระแสโอกาสสต็อกส่วนเกินจากโรงงานอย่างต่อเนื่อง",
+    "subtitle": "เข้าร่วม 101Recycle เป็นผู้ซื้อที่ได้รับการยืนยันและเริ่มรับรายการสต็อกส่วนเกินที่มีโครงสร้างและติดตามได้จากโรงงาน — แทนที่จะรอโทรศัพท์สุ่มครั้งต่อไป"
+  }
+},
+"dashboard": {
+  "title": "แดชบอร์ด",
+  "subtitle": "จัดการการจัดซื้อและวงจรชีวิตสินทรัพย์ของคุณ",
+  "newSubmission": "การยื่นใหม่",
+  "activeSubmissions": "การยื่นที่ใช้งานอยู่",
+  "activeBids": "ราคาประมูลที่ใช้งานอยู่",
+  "pendingReview": "รอการตรวจสอบ",
+  "completed": "เสร็จสิ้น",
+  "recentActivity": "กิจกรรมล่าสุด",
+  "viewAll": "ดูสินค้าทั้งหมด",
+  "quickActions": "การดำเนินการด่วน",
+  "submitScrap": "ยื่นเศษวัสดุ",
+  "sourceEquipment": "จัดหาอุปกรณ์",
+  "viewReports": "ดูรายงาน",
+  "backToDashboard": "กลับไปยังแดชบอร์ด",
+  "welcomeBack": "ยินดีต้อนรับกลับ, {user}",
+  "logout": "ออกจากระบบ",
+  "roleSwitcher": {
+    "currentMode": "โหมดปัจจุบัน",
+    "switchTo": "สลับไปยังแดชบอร์ด {role}",
+    "switching": "กำลังสลับ...",
+    "sellerDashboard": "แดชบอร์ดผู้ขาย",
+    "buyerDashboard": "แดชบอร์ดผู้ซื้อ"
+  }
+},
+"sellerDashboard": {
+  "title": "แดชบอร์ดผู้ใช้",
+  "subtitle": "ติดตามผลการดำเนินงานและจัดการรายการของคุณ",
+  "newSubmission": "การยื่นใหม่",
+  "recentActivity": "กิจกรรมล่าสุด",
+  "viewAll": "ดูสินค้าทั้งหมด",
+  "noRecentActivity": "ไม่มีกิจกรรมล่าสุด",
+  "quickActions": "การดำเนินการด่วน",
+  "actions": {
+    "submitScrap": "ยื่นเศษวัสดุ",
+    "sourceEquipment": "จัดหาอุปกรณ์",
+    "viewReports": "ดูรายงาน"
+  },
+  "stats": {
+    "totalSubmissions": "การยื่นทั้งหมด",
+    "totalInspections": "การตรวจสอบทั้งหมด",
+    "activeBids": "ราคาประมูลที่ใช้งานอยู่",
+    "closedBids": "ราคาประมูลที่ปิดแล้ว",
+    "totalCurrentInspectionBids": "ราคาประมูลการตรวจสอบปัจจุบัน",
+    "totalCurrentLiveBids": "ราคาประมูลที่มีอยู่ปัจจุบัน",
+    "totalCurrentClosedBids": "ราคาประมูลที่ปิดแล้วปัจจุบัน",
+    "totalEmbodiedCarbonAvoided": "คาร์บอนสะสมที่หลีกเลี่ยงได้ทั้งหมด"
+  },
+  "status": {
+    "title": "สถานะ",
+    "pending": "รอดำเนินการ",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ปฏิเสธแล้ว",
+    "inProgress": "กำลังดำเนินการ",
+    "completed": "เสร็จสิ้น"
+  },
+  "inspectionSchedule": {
+    "title": "กำหนดการตรวจสอบ",
+    "upcoming": "การตรวจสอบที่กำลังจะมาถึง",
+    "past": "การตรวจสอบที่ผ่านมา",
+    "scheduledOn": "กำหนดเมื่อ",
+    "inspector": "ผู้ตรวจสอบ",
+    "noSchedule": "ไม่มีกำหนดการตรวจสอบ"
+  }
+},
   "submissions": {
     "commission": "ค่าคอมมิชชั่น",
     "commissionPercent": "{percent}%",
@@ -979,22 +979,22 @@
     "posted": "วันที่โพสต์",
     "stats": "สถิติ"
   },
-  "bids": {
-    "title": "Active Bids",
-    "subtitle": "Monitor live bidding activity on your submissions",
-    "totalActiveBids": "Total Active Bids",
-    "highestCurrentBid": "Highest Current Bid",
-    "totalBidValue": "Total Bid Value",
-    "liveBiddingActivity": "Live Bidding Activity",
-    "bidEndDate": "Bid End Date",
-    "highestBid": "Highest Bid",
-    "lowestBid": "Lowest Bid",
-    "totalBids": "Total Bids",
-    "change": "เปลี่ยน",
-    "timeRemaining": "Time Remaining",
-    "days": "days",
-    "day": "day"
-  },
+"bids": {
+  "title": "ราคาประมูลที่ใช้งานอยู่",
+  "subtitle": "ติดตามกิจกรรมการประมูลสดบนการยื่นของคุณ",
+  "totalActiveBids": "ราคาประมูลที่ใช้งานอยู่ทั้งหมด",
+  "highestCurrentBid": "ราคาประมูลสูงสุดในปัจจุบัน",
+  "totalBidValue": "มูลค่าราคาประมูลทั้งหมด",
+  "liveBiddingActivity": "กิจกรรมการประมูลสด",
+  "bidEndDate": "วันสิ้นสุดการประมูล",
+  "highestBid": "ราคาประมูลสูงสุด",
+  "lowestBid": "ราคาประมูลต่ำสุด",
+  "totalBids": "ราคาประมูลทั้งหมด",
+  "change": "เปลี่ยน",
+  "timeRemaining": "เวลาที่เหลือ",
+  "days": "วัน",
+  "day": "วัน"
+},
   "reports": {
     "title": "รายงาน",
     "subtitle": "เข้าถึงรายงานการตรวจสอบ การประเมินราคา และสรุปการขาย",
@@ -1019,29 +1019,29 @@
     "next": "ถัดไป",
     "pageOf": "หน้า {page} จาก {total}"
   },
-  "inspectionReport": {
-    "registeredCompanies": "Registered Companies",
-    "inspectionPeriod": "Inspection Period",
-    "registeredTitle": "Companies Registered for Inspection",
-    "attendedInspection": "Attended Inspection",
-    "table": {
-      "attended": "Attended",
-      "companyName": "ชื่อบริษัท",
-      "country": "ประเทศ",
-      "contactPerson": "Contact Person",
-      "email": "อีเมล",
-      "registeredDate": "Registered Date",
-      "slot": "Time Slot"
-    },
-    "skipping": "Skipping…",
-    "skipInspection": "Skip Inspection",
-    "inspectionComplete": "Inspection Complete",
-    "markAtLeastOne": "Please mark at least one company as attended",
-    "selectAtLeastOne": "Please select at least one company",
-    "markedSuccessfully": "Selected companies have been marked successfully",
-    "networkError": "Network Error",
-    "back": "กลับ"
+"inspectionReport": {
+  "registeredCompanies": "บริษัทที่ลงทะเบียน",
+  "inspectionPeriod": "ระยะเวลาการตรวจสอบ",
+  "registeredTitle": "บริษัทที่ลงทะเบียนเพื่อการตรวจสอบ",
+  "attendedInspection": "เข้าร่วมการตรวจสอบ",
+  "table": {
+    "attended": "เข้าร่วมแล้ว",
+    "companyName": "ชื่อบริษัท",
+    "country": "ประเทศ",
+    "contactPerson": "ผู้ติดต่อ",
+    "email": "อีเมล",
+    "registeredDate": "วันที่ลงทะเบียน",
+    "slot": "ช่วงเวลา"
   },
+  "skipping": "กำลังข้าม…",
+  "skipInspection": "ข้ามการตรวจสอบ",
+  "inspectionComplete": "การตรวจสอบเสร็จสิ้น",
+  "markAtLeastOne": "กรุณาทำเครื่องหมายบริษัทอย่างน้อยหนึ่งแห่งว่าเข้าร่วมแล้ว",
+  "selectAtLeastOne": "กรุณาเลือกบริษัทอย่างน้อยหนึ่งแห่ง",
+  "markedSuccessfully": "บริษัทที่เลือกได้รับการทำเครื่องหมายเรียบร้อยแล้ว",
+  "networkError": "ข้อผิดพลาดของเครือข่าย",
+  "back": "กลับ"
+},
   "aiPreview": {
     "modalTitle": "Does this match your expectation?",
     "regenerate": "Regenerate",
