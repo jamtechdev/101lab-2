@@ -125,9 +125,39 @@ const BuyerSettingPage = () => {
         setIndustry(rawIndustry);
         setIndustryOther("");
       }
+      // Raw set first; normalization effect below reconciles against live category slugs
       setSelectedInterests(data.personalInfo?.interests || []);
     }
   }, [profileData]);
+
+  // Reconcile stored interests against current category slugs once both are loaded.
+  // Handles cases where interests were stored as names, old slugs, or object format.
+  useEffect(() => {
+    if (!profileData?.success || labCategories.length === 0) return;
+    const raw: any[] = profileData.data.personalInfo?.interests || [];
+    if (!raw.length) return;
+
+    const slugSet = new Set<string>();
+    const nameToSlug = new Map<string, string>();
+    for (const cat of labCategories) {
+      slugSet.add(cat.slug);
+      nameToSlug.set(cat.name.toLowerCase(), cat.slug);
+      for (const sub of cat.subcategories || []) {
+        slugSet.add(sub.slug);
+        nameToSlug.set(sub.name.toLowerCase(), sub.slug);
+      }
+    }
+
+    const normalized = raw
+      .map((i) => {
+        const val = typeof i === "string" ? i : (i?.slug ?? "");
+        if (slugSet.has(val)) return val;
+        return nameToSlug.get(val.toLowerCase()) ?? val;
+      })
+      .filter((i) => slugSet.has(i));
+
+    setSelectedInterests(normalized);
+  }, [profileData, labCategories]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -138,6 +168,18 @@ const BuyerSettingPage = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Auto-expand parents that have selected subcategories when dropdown opens
+  useEffect(() => {
+    if (interestDropdownOpen && labCategories.length > 0 && selectedInterests.length > 0) {
+      const parentsWithSelectedSubs = labCategories
+        .filter(cat => cat.subcategories?.some(sub => selectedInterests.includes(sub.slug)))
+        .map(cat => cat.slug);
+      if (parentsWithSelectedSubs.length > 0) {
+        setExpandedParents(prev => [...new Set([...prev, ...parentsWithSelectedSubs])]);
+      }
+    }
+  }, [interestDropdownOpen, labCategories, selectedInterests]);
 
   const toggleInterest = (slug: string) => {
     setSelectedInterests(prev =>
@@ -497,6 +539,7 @@ const BuyerSettingPage = () => {
                     <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl border border-border bg-background shadow-xl max-h-64 overflow-y-auto">
                       {labCategories.map((cat) => {
                         const parentSel = selectedInterests.includes(cat.slug);
+                        const hasSelectedSubs = cat.subcategories?.some(sub => selectedInterests.includes(sub.slug));
                         const isExp = expandedParents.includes(cat.slug);
                         const hasSubs = cat.subcategories?.length > 0;
                         return (
@@ -504,10 +547,11 @@ const BuyerSettingPage = () => {
                             <div className="flex items-stretch">
                               <button type="button" onClick={() => toggleInterest(cat.slug)}
                                 className="flex items-center gap-2.5 flex-1 px-3 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors text-left">
-                                <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-accent border-accent" : "border-border")}>
+                                <div className={cn("w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-all", parentSel ? "bg-accent border-accent" : hasSelectedSubs ? "bg-accent/30 border-accent/60" : "border-border")}>
                                   {parentSel && <Check className="w-2.5 h-2.5 text-white" />}
+                                  {!parentSel && hasSelectedSubs && <div className="w-1.5 h-1.5 rounded-sm bg-accent" />}
                                 </div>
-                                <span className={parentSel ? "text-accent" : "text-foreground"}>{cat.name}</span>
+                                <span className={parentSel || hasSelectedSubs ? "text-accent" : "text-foreground"}>{cat.name}</span>
                               </button>
                               {hasSubs && (
                                 <button type="button"
@@ -569,7 +613,7 @@ const BuyerSettingPage = () => {
 
 
 
-        {/* Notification Settings */}
+        {/* Notification Settings — temporarily hidden
         <Card className="border-border/50">
           <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center gap-3">
@@ -624,12 +668,13 @@ const BuyerSettingPage = () => {
             </div>
           </CardContent>
         </Card>
+        */}
 
 
 
 
 
-        {/* Security Settings */}
+        {/* Security Settings — temporarily hidden
         <Card className="border-border/50">
           <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center gap-3">
@@ -688,6 +733,7 @@ const BuyerSettingPage = () => {
             </div>
           </CardContent>
         </Card>
+        */}
 
         {/* Language & Region */}
         <Card className="border-border/50">

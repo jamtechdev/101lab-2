@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Store, Building2, Loader2, Lock, Crown, CheckCircle2,
@@ -141,12 +141,18 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
   const existingRequest = statusData?.data;
   const isVerifiedSeller = jwtRole === "seller" || existingRequest?.status === "approved";
 
-  const storedView      = localStorage.getItem("activeView");
-  const currentPath     = window.location.pathname;
+  const currentPath      = window.location.pathname;
   const isBuyerDashboard = currentPath.startsWith("/buyer-dashboard") || currentPath.startsWith("/buyer/");
-  const currentRole     = isVerifiedSeller
-    ? (storedView === "buyer" || isBuyerDashboard ? "buyer" : "seller")
+  const currentRole      = isVerifiedSeller
+    ? (isBuyerDashboard ? "buyer" : "seller")
     : "buyer";
+
+  // Keep activeView in sync with the actual current URL
+  useEffect(() => {
+    if (isVerifiedSeller) {
+      localStorage.setItem("activeView", currentRole);
+    }
+  }, [currentRole, isVerifiedSeller]);
 
   const handleSwitch = (targetRole: string) => {
     if (targetRole === currentRole || switching) return;
