@@ -7,7 +7,6 @@ import { useGetUsersQuery, useLazyGetUsersQuery, useUpdateUserStatusMutation, us
 import { exportToExcel } from "@/utils/exportToExcel";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import AdminHeader from "./AdminHeader";
-import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -28,7 +27,6 @@ const AdminUsersAntd = () => {
     const [limit, setLimit] = useState(10);
     const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
 
-    const { sidebarCollapsed } = useAdminSidebar();
     const navigate = useNavigate();
     const { t } = useTranslation();
 
@@ -280,9 +278,9 @@ const AdminUsersAntd = () => {
     }, [searchText, statusFilter, userTypeFilter, sortOrder, dateRange]);
 
     return (
-        <div className="min-h-screen w-full bg-gray-50">
+        <div className="min-h-screen bg-gray-50/50">
             <AdminSidebar activePath="/admin/users" />
-            <div className={sidebarCollapsed ? "lg:ml-16 transition-all duration-300" : "lg:ml-64 transition-all duration-300"}>
+            <div className="lg:pl-56">
                 <AdminHeader />
 
                 <div className="p-6 mx-auto space-y-6">

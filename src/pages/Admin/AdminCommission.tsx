@@ -23,7 +23,7 @@ import { toastSuccess, toastError } from "@/helper/toasterNotification";
 
 const AdminCommission = () => {
   const { t } = useTranslation();
-  const { sidebarCollapsed } = useAdminSidebar();
+  useAdminSidebar();
   const [activeTab, setActiveTab] = useState<string>("global");
   const [globalPercent, setGlobalPercent] = useState<number>(20);
   const [sellerId, setSellerId] = useState<number | null>(null);
@@ -258,7 +258,7 @@ const AdminCommission = () => {
   return (
     <div className={cn("min-h-screen w-full bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50")}>
       <AdminSidebar activePath="/admin/commission" />
-      <div className={sidebarCollapsed ? "lg:ml-16 transition-all duration-300" : "lg:ml-64 transition-all duration-300"}>
+      <div className="lg:pl-56 transition-all duration-300">
         <AdminHeader />
         <div className="p-4 lg:p-6 md:p-8 max-w-5xl mx-auto space-y-6">
           <div>

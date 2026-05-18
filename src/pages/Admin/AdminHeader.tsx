@@ -9,7 +9,7 @@ import NotificationBell from './AdminNotification';
 const AdminHeader = () => {
 
     const [dateRange, setDateRange] = useState("thisMonth");
-    const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+    const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
     const { t } = useTranslation();
 
 

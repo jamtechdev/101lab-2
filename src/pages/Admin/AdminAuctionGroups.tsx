@@ -916,7 +916,7 @@ function GroupTagsPanel({ group }: { group: AdminAuctionGroupItem }) {
 
 /* ── Main page ──────────────────────────────────────────────────────────── */
 const AdminAuctionGroups = () => {
-  const { sidebarCollapsed } = useAdminSidebar();
+  useAdminSidebar();
   const [platformType, setPlatformType] = useState("LabGreenbidz");
   const [approvalFilter, setApprovalFilter] = useState<"all"|"pending"|"approved">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -1119,7 +1119,7 @@ const AdminAuctionGroups = () => {
   if (isLoading) return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
       <AdminSidebar activePath="/admin/auction-groups" />
-      <div className={cn("transition-all duration-300 min-h-screen", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+      <div className="transition-all duration-300 min-h-screen lg:pl-56">
         <div className="p-8 space-y-6 max-w-7xl mx-auto">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-4 gap-4">{[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}</div>
@@ -1132,7 +1132,7 @@ const AdminAuctionGroups = () => {
   if (isError) return (
     <div className="min-h-screen bg-background">
       <AdminSidebar activePath="/admin/auction-groups" />
-      <div className={cn("transition-all duration-300 min-h-screen flex items-center justify-center", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+      <div className="transition-all duration-300 min-h-screen flex items-center justify-center lg:pl-56">
         <Card className="border-destructive"><CardHeader><CardTitle className="text-destructive">Failed to load auction groups</CardTitle></CardHeader></Card>
       </div>
     </div>
@@ -1141,7 +1141,7 @@ const AdminAuctionGroups = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <AdminSidebar activePath="/admin/auction-groups" />
-      <div className={cn("transition-all duration-300 min-h-screen", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+      <div className="transition-all duration-300 min-h-screen lg:pl-56">
         <AdminHeader />
         <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
 

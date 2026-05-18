@@ -12,6 +12,8 @@ export interface AdmindashboardStatsResponse {
     newBuyers: number;
     inspectionsScheduled: number;
     transactionsCompleted: number;
+    pendingListingApprovals: number;
+    pendingSellerUpgrades: number;
   };
 }
 

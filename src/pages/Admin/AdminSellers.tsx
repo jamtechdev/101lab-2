@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useGetSellersQuery, useLazyGetSellersQuery, useDeleteUsersMutation } from "@/rtk/slices/adminApiSlice";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { exportToExcel } from "@/utils/exportToExcel";
@@ -138,6 +137,19 @@ const StatCard = ({
   </Card>
 );
 
+const SellerStatusBadge = ({ status }: { status: string }) => {
+  const s = status?.toLowerCase();
+  if (s === "approved" || s === "active")
+    return <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">Approved</Badge>;
+  if (s === "pending" || s === "profile_incomplete")
+    return <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">Pending</Badge>;
+  if (s === "suspended")
+    return <Badge className="bg-red-500 hover:bg-red-600 text-white border-0">Suspended</Badge>;
+  if (s === "deactive" || s === "inactive")
+    return <Badge className="bg-slate-400 hover:bg-slate-500 text-white border-0">Inactive</Badge>;
+  return <Badge variant="outline" className="capitalize">{status || "—"}</Badge>;
+};
+
 const AdminSellers = () => {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
@@ -145,7 +157,6 @@ const AdminSellers = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<{ ids: number[]; label: string } | null>(null);
-  const [userStatusFilter, setUserStatusFilter] = useState<"approved" | "pending" | "all">("approved");
   const limit = 10;
 
   const navigate = useNavigate();
@@ -158,9 +169,7 @@ const AdminSellers = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => { setPage(1); }, [userStatusFilter]);
-
-  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: userStatusFilter });
+  const { data: response, isLoading, isFetching, isError, refetch } = useGetSellersQuery({ page, limit, search: debouncedSearch || undefined, userStatus: "all" });
   const [deleteUsers, { isLoading: deleting }] = useDeleteUsersMutation();
   const [fetchAllSellers, { isLoading: exporting }] = useLazyGetSellersQuery();
 
@@ -233,7 +242,7 @@ const AdminSellers = () => {
   
 
 
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+  const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
   // ---------------- Loading States ----------------
   if (isLoading) {
@@ -241,11 +250,7 @@ const AdminSellers = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <AdminSidebar activePath="/admin/sellers" />
         <div
-          className={cn(
-            "transition-all duration-300 min-h-screen overflow-y-auto",
-            sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-            "ml-0"
-          )}
+          className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
         >
           <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
             <div className="space-y-2">
@@ -287,11 +292,7 @@ const AdminSellers = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-background">
         <AdminSidebar activePath="/admin/sellers" />
         <div
-          className={cn(
-            "transition-all duration-300 min-h-screen flex justify-center items-center",
-            sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-            "ml-0"
-          )}
+          className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0"
         >
           <Card className="border-destructive">
             <CardHeader>
@@ -325,13 +326,7 @@ const AdminSellers = () => {
       <AdminSidebar activePath="/admin/sellers" />
 
       <div
-        className={cn(
-          "transition-all duration-300 min-h-screen overflow-y-auto",
-          // Desktop: margin based on sidebar collapsed state
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-          // Mobile: no margin (sidebar is overlay)
-          "ml-0"
-        )}
+        className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
       >
         {/* Mobile header with menu button */}
         {false &&
@@ -427,16 +422,6 @@ const AdminSellers = () => {
                     </Button>
                   )}
                 </div>
-                <Select value={userStatusFilter} onValueChange={(v) => setUserStatusFilter(v as "approved" | "pending" | "all")}>
-                  <SelectTrigger className="w-full sm:w-[200px] h-11 border-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="approved">{t('admin.sellers.statusApproved', 'Approved')}</SelectItem>
-                    <SelectItem value="pending">{t('admin.sellers.statusPending', 'Pending Review')}</SelectItem>
-                    <SelectItem value="all">{t('admin.sellers.statusAll', 'All')}</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>
@@ -533,7 +518,7 @@ const AdminSellers = () => {
                         <TableRow
                           key={seller.seller_id}
                           className={`hover:bg-muted/30 transition-colors cursor-pointer ${selectedIds.includes(seller.seller_id) ? "bg-red-50/40" : ""}`}
-                          onClick={() => navigate(`/admin/sellers/${seller.seller_id}`)}
+                          onClick={() => navigate(`/admin/users/${seller.seller_id}`)}
                         >
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <input
@@ -598,22 +583,14 @@ const AdminSellers = () => {
                             </span>
                           </TableCell>
                           <TableCell>
-                            {seller.user_status === "approved" ? (
-                              <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
-                                {t('admin.sellers.verified')}
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0">
-                                {t('admin.usersPage.pendingReview', 'Pending Review')}
-                              </Badge>
-                            )}
+                            <SellerStatusBadge status={seller.user_status} />
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => navigate(`/admin/sellers/${seller.seller_id}`)}
+                                onClick={() => navigate(`/admin/users/${seller.seller_id}`)}
                               >
                                 {t('admin.common.details', 'Details')}
                               </Button>

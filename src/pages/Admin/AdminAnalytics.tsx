@@ -6,7 +6,7 @@ import {
   TrendingUp,
   TrendingDown
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import {
   LineChart,
   Line,
@@ -47,7 +47,7 @@ const colors = [
 const AdminAnalytics = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
+  const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
 
   // date range
   const today = new Date();
@@ -140,13 +140,7 @@ const AdminAnalytics = () => {
       <AdminSidebar activePath="/admin/analytics" />
 
       <div
-        className={cn(
-          "transition-all duration-300 min-h-screen flex flex-col overflow-hidden",
-          // Desktop: margin based on sidebar collapsed state
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64",
-          // Mobile: no margin (sidebar is overlay)
-          "ml-0"
-        )}
+        className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-56 ml-0"
       >
         {/* Mobile header with menu button */}
         <header className="sticky top-0 z-30 bg-card border-b border-border shadow-sm lg:hidden">

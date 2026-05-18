@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/lablogo.png";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -7,7 +7,7 @@ import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useLanguageAwareCategories, LabCategory } from "@/hooks/useLanguageAwareCategories";
 import {
-  Menu, X, ChevronDown, Search, Headphones, LogIn, User, Globe, UserPlus, Heart, ChevronRight,
+  Menu, X, ChevronDown, Search, Headphones, Globe, Heart, ChevronRight, UserCircle, Plus,
 } from "lucide-react";
 import i18n from "@/i18n/config";
 import SellLeadModal from "@/components/common/SellLeadModal";
@@ -37,6 +37,8 @@ const Header = () => {
   const [hoveredParent, setHoveredParent] = useState<string | null>(null);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const [sellModalOpen, setSellModalOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
   const [searchVal, setSearchVal] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("search") || "";
@@ -62,6 +64,17 @@ const Header = () => {
       window.removeEventListener("auth-changed", syncAuth);
       window.removeEventListener("storage", syncAuth);
     };
+  }, []);
+
+  // Close account dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
+        setIsAccountOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const lang = i18n.language || "en";
@@ -252,58 +265,99 @@ const Header = () => {
 
             {/* Desktop right actions */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0 ml-auto">
-              <button
-                onClick={() => {
-                  if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
-                  navigate("/my-lots");
-                }}
-                className="flex items-center gap-1.5 text-xs text-foreground hover:text-primary transition-colors px-2 py-1.5"
-              >
-                <Heart className="h-4 w-4" />
-                {t("publicHeader.favourites")}
-              </button>
+              {/* Wanted */}
+              <Link to="/wanted">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-foreground hover:bg-foreground hover:text-background text-sm h-10 rounded px-4 font-medium"
+                >
+                  {t("publicHeader.wantedBoard")}
+                </Button>
+              </Link>
 
-              {userId ? (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-foreground hover:bg-foreground hover:text-background text-xs h-9 gap-1.5"
-                    onClick={() => window.open("/dashboard", "_blank")}
-                  >
-                    <User className="h-3.5 w-3.5" />
-                    {t("publicHeader.dashboard")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-muted-foreground hover:bg-primary hover:text-primary-foreground text-xs h-9"
-                    onClick={handleLogout}
-                  >
-                    {t("publicHeader.logout")}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-black hover:bg-destructive text-xs h-9 gap-1.5 font-medium"
-                    onClick={() => window.open("/auth?type=buyer&mode=signup", "_blank")}
-                  >
-                    <UserPlus className="h-3.5 w-3.5" />
-                    {t("publicHeader.createAccount")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground hover:text-black gap-1.5 text-xs h-9 rounded"
-                    onClick={() => window.open("/auth?mode=signin", "_blank")}
-                  >
-                    <LogIn className="h-3.5 w-3.5" />
-                    {t("publicHeader.signIn")}
-                  </Button>
-                </>
-              )}
+              {/* Add a Machine */}
+              <Link to="/sell" target="_blank" rel="noopener noreferrer">
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm h-10 rounded gap-1.5 px-4"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("publicHeader.startSelling", "Add a Machine")}
+                </Button>
+              </Link>
+
+              {/* Account dropdown */}
+              <div className="relative" ref={accountRef}>
+                <button
+                  onClick={() => setIsAccountOpen((v) => !v)}
+                  className="flex items-center gap-1.5 border border-border rounded px-3 h-10 text-sm text-foreground hover:bg-muted transition-colors"
+                >
+                  <UserCircle className="h-4 w-4" />
+                  {t("publicHeader.account", "Account")}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAccountOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {isAccountOpen && (
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-popover border border-border rounded shadow-lg min-w-[180px] py-1">
+                    {userId ? (
+                      <>
+                        <button
+                          onClick={() => { window.open("/dashboard", "_blank"); setIsAccountOpen(false); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          {t("publicHeader.dashboard")}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsAccountOpen(false);
+                            if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
+                            navigate("/my-lots");
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          <Heart className="h-3.5 w-3.5" />
+                          {t("publicHeader.favourites")}
+                        </button>
+                        <div className="my-1 border-t border-border" />
+                        <button
+                          onClick={() => { setIsAccountOpen(false); handleLogout(); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          {t("publicHeader.logout")}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => { window.open("/auth?type=buyer&mode=signup", "_blank"); setIsAccountOpen(false); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          {t("publicHeader.createAccount")}
+                        </button>
+                        <button
+                          onClick={() => { window.open("/auth?mode=signin", "_blank"); setIsAccountOpen(false); }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          {t("publicHeader.signIn")}
+                        </button>
+                        <div className="my-1 border-t border-border" />
+                        <button
+                          onClick={() => {
+                            setIsAccountOpen(false);
+                            if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
+                            navigate("/my-lots");
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-foreground hover:text-background transition-colors"
+                        >
+                          <Heart className="h-3.5 w-3.5" />
+                          {t("publicHeader.favourites")}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Mobile hamburger */}
@@ -440,24 +494,6 @@ const Header = () => {
 
             {/* Right-side action buttons */}
             <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
-              {/* <Link to="/blog">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-foreground hover:bg-foreground hover:text-background text-xs h-7 rounded px-3 font-medium"
-                >
-                  {t("publicHeader.blog", "Blog")}
-                </Button>
-              </Link> */}
-              <Link to="/wanted">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-foreground hover:bg-foreground hover:text-background text-xs h-7 rounded px-3 font-medium"
-                >
-                  {t("publicHeader.wantedBoard")}
-                </Button>
-              </Link>
               <Button
                 size="sm"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs h-7 rounded px-3"
@@ -474,14 +510,6 @@ const Header = () => {
                   {t("publicHeader.directSales")}
                 </Button>
               </Link>
-              <a href="http://localhost:8080/sell" target="_blank" rel="noopener noreferrer">
-                <Button
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold text-xs h-7 rounded px-3"
-                >
-                  {t("publicHeader.startSelling", "Start Selling")}
-                </Button>
-              </a>
             </div>
           </div>
         </div>
@@ -592,9 +620,22 @@ const Header = () => {
 
               {/* Actions */}
               <div className="space-y-2">
-                <Link to="/blog" onClick={() => setOpenMenu(false)}>
+                <Link to="/sell" target="_blank" rel="noopener noreferrer" onClick={() => setOpenMenu(false)}>
+                  <Button size="sm" className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold h-9 gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    {t("publicHeader.startSelling", "Add Machines")}
+                  </Button>
+                </Link>
+                <Button
+                  size="sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9"
+                  onClick={() => { navigate("/sell-with-greenbidz"); setOpenMenu(false); }}
+                >
+                  {t("publicHeader.sellWithGreenBidz")}
+                </Button>
+                <Link to="/direct-sales" onClick={() => setOpenMenu(false)}>
                   <Button size="sm" variant="outline" className="w-full border-border text-foreground h-9 text-xs">
-                    {t("publicHeader.blog", "Blog")}
+                    {t("publicHeader.directSales")}
                   </Button>
                 </Link>
                 <Link to="/wanted" onClick={() => setOpenMenu(false)}>
@@ -602,22 +643,6 @@ const Header = () => {
                     {t("publicHeader.wantedBoard")}
                   </Button>
                 </Link>
-                <Button
-                  size="sm"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9"
-                  onClick={() => { setSellModalOpen(true); setOpenMenu(false); }}
-                >
-                  {t("publicHeader.sellWithGreenBidz")}
-                </Button>
-                <a href="http://localhost:8080/sell" target="_blank" rel="noopener noreferrer" className="block">
-                  <Button
-                    size="sm"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold h-9"
-                    onClick={() => setOpenMenu(false)}
-                  >
-                    {t("publicHeader.startSelling", "Start Selling")}
-                  </Button>
-                </a>
 
                 {userId ? (
                   <>
@@ -625,22 +650,48 @@ const Header = () => {
                       onClick={() => { window.open("/dashboard", "_blank"); setOpenMenu(false); }}>
                       {t("publicHeader.dashboard")}
                     </Button>
+                    <Button
+                      size="sm" variant="outline"
+                      className="w-full border-border text-foreground h-9 text-xs gap-1.5"
+                      onClick={() => {
+                        setOpenMenu(false);
+                        if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
+                        navigate("/my-lots");
+                      }}
+                    >
+                      <Heart className="h-3.5 w-3.5" />
+                      {t("publicHeader.favourites")}
+                    </Button>
                     <Button size="sm" variant="ghost" className="w-full text-muted-foreground hover:bg-primary hover:text-primary-foreground h-9"
                       onClick={handleLogout}>
                       {t("publicHeader.logout")}
                     </Button>
                   </>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
-                      onClick={() => { navigate("/auth?type=buyer&mode=signup"); setOpenMenu(false); }}>
-                      {t("publicHeader.createAccount")}
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="outline" size="sm" className="border-border text-foreground h-9 text-xs"
+                        onClick={() => { navigate("/auth?type=buyer&mode=signup"); setOpenMenu(false); }}>
+                        {t("publicHeader.createAccount")}
+                      </Button>
+                      <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
+                        onClick={() => { navigate("/auth?mode=signin"); setOpenMenu(false); }}>
+                        {t("publicHeader.signIn")}
+                      </Button>
+                    </div>
+                    <Button
+                      size="sm" variant="outline"
+                      className="w-full border-border text-foreground h-9 text-xs gap-1.5"
+                      onClick={() => {
+                        setOpenMenu(false);
+                        if (!userId) { toastError(t("publicHeader.loginForFavourites")); return; }
+                        navigate("/my-lots");
+                      }}
+                    >
+                      <Heart className="h-3.5 w-3.5" />
+                      {t("publicHeader.favourites")}
                     </Button>
-                    <Button size="sm" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-9 text-xs"
-                      onClick={() => { navigate("/auth?mode=signin"); setOpenMenu(false); }}>
-                      {t("publicHeader.signIn")}
-                    </Button>
-                  </div>
+                  </>
                 )}
               </div>
             </div>

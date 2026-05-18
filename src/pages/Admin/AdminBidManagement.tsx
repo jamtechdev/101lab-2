@@ -234,7 +234,7 @@ function BidRow({ row, navigate }: { row: AdminBidRow; navigate: (path: string) 
 /* ── Page ─────────────────────────────────────────────── */
 export default function AdminBidManagement() {
   const navigate = useNavigate();
-  const { sidebarCollapsed } = useAdminSidebar();
+  useAdminSidebar();
 
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -276,7 +276,7 @@ export default function AdminBidManagement() {
   return (
     <div className="flex min-h-screen bg-gray-50/60">
       <AdminSidebar activePath="/admin/bids" />
-      <main className={cn("flex-1 transition-all duration-300", sidebarCollapsed ? "lg:ml-16" : "lg:ml-64")}>
+      <main className="flex-1 transition-all duration-300 lg:pl-56">
                 <AdminHeader />
         <div className="p-6 max-w-[1600px] mx-auto space-y-5">
 

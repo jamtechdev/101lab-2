@@ -24,7 +24,7 @@ import EmailTypePanel from "./AdminEmail/EmailTypePanel";
 import EmailUserPanel from "./AdminEmail/EmailUserPane";
 
 const AdminEmail = () => {
-  const { sidebarCollapsed, setSidebarOpen } = useAdminSidebar();
+  const { setSidebarOpen } = useAdminSidebar();
 
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -35,12 +35,7 @@ const AdminEmail = () => {
     <div className="min-h-screen bg-muted/20">
       <AdminSidebar activePath="/admin/email" />
 
-      <div
-        className={cn(
-          "transition-all min-h-screen",
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-64"
-        )}
-      >
+      <div className="transition-all min-h-screen lg:pl-56">
         {/* <header className="lg:hidden sticky top-0 bg-card border-b p-3 flex justify-between">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu />

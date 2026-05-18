@@ -1,21 +1,21 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Users,
   UserCheck,
   Calendar,
-  DollarSign,
   BarChart3,
   Store,
   Menu,
-  Download,
   TrendingUp,
+  AlertCircle,
+  ArrowRight,
+  Package,
+  CheckSquare,
+  ShoppingCart,
+  Activity,
 } from "lucide-react";
 import { format, subMonths } from "date-fns";
-import { toast } from "react-hot-toast";
 import {
   LineChart,
   Line,
@@ -28,10 +28,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { cn } from "@/lib/utils";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { toastError } from "@/helper/toasterNotification";
-import { useTranslation } from "react-i18next";
 
 import {
   useGetAdminDashboardStatsQuery,
@@ -41,14 +39,6 @@ import AdminSidebar from "@/components/layouts/AdminSidebar";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
 import NotificationBell from "./AdminNotification";
 
-interface KPIData {
-  newSellers: number;
-  newBuyers: number;
-  inspectionsScheduled: number;
-  transactionsCompleted: number;
-  transactionAmount?: number;
-}
-
 interface ChartData {
   month: string;
   transactions: number;
@@ -57,26 +47,21 @@ interface ChartData {
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-
-  // const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [dateRange, setDateRange] = useState("thisMonth");
+  const { setSidebarOpen } = useAdminSidebar();
 
-  const { sidebarCollapsed, sidebarOpen, setSidebarOpen } = useAdminSidebar();
-
-  // Helper to convert dateRange -> API params
   const getRange = () => {
     const now = new Date();
     const year = now.getFullYear();
-    const month = now.getMonth() + 1; // 1-12
-
+    const month = now.getMonth() + 1;
     switch (dateRange) {
       case "thisMonth":
         return { year, startMonth: month, endMonth: month };
-      case "lastMonth":
+      case "lastMonth": {
         const lastMonth = month === 1 ? 12 : month - 1;
         const lastMonthYear = month === 1 ? year - 1 : year;
         return { year: lastMonthYear, startMonth: lastMonth, endMonth: lastMonth };
+      }
       case "last3Months":
         return { year, startMonth: Math.max(1, month - 2), endMonth: month };
       case "last6Months":
@@ -90,36 +75,27 @@ const Admin = () => {
 
   const { year, startMonth, endMonth } = getRange();
 
-  // RTK Queries
   const {
     data: dashboardStats,
     isLoading: statsLoading,
-    isFetching: statsFetching,
     isError: statsError,
   } = useGetAdminDashboardStatsQuery({ year, startMonth, endMonth });
 
   const {
     data: monthlyStats,
     isLoading: monthlyLoading,
-    isFetching: monthlyFetching,
     isError: monthlyError,
   } = useGetMonthlyStatsQuery({ year, startMonth, endMonth });
 
-  const loading = statsLoading || monthlyLoading || statsFetching || monthlyFetching;
+  const loading = statsLoading || monthlyLoading;
 
   useEffect(() => {
-    if (statsError) {
-      toastError(t("admin.common.failedToLoad") || "Failed to load dashboard stats");
-    }
-    if (monthlyError) {
-      toastError(t("admin.common.failedToLoad") || "Failed to load monthly stats");
-    }
-  }, [statsError, monthlyError, t]);
+    if (statsError) toastError("Failed to load dashboard stats");
+    if (monthlyError) toastError("Failed to load monthly stats");
+  }, [statsError, monthlyError]);
 
-  // Transform monthlyStats into ChartData[]
   const chartData: ChartData[] = useMemo(() => {
     if (!monthlyStats?.months) {
-      // fallback to 12 months of labels (keeps design consistent)
       const months: ChartData[] = [];
       for (let i = 11; i >= 0; i--) {
         const date = subMonths(new Date(), i);
@@ -129,283 +105,278 @@ const Admin = () => {
     }
 
     const mapped = monthlyStats.months.map((m) => {
-      // Prefer currencies.USD if exists, otherwise try first currency available
       const currencies = m.currencies || {};
       const usd = currencies["USD"];
-      const firstCurrencyKey = Object.keys(currencies)[0];
-      const fallback = currencies[firstCurrencyKey];
-
+      const firstKey = Object.keys(currencies)[0];
+      const fallback = currencies[firstKey];
       const transactions = usd?.transaction_count ?? fallback?.transaction_count ?? 0;
       const amount = usd?.total_amount ?? fallback?.total_amount ?? 0;
-
-      return {
-        month: format(new Date(m.year, m.month - 1, 1), "MMM"),
-        transactions,
-        amount,
-      } as ChartData;
+      return { month: format(new Date(m.year, m.month - 1, 1), "MMM"), transactions, amount };
     });
 
-    // If API returned fewer months than UI expects, pad with zeros for last months
     if (mapped.length >= 12) return mapped.slice(-12);
 
-    // Build a last-12-months array and fill from mapped using month label match
-    const last12 = [] as ChartData[];
+    const last12: ChartData[] = [];
     for (let i = 11; i >= 0; i--) {
       const date = subMonths(new Date(), i);
       const label = format(date, "MMM");
       const found = mapped.find((m) => m.month === label);
       last12.push(found ?? { month: label, transactions: 0, amount: 0 });
     }
-
     return last12;
   }, [monthlyStats]);
 
-  // KPI data from API
-  const kpiData: KPIData = {
-    newSellers: dashboardStats?.data?.newSellers ?? 0,
-    newBuyers: dashboardStats?.data?.newBuyers ?? 0,
-    inspectionsScheduled: dashboardStats?.data?.inspectionsScheduled ?? 0,
-    transactionsCompleted: dashboardStats?.data?.transactionsCompleted ?? 0,
-    transactionAmount: (dashboardStats?.data as any)?.transactionAmount ?? 0,
-  };
+  const newSellers = dashboardStats?.data?.newSellers ?? 0;
+  const newBuyers = dashboardStats?.data?.newBuyers ?? 0;
+  const inspectionsScheduled = dashboardStats?.data?.inspectionsScheduled ?? 0;
+  const transactionsCompleted = dashboardStats?.data?.transactionsCompleted ?? 0;
+  const pendingListingApprovals = dashboardStats?.data?.pendingListingApprovals ?? 0;
+  const pendingSellerUpgrades = dashboardStats?.data?.pendingSellerUpgrades ?? 0;
+  const totalPendingActions = pendingListingApprovals + pendingSellerUpgrades;
 
-  const handleExportCsv = () => {
-    try {
-      const csvEscape = (v: any) => {
-        const s = String(v ?? "");
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-      const rowsToCsv = (rows: Record<string, any>[]) => {
-        if (!rows.length) return "";
-        const keys = Object.keys(rows[0]);
-        return [keys.join(","), ...rows.map(r => keys.map(k => csvEscape(r[k])).join(","))].join("\n");
-      };
-
-      const periodLabel = t(`admin.dashboard.dateRange.${dateRange}`);
-      const summary = [
-        { Metric: "Period", Value: periodLabel },
-        { Metric: "New Sellers", Value: kpiData.newSellers },
-        { Metric: "New Buyers", Value: kpiData.newBuyers },
-        { Metric: "Inspections Scheduled", Value: kpiData.inspectionsScheduled },
-        { Metric: "Transactions Completed", Value: kpiData.transactionsCompleted },
-        { Metric: "Transaction Amount (USD)", Value: kpiData.transactionAmount ?? 0 },
-      ];
-      const monthly = chartData.map(c => ({
-        Month: c.month,
-        Transactions: c.transactions,
-        Amount: c.amount,
-      }));
-
-      const csv =
-        rowsToCsv(summary) +
-        "\n\nMonthly Breakdown\n" +
-        rowsToCsv(monthly);
-
-      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `admin-dashboard_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Dashboard exported");
-    } catch {
-      toast.error("Export failed");
-    }
-  };
+  const dateRangeLabel =
+    dateRange === "thisMonth"
+      ? "This Month"
+      : dateRange === "lastMonth"
+        ? "Last Month"
+        : dateRange === "last3Months"
+          ? "Last 3 Months"
+          : dateRange === "last6Months"
+            ? "Last 6 Months"
+            : "This Year";
 
 
   // Skeleton while loading - preserves original design exactly
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t('admin.dashboard.loadingDashboard')}</p>
+      <div className="min-h-screen bg-gray-50/50 lg:pl-56">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Loading dashboard…</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      <AdminSidebar activePath="/admin" />
+    <div className="min-h-screen bg-gray-50/50">
+      <AdminSidebar />
 
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
+      <div className="lg:pl-56">
         {/* Header */}
-        <header className="bg-card border-b px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden p-1.5 rounded-md hover:bg-gray-100"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <h1 className="text-2xl font-bold text-foreground">{t("admin.dashboard.title")}</h1>
+              <Menu className="h-5 w-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
+              <p className="text-xs text-gray-400 hidden sm:block">GreenBidz Admin — {format(new Date(), "EEEE, d MMM yyyy")}</p>
+            </div>
           </div>
-
-
-          <div className="flex items-center gap-4">
-
+          <div className="flex items-center gap-3">
             <NotificationBell />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-4 py-2 border border-input rounded-md bg-background text-foreground"
+              className="text-sm px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
-              <option value="thisMonth">{t("admin.dashboard.dateRange.thisMonth")}</option>
-              <option value="lastMonth">{t("admin.dashboard.dateRange.lastMonth")}</option>
-              <option value="last3Months">{t("admin.dashboard.dateRange.last3Months")}</option>
-              <option value="last6Months">{t("admin.dashboard.dateRange.last6Months")}</option>
-              <option value="thisYear">{t("admin.dashboard.dateRange.thisYear")}</option>
+              <option value="thisMonth">This Month</option>
+              <option value="lastMonth">Last Month</option>
+              <option value="last3Months">Last 3 Months</option>
+              <option value="last6Months">Last 6 Months</option>
+              <option value="thisYear">This Year</option>
             </select>
             <LanguageSwitcher />
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6   ">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <Card className="hover:shadow-accent transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("admin.dashboard.newSellersRegistered")}
-                </CardTitle>
-                <Store className="h-5 w-5 text-accent" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-accent">{kpiData.newSellers}</div>
-                <p className="text-xs text-muted-foreground mt-1">{t("admin.dashboard.thisMonth")}</p>
-              </CardContent>
-            </Card>
+        <div className="p-6 space-y-6">
 
-            <Card className="hover:shadow-accent transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("admin.dashboard.newBuyersRegistered")}
-                </CardTitle>
-                <UserCheck className="h-5 w-5 text-success" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-success">{kpiData.newBuyers}</div>
-                <p className="text-xs text-muted-foreground mt-1">{t("admin.dashboard.thisMonth")}</p>
-              </CardContent>
-            </Card>
+          {/* ── Action Required Banner ── */}
+          {totalPendingActions > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <span className="text-sm font-semibold text-amber-800">
+                  Action Required — {totalPendingActions} item{totalPendingActions !== 1 ? "s" : ""} need your attention
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {pendingListingApprovals > 0 && (
+                  <button
+                    onClick={() => navigate("/admin/listings?approvalStatus=pending")}
+                    className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-4 py-2.5 text-sm hover:bg-amber-50 transition-colors group"
+                  >
+                    <Package className="h-4 w-4 text-amber-600" />
+                    <span className="font-medium text-gray-800">
+                      <span className="text-amber-700 font-bold">{pendingListingApprovals}</span> listing{pendingListingApprovals !== 1 ? "s" : ""} awaiting approval
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-amber-600 transition-colors" />
+                  </button>
+                )}
+                {pendingSellerUpgrades > 0 && (
+                  <button
+                    onClick={() => navigate("/admin/seller-upgrade-requests")}
+                    className="flex items-center gap-2 bg-white border border-amber-200 rounded-xl px-4 py-2.5 text-sm hover:bg-amber-50 transition-colors group"
+                  >
+                    <CheckSquare className="h-4 w-4 text-amber-600" />
+                    <span className="font-medium text-gray-800">
+                      <span className="text-amber-700 font-bold">{pendingSellerUpgrades}</span> seller upgrade{pendingSellerUpgrades !== 1 ? "s" : ""} to review
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-amber-600 transition-colors" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-            <Card className="hover:shadow-accent transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("admin.dashboard.inspectionsScheduled")}
-                </CardTitle>
-                <Calendar className="h-5 w-5 text-info" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-info">{kpiData.inspectionsScheduled}</div>
-                <p className="text-xs text-muted-foreground mt-1">{t("admin.dashboard.thisMonth")}</p>
-              </CardContent>
-            </Card>
+          {/* ── KPI Cards ── */}
+          <div>
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">{dateRangeLabel}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-gray-500">New Sellers</span>
+                  <div className="w-8 h-8 bg-green-50 rounded-xl flex items-center justify-center">
+                    <Store className="h-4 w-4 text-green-600" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{newSellers}</div>
+                <p className="text-xs text-gray-400 mt-1">Registered sellers</p>
+              </div>
 
-            <Card className="hover:shadow-accent transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("admin.dashboard.transactionsCompleted")}
-                </CardTitle>
-                <DollarSign className="h-5 w-5 text-warning" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-warning">{kpiData.transactionsCompleted}</div>
-                {/* <p className="text-xs text-muted-foreground mt-1">
-                  Total Amount: {(kpiData.transactionAmount / 1000).toFixed(0)}
-                </p> */}
-                <p className="text-xs text-muted-foreground mt-1">{t("admin.dashboard.thisMonth")}</p>
-              </CardContent>
-            </Card>
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-gray-500">New Buyers</span>
+                  <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <UserCheck className="h-4 w-4 text-blue-600" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{newBuyers}</div>
+                <p className="text-xs text-gray-400 mt-1">Registered buyers</p>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-gray-500">Inspections</span>
+                  <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
+                    <Calendar className="h-4 w-4 text-purple-600" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{inspectionsScheduled}</div>
+                <p className="text-xs text-gray-400 mt-1">Scheduled visits</p>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-gray-500">Transactions</span>
+                  <div className="w-8 h-8 bg-orange-50 rounded-xl flex items-center justify-center">
+                    <ShoppingCart className="h-4 w-4 text-orange-600" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">{transactionsCompleted}</div>
+                <p className="text-xs text-gray-400 mt-1">Completed payments</p>
+              </div>
+            </div>
           </div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Transactions Line Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-accent" />
-                  {t("admin.dashboard.transactionsCompletedChart")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="transactions"
-                      stroke="hsl(var(--accent))"
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--accent))" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {/* ── Quick Actions ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button
+              onClick={() => navigate("/admin/listings")}
+              className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md hover:border-green-200 transition-all text-left group"
+            >
+              <Package className="h-5 w-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+              <span className="text-sm font-medium text-gray-700">All Listings</span>
+              <span className="text-xs text-gray-400">View & approve</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/sellers")}
+              className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md hover:border-blue-200 transition-all text-left group"
+            >
+              <Store className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+              <span className="text-sm font-medium text-gray-700">Sellers</span>
+              <span className="text-xs text-gray-400">Manage accounts</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/buyers")}
+              className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md hover:border-purple-200 transition-all text-left group"
+            >
+              <Users className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+              <span className="text-sm font-medium text-gray-700">Buyers</span>
+              <span className="text-xs text-gray-400">Manage accounts</span>
+            </button>
+            <button
+              onClick={() => navigate("/admin/offers")}
+              className="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md hover:border-orange-200 transition-all text-left group"
+            >
+              <Activity className="h-5 w-5 text-gray-400 group-hover:text-orange-600 transition-colors" />
+              <span className="text-sm font-medium text-gray-700">Offers & Orders</span>
+              <span className="text-xs text-gray-400">View activity</span>
+            </button>
+          </div>
 
-            {/* Transaction Amount Bar Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-success" />
-                  {t("admin.dashboard.transactionAmountChart")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                      }}
-                      formatter={(value: number) => `$${(value / 1000).toFixed(0)}K`}
-                    />
-                    <Legend />
-                    <Bar dataKey="amount" fill="hsl(var(--success))" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          {/* ── Charts ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <h3 className="text-sm font-semibold text-gray-800">Transactions Over Time</h3>
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                  <Tooltip
+                    contentStyle={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", fontSize: 12 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line
+                    type="monotone"
+                    dataKey="transactions"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    dot={{ fill: "#16a34a", r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <BarChart3 className="h-4 w-4 text-blue-600" />
+                <h3 className="text-sm font-semibold text-gray-800">Transaction Amount (USD)</h3>
+              </div>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                  <Tooltip
+                    contentStyle={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: "10px", fontSize: 12 }}
+                    formatter={(value: number) => [`$${(value / 1000).toFixed(1)}K`, "Amount"]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="amount" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Footer */}
-          <Card>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {t("admin.common.lastUpdated")}: {format(new Date(), "PPpp")}
-              </div>
-              <Button variant="outline" size="sm" onClick={handleExportCsv}>
-                <Download className="h-4 w-4 mr-2" />
-                {t("admin.common.exportCsv")}
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Last updated: {format(new Date(), "PPpp")}
+            </div>
+          </div>
         </div>
       </div>
     </div>
