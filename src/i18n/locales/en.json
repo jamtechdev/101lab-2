@@ -901,6 +901,8 @@
     "welcomeBack": "Welcome back, {user}",
     "logout": "Logout",
     "roleSwitcher": {
+      "seller": "Seller",
+      "buyer": "Buyer",
       "currentMode": "Current Mode",
       "switchTo": "Switch to {role} Dashboard",
       "switching": "Switching...",

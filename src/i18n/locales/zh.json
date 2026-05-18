@@ -820,7 +820,16 @@
     "viewReports": "查看報告",
     "backToDashboard": "返回儀表板",
     "welcomeBack": "歡迎回來，{user}",
-    "logout": "登出"
+    "logout": "登出",
+    "roleSwitcher": {
+      "seller": "賣家",
+      "buyer": "買家",
+      "currentMode": "目前模式",
+      "switchTo": "切換至{role}儀表板",
+      "switching": "切換中...",
+      "sellerDashboard": "賣家儀表板",
+      "buyerDashboard": "買家儀表板"
+    }
   },
   "sellerDashboard": {
     "title": "賣家控制台",
