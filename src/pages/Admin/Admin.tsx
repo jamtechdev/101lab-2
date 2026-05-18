@@ -126,23 +126,27 @@ const Admin = () => {
     return last12;
   }, [monthlyStats]);
 
-  const stats = (dashboardStats?.data as any) ?? {};
-  const newSellers: number = stats.newSellers ?? 0;
-  const newBuyers: number = stats.newBuyers ?? 0;
-  const transactionsCompleted: number = stats.transactionsCompleted ?? 0;
-  const inspectionsScheduled: number = stats.inspectionsScheduled ?? 0;
-  const pendingListingApprovals: number = stats.pendingListingApprovals ?? 0;
-  const pendingSellerUpgrades: number = stats.pendingSellerUpgrades ?? 0;
+  const newSellers = dashboardStats?.data?.newSellers ?? 0;
+  const newBuyers = dashboardStats?.data?.newBuyers ?? 0;
+  const inspectionsScheduled = dashboardStats?.data?.inspectionsScheduled ?? 0;
+  const transactionsCompleted = dashboardStats?.data?.transactionsCompleted ?? 0;
+  const pendingListingApprovals = dashboardStats?.data?.pendingListingApprovals ?? 0;
+  const pendingSellerUpgrades = dashboardStats?.data?.pendingSellerUpgrades ?? 0;
   const totalPendingActions = pendingListingApprovals + pendingSellerUpgrades;
 
-  const dateRangeLabel = {
-    thisMonth: "This Month",
-    lastMonth: "Last Month",
-    last3Months: "Last 3 Months",
-    last6Months: "Last 6 Months",
-    thisYear: "This Year",
-  }[dateRange] ?? "This Month";
+  const dateRangeLabel =
+    dateRange === "thisMonth"
+      ? "This Month"
+      : dateRange === "lastMonth"
+        ? "Last Month"
+        : dateRange === "last3Months"
+          ? "Last 3 Months"
+          : dateRange === "last6Months"
+            ? "Last 6 Months"
+            : "This Year";
 
+
+  // Skeleton while loading - preserves original design exactly
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50/50 lg:pl-56">
@@ -367,12 +371,12 @@ const Admin = () => {
             </div>
           </div>
 
-          {/* ── Footer ── */}
-          <div className="flex items-center justify-between py-2">
-            <p className="text-xs text-gray-400">Last refreshed: {format(new Date(), "HH:mm, d MMM yyyy")}</p>
-            <p className="text-xs text-gray-400">GreenBidz Admin v2</p>
+          {/* Footer */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between">
+            <div className="text-sm text-gray-500">
+              Last updated: {format(new Date(), "PPpp")}
+            </div>
           </div>
-
         </div>
       </div>
     </div>
