@@ -169,6 +169,53 @@ const Admin = () => {
     transactionAmount: (dashboardStats?.data as any)?.transactionAmount ?? 0,
   };
 
+  const handleExportCsv = () => {
+    try {
+      const csvEscape = (v: any) => {
+        const s = String(v ?? "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rowsToCsv = (rows: Record<string, any>[]) => {
+        if (!rows.length) return "";
+        const keys = Object.keys(rows[0]);
+        return [keys.join(","), ...rows.map(r => keys.map(k => csvEscape(r[k])).join(","))].join("\n");
+      };
+
+      const periodLabel = t(`admin.dashboard.dateRange.${dateRange}`);
+      const summary = [
+        { Metric: "Period", Value: periodLabel },
+        { Metric: "New Sellers", Value: kpiData.newSellers },
+        { Metric: "New Buyers", Value: kpiData.newBuyers },
+        { Metric: "Inspections Scheduled", Value: kpiData.inspectionsScheduled },
+        { Metric: "Transactions Completed", Value: kpiData.transactionsCompleted },
+        { Metric: "Transaction Amount (USD)", Value: kpiData.transactionAmount ?? 0 },
+      ];
+      const monthly = chartData.map(c => ({
+        Month: c.month,
+        Transactions: c.transactions,
+        Amount: c.amount,
+      }));
+
+      const csv =
+        rowsToCsv(summary) +
+        "\n\nMonthly Breakdown\n" +
+        rowsToCsv(monthly);
+
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `admin-dashboard_${dateRange}_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Dashboard exported");
+    } catch {
+      toast.error("Export failed");
+    }
+  };
+
 
   // Skeleton while loading - preserves original design exactly
   if (loading) {
@@ -353,7 +400,7 @@ const Admin = () => {
               <div className="text-sm text-muted-foreground">
                 {t("admin.common.lastUpdated")}: {format(new Date(), "PPpp")}
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleExportCsv}>
                 <Download className="h-4 w-4 mr-2" />
                 {t("admin.common.exportCsv")}
               </Button>

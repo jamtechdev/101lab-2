@@ -362,21 +362,16 @@ const AdminSellers = () => {
               <h1 className="text-3xl font-bold tracking-tight">{t('admin.sellers.titleFull')}</h1>
               <p className="text-muted-foreground mt-1">{t('admin.sellers.subtitle')}</p>
             </div>
-            <div className="relative inline-block">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-                onClick={handleExport}
-                className="flex items-center gap-2 border-green-300 text-green-700 opacity-70 cursor-not-allowed"
-              >
-                <span className="text-base">⬇</span>
-                Export Excel
-              </Button>
-              <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow whitespace-nowrap">
-                Coming Soon
-              </span>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={exporting}
+              onClick={handleExport}
+              className="flex items-center gap-2 border-green-300 text-green-700"
+            >
+              <span className="text-base">⬇</span>
+              {exporting ? "Exporting…" : "Export Excel"}
+            </Button>
           </div>
 
           {/* ---------------- SUMMARY CARDS ---------------- */}
