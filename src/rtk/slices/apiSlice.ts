@@ -554,6 +554,21 @@ export const apiSlice = createApi({
       }),
     }),
 
+    // ── Power Seller (admin-controlled premium tier) ─────────────────────────
+    // Backend (not implemented yet): `PUT /admin/sellers/:id/power-seller`
+    // body { is_power_seller: boolean } + audit log row, mirror flag onto
+    // /user/verify-user response so client picks it up.
+    setSellerPowerStatus: builder.mutation<
+      { success: boolean; message: string; data?: { is_power_seller: boolean } },
+      { sellerId: number | string; is_power_seller: boolean; admin_notes?: string }
+    >({
+      query: ({ sellerId, is_power_seller, admin_notes }) => ({
+        url: `/admin/sellers/${sellerId}/power-seller`,
+        method: "PUT",
+        data: { is_power_seller, admin_notes },
+      }),
+    }),
+
   }),
 });
 
@@ -592,4 +607,5 @@ export const {
   useGetSellerUpgradeRequestsQuery,
   useApproveSellerUpgradeRequestMutation,
   useRejectSellerUpgradeRequestMutation,
+  useSetSellerPowerStatusMutation,
 } = apiSlice;

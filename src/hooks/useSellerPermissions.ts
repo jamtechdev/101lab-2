@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useGetUserProfileQuery, useGetUserTypeAndRoleQuery, apiSlice } from '@/rtk/slices/apiSlice';
+import { useGetUserProfileQuery, useGetUserTypeAndRoleQuery, useVerifyUserQuery, apiSlice } from '@/rtk/slices/apiSlice';
 import { useGetCompanyPermissionsQuery } from '@/rtk/slices/permissionApiSlice';
 import {
   hasPermission,
@@ -16,6 +16,11 @@ import { SITE_TYPE_PROFILE } from '@/config/site';
 export const useSellerPermissions = (roleOverride?: SellerRole) => {
   const { user } = useAuth();
   const userId = localStorage.getItem("userId") || user?.id?.toString() || "";
+
+  // AuthProvider isn't mounted at app root, so `useAuth().user` is always null.
+  // Read the live user object from the RTK query that actually fires.
+  const { data: verifyData } = useVerifyUserQuery();
+  const verifiedUser = verifyData?.user as { is_power_seller?: boolean } | undefined;
 
   // NEW: Check if user has assigned roles from login (highest priority for assigned users)
   const userRoleFromLogin = useMemo(() => {
@@ -456,6 +461,13 @@ export const useSellerPermissions = (roleOverride?: SellerRole) => {
     isBidManager: sellerRole === 'bid_manager',
     isPaymentManager: sellerRole === 'payment_manager',
     isReportsViewer: sellerRole === 'reports_viewer',
+    // Platform-admin-granted premium tier — orthogonal to company sub-roles.
+    // Source priority: verify-user response (AuthContext) > user-type-role API.
+    isPowerSeller: !!(
+      verifiedUser?.is_power_seller ||
+      user?.is_power_seller ||
+      userTypeRoleData?.data?.is_power_seller
+    ),
   };
 };
 

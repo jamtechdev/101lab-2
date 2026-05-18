@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Store, Building2, Loader2, Lock, Crown, CheckCircle2,
-  ArrowLeftRight, Clock, XCircle, ChevronRight,
+  ArrowLeftRight, Clock, XCircle, ChevronRight, ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSocket } from "@/services/socket";
@@ -198,26 +198,32 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
 
   // ── Segmented toggle variant ──────────────────────────────────────────────
   if (variant === "segmented") {
+    const baseBtn =
+      "flex-1 flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold " +
+      "transition-all duration-200 relative " +
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent " +
+      "focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar " +
+      "disabled:opacity-60 disabled:cursor-not-allowed";
+
     return (
       <>
-        <div className="flex rounded-lg bg-sidebar-foreground/10 p-0.5 gap-0.5">
+        <div className="flex gap-1 rounded-xl border border-white/[0.07] bg-black/25 p-1 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
           {/* Seller tab */}
           <button
             onClick={() => handleSwitch("seller")}
             disabled={switching}
+            aria-pressed={currentRole === "seller"}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-200 relative",
+              baseBtn,
               currentRole === "seller"
-                ? "bg-sidebar-foreground/15 text-sidebar-foreground shadow-sm"
-                : isVerifiedSeller
-                  ? "text-sidebar-foreground/50 hover:text-sidebar-foreground/70 hover:bg-sidebar-foreground/5"
-                  : "text-sidebar-foreground/35 hover:text-sidebar-foreground/50 cursor-pointer"
+                ? "bg-accent text-accent-foreground shadow-md shadow-accent/30"
+                : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
             )}
           >
-            <Building2 className="w-3 h-3 shrink-0" />
-            {t("dashboard.roleSwitcher.seller", "Seller")}
-            {!isVerifiedSeller && (
-              <Lock className="w-2.5 h-2.5 ml-0.5 opacity-50" />
+            <Store className="w-4 h-4 shrink-0" />
+            <span>{t("dashboard.roleSwitcher.seller", "Seller")}</span>
+            {!isVerifiedSeller && currentRole !== "seller" && (
+              <Lock className="w-3 h-3 ml-0.5 opacity-60" />
             )}
           </button>
 
@@ -225,15 +231,16 @@ export default function RoleSwitcher({ variant = "default" }: RoleSwitcherProps)
           <button
             onClick={() => handleSwitch("buyer")}
             disabled={switching}
+            aria-pressed={currentRole === "buyer"}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-200",
+              baseBtn,
               currentRole === "buyer"
-                ? "bg-sidebar-foreground/15 text-sidebar-foreground shadow-sm"
-                : "text-sidebar-foreground/50 hover:text-sidebar-foreground/70 hover:bg-sidebar-foreground/5"
+                ? "bg-accent text-accent-foreground shadow-md shadow-accent/30"
+                : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground"
             )}
           >
-            <Store className="w-3 h-3 shrink-0" />
-            {t("dashboard.roleSwitcher.buyer", "Buyer")}
+            <ShoppingBag className="w-4 h-4 shrink-0" />
+            <span>{t("dashboard.roleSwitcher.buyer", "Buyer")}</span>
           </button>
         </div>
         {modal}

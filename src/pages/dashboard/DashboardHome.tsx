@@ -11,8 +11,6 @@ import {
   CheckCircle2,
   ArrowUpRight,
   Activity,
-  FileText,
-  Zap,
   Sparkles,
   Trash2,
   Bell,
@@ -22,7 +20,9 @@ import {
   ArrowRight,
   CircleCheck,
   BarChart3,
-  TableProperties,
+  Tag,
+  ShoppingBag,
+  ClipboardList,
 } from "lucide-react";
 import {
   useGetSellerDashboardQuery,
@@ -97,7 +97,7 @@ const SellerActionRequired = ({
         {liveWithBids.map((batch: any) => (
           <div
             key={batch.batch_id}
-            onClick={() => navigate("/dashboard/bids")}
+            onClick={() => navigate("/dashboard/buyer-activity?tab=auction-bids")}
             className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-amber-100/60 transition-colors group"
           >
             <Gavel className="w-3.5 h-3.5 text-violet-500 flex-shrink-0" />
@@ -157,6 +157,45 @@ const SellerActionRequired = ({
   );
 };
 
+/* ─── Quick nav card (matches buyer dashboard) ─────────────────── */
+const NavCard = ({
+  icon: Icon,
+  label,
+  sub,
+  href,
+  badge,
+}: {
+  icon: any;
+  label: string;
+  sub: string;
+  href: string;
+  badge?: number;
+}) => {
+  const navigate = useNavigate();
+  return (
+    <Card
+      onClick={() => navigate(href)}
+      className="group cursor-pointer border border-border hover:border-accent/40 shadow-sm hover:shadow-md transition-all duration-200"
+    >
+      <CardContent className="p-3 flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0 relative bg-muted">
+          <Icon className="w-4 h-4 text-foreground/70" />
+          {badge != null && badge > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[16px] bg-destructive text-white text-[9px] font-bold flex items-center justify-center rounded-full ring-2 ring-background">
+              {badge}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-foreground">{label}</p>
+          <p className="text-[10px] text-muted-foreground truncate mt-0.5 font-mono">{sub}</p>
+        </div>
+        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-accent group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+      </CardContent>
+    </Card>
+  );
+};
+
 /* ─── Deal Pipeline ──────────────────────────────────────────────── */
 const PipelineSummary = ({
   counts,
@@ -194,7 +233,7 @@ const PipelineSummary = ({
       bg: "bg-blue-100",
       text: "text-blue-700",
       border: "border-blue-200",
-      onClick: () => navigate("/dashboard/bids"),
+      onClick: () => navigate("/dashboard/buyer-activity?tab=auction-bids"),
     },
     {
       label: "Winner Selected",
@@ -203,7 +242,7 @@ const PipelineSummary = ({
       bg: "bg-amber-100",
       text: "text-amber-700",
       border: "border-amber-200",
-      onClick: () => navigate("/dashboard/bids"),
+      onClick: () => navigate("/dashboard/buyer-activity?tab=auction-bids"),
     },
     {
       label: "Awaiting Payment",
@@ -212,7 +251,7 @@ const PipelineSummary = ({
       bg: "bg-orange-100",
       text: "text-orange-700",
       border: "border-orange-200",
-      onClick: () => navigate("/dashboard/bids"),
+      onClick: () => navigate("/dashboard/buyer-activity?tab=auction-bids"),
     },
     {
       label: "Pickup Stage",
@@ -221,7 +260,7 @@ const PipelineSummary = ({
       bg: "bg-sky-100",
       text: "text-sky-700",
       border: "border-sky-200",
-      onClick: () => navigate("/dashboard/bids"),
+      onClick: () => navigate("/dashboard/buyer-activity?tab=auction-bids"),
     },
     {
       label: "Deals Closed",
@@ -310,7 +349,7 @@ const RecentBidsFeed = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/dashboard/bids")}
+            onClick={() => navigate("/dashboard/buyer-activity?tab=auction-bids")}
             className="text-[11px] text-muted-foreground hover:text-foreground h-7 px-2"
           >
             View All
@@ -331,7 +370,7 @@ const RecentBidsFeed = ({
               <div
                 key={batch.batch_id}
                 className="flex items-center gap-3 px-3 py-2 hover:bg-secondary/50 transition-all duration-200 cursor-pointer group"
-                onClick={() => navigate("/dashboard/bids")}
+                onClick={() => navigate("/dashboard/buyer-activity?tab=auction-bids")}
               >
                 {/* Thumbnail */}
                 <div className="w-8 h-8 rounded border border-border overflow-hidden flex-shrink-0 bg-muted">
@@ -566,26 +605,9 @@ const DashboardHome = () => {
     },
   ];
 
-  const quickActions = [
-    {
-      label: t("sellerDashboard.actions.submitScrap"),
-      icon: Package,
-      onClick: () => navigate("/upload?type=scrap"),
-      color: "hover:bg-info/5 hover:text-info hover:border-info/20",
-    },
-    {
-      label: t("sellerDashboard.actions.sourceEquipment"),
-      icon: Zap,
-      onClick: () => navigate("/dashboard/submissions"),
-      color: "hover:bg-accent/5 hover:text-accent hover:border-accent/20",
-    },
-    {
-      label: t("sellerDashboard.actions.viewReports"),
-      icon: FileText,
-      onClick: () => navigate("/dashboard/reports"),
-      color: "hover:bg-success/5 hover:text-success hover:border-success/20",
-    },
-  ];
+  const auctionBidsBadge = sellerBids.filter(
+    (b: any) => b.status === "live_for_bids" && (b.summary?.total ?? 0) > 0
+  ).length;
 
   const handleDeactivate = async (batchId: any) => {
     const confirmAction = window.confirm(
@@ -756,8 +778,14 @@ const DashboardHome = () => {
                       </h3>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate mt-0.5 font-mono">
-                      {t(stat.name)} · {t(`sellerDashboard.stats.${stat.currentValue}`)}{" "}
-                      {stat?.currentData}
+                      {t(`sellerDashboard.stats.${stat.name}`)}
+                      {stat.currentValue && stat.currentValue !== stat.name && (
+                        <>
+                          {" · "}
+                          {t(`sellerDashboard.stats.${stat.currentValue}`)}{" "}
+                          {stat?.currentData}
+                        </>
+                      )}
                     </p>
                   </div>
                 </CardContent>
@@ -773,18 +801,54 @@ const DashboardHome = () => {
           navigate={navigate}
         /> */}
 
-        {/* Main Content */}
-        <div className="grid lg:grid-cols-3 gap-4">
-          {/* Recent Activity */}
-          <Card className="lg:col-span-2 border-border/50 hover:border-border transition-colors shadow-sm">
+        {/* ── Quick access ─────────────────────────────────────── */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            {t("sellerDashboard.quickAccess")}
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <NavCard
+              href="/dashboard/submissions"
+              icon={ClipboardList}
+              label={t("sellerDashboard.myListingsNav")}
+              sub={t("sellerDashboard.myListingsNavSub")}
+            />
+            <NavCard
+              href="/dashboard/buyer-activity?tab=auction-bids"
+              icon={Gavel}
+              label={t("sellerDashboard.auctionBidsNav")}
+              sub={t("sellerDashboard.auctionBidsNavSub")}
+              badge={auctionBidsBadge}
+            />
+            <NavCard
+              href="/dashboard/buyer-activity?tab=negotiated-offers"
+              icon={Tag}
+              label={t("sellerDashboard.negotiatedOffersNav")}
+              sub={t("sellerDashboard.negotiatedOffersNavSub")}
+            />
+            <NavCard
+              href="/dashboard/buyer-activity?tab=buy-now-orders"
+              icon={ShoppingBag}
+              label={t("sellerDashboard.buyNowOrdersNav")}
+              sub={t("sellerDashboard.buyNowOrdersNavSub")}
+            />
+          </div>
+        </div>
+
+        {/* ── Recent Activity ─────────────────────────────────── */}
+        <div>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            {t("sellerDashboard.recentActivity")}
+          </h2>
+          <Card className="border-border/50 hover:border-border transition-colors shadow-sm">
             <CardHeader className="border-b border-border/50 pb-2 px-3 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-1 rounded bg-muted text-foreground/70">
                     <Activity className="w-3.5 h-3.5" />
                   </div>
-                  <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
-                    {t("sellerDashboard.recentActivity")}
+                  <CardTitle className="text-sm font-bold text-foreground">
+                    {t("sellerDashboard.recentActivityList")}
                   </CardTitle>
                 </div>
 
@@ -891,38 +955,6 @@ const DashboardHome = () => {
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="border-border/50 hover:border-border transition-colors shadow-sm">
-            <CardHeader className="border-b border-border/50 pb-2 px-3 pt-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1 rounded bg-muted text-foreground/70">
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
-                <CardTitle className="text-sm font-bold text-foreground uppercase tracking-wide">
-                  {t("sellerDashboard.quickActions")}
-                </CardTitle>
-              </div>
-            </CardHeader>
-
-            <CardContent className="p-2.5 space-y-1.5">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className={`w-full justify-start h-auto py-2.5 px-3 group transition-all duration-200 ${action.color} border-border/50 hover:border-current text-sm`}
-                    onClick={action.onClick}
-                  >
-                    <Icon className="w-4 h-4 mr-2.5" />
-                    <span className="font-medium">{action.label}</span>
-                    <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-0 group-hover:opacity-100" />
-                  </Button>
-                );
-              })}
             </CardContent>
           </Card>
         </div>

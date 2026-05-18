@@ -28,6 +28,8 @@ import {
   Hash,
   Globe,
   BadgeCheck,
+  Crown,
+  Loader2,
 } from "lucide-react";
 import AdminSidebar from "@/components/layouts/AdminSidebar";
 import AdminHeader from "./AdminHeader";
@@ -35,6 +37,7 @@ import {
   useGetAdminUserDetailsQuery,
   useUpdateUserStatusMutation,
 } from "@/rtk/slices/adminApiSlice";
+import { useSetSellerPowerStatusMutation } from "@/rtk/slices/apiSlice";
 import {
   useGetBuyerFullDetailsQuery,
   useGetBuyerBidsQuery,
@@ -166,6 +169,7 @@ const AdminUserDetails = () => {
   const { data: batchResp, isLoading: batchLoading } = useGetBatchesBySellerQuery({ sellerId: String(id), page: listingPage }, { skip: !id || tab !== "listings" });
 
   const [updateStatus, { isLoading: statusUpdating }] = useUpdateUserStatusMutation();
+  const [setPowerStatus, { isLoading: isSavingPower }] = useSetSellerPowerStatusMutation();
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const user       = userResp?.data;
@@ -220,7 +224,7 @@ const AdminUserDetails = () => {
     return (
       <div className="min-h-screen bg-gray-50/50">
         <AdminSidebar />
-        <div className="lg:pl-56">
+        <div className="lg:pl-[280px]">
           <AdminHeader />
           <div className="p-4 md:p-6 space-y-5">
             <Skeleton className="h-8 w-40 rounded-xl" />
@@ -239,7 +243,7 @@ const AdminUserDetails = () => {
     return (
       <div className="min-h-screen bg-gray-50/50">
         <AdminSidebar />
-        <div className="lg:pl-56">
+        <div className="lg:pl-[280px]">
           <AdminHeader />
           <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[60vh]">
             <AlertCircle className="h-10 w-10 text-gray-300 mb-3" />
@@ -252,6 +256,10 @@ const AdminUserDetails = () => {
   }
 
   const currentStatus = String(user.status || "").toLowerCase();
+  const isSeller = String(user.user_type || "").toLowerCase() === "seller";
+  // Power Seller status is stored in jos_usermeta — see docs/POWER_SELLER.md.
+  // Backend serializes meta as a flat object on `user.meta` (e.g. `meta.is_power_seller`).
+  const isPowerSeller = String(meta?.is_power_seller ?? user.is_power_seller ?? "0") === "1";
   const tabs = [
     { key: "overview",     label: "Overview" },
     { key: "bids",         label: "Bids" },
@@ -259,10 +267,32 @@ const AdminUserDetails = () => {
     { key: "inspections",  label: "Inspections" },
   ] as const;
 
+  // ── Power Seller toggle (admin-only, sellers only) ──────────────────────────
+  // NOTE: `setPowerStatus` is destructured from the mutation hook hoisted to
+  // the top of the component (see near the userLoading checks) to keep hook
+  // order stable across renders. Do not move this hook back down here.
+  const handleTogglePowerSeller = async () => {
+    if (!id) return;
+    const next = !isPowerSeller;
+    const confirm = window.confirm(
+      next
+        ? "Grant Power Seller status to this seller?"
+        : "Revoke Power Seller status from this seller?"
+    );
+    if (!confirm) return;
+    try {
+      await setPowerStatus({ sellerId: id, is_power_seller: next }).unwrap();
+      toast.success(next ? "Power Seller status granted" : "Power Seller status revoked");
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update Power Seller status");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar />
-      <div className="lg:pl-56">
+      <div className="lg:pl-[280px]">
         <AdminHeader />
 
         <main className="p-4 md:p-6 space-y-5">
@@ -296,6 +326,11 @@ const AdminUserDetails = () => {
                   <h2 className="text-xl font-bold text-gray-900">{user.name || "—"}</h2>
                   <StatusBadge status={user.status} />
                   <UserTypeBadge type={user.user_type} />
+                  {isSeller && isPowerSeller && (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-1">
+                      <Crown className="h-3 w-3" />Power Seller
+                    </span>
+                  )}
                   {platform && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 rounded-full px-2.5 py-1">
                       <Globe className="h-3 w-3" />{platform}
@@ -334,6 +369,23 @@ const AdminUserDetails = () => {
                     className="text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl px-4 py-2 transition-colors disabled:opacity-50 whitespace-nowrap"
                   >
                     Set Pending
+                  </button>
+                )}
+                {isSeller && (
+                  <button
+                    onClick={handleTogglePowerSeller}
+                    disabled={isSavingPower}
+                    className={
+                      isPowerSeller
+                        ? "text-xs font-semibold bg-white border border-amber-200 hover:bg-amber-50 text-amber-700 rounded-xl px-4 py-2 transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5 justify-center"
+                        : "text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-4 py-2 transition-colors disabled:opacity-50 whitespace-nowrap flex items-center gap-1.5 justify-center"
+                    }
+                    title={isPowerSeller ? "Revoke Power Seller status" : "Grant Power Seller status"}
+                  >
+                    {isSavingPower
+                      ? <Loader2 className="h-3 w-3 animate-spin" />
+                      : <Crown className="h-3 w-3" />}
+                    {isPowerSeller ? "Revoke Power" : "Make Power Seller"}
                   </button>
                 )}
                 <button

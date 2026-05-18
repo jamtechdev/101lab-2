@@ -201,7 +201,7 @@ const AdminAutoApproval = () => {
   return (
     <div className={cn("min-h-screen w-full bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50")}>
       <AdminSidebar activePath="/admin/auto-approval" />
-      <div className="lg:pl-56 transition-all duration-300">
+      <div className="lg:pl-[280px] transition-all duration-300">
         <AdminHeader />
         <div className="p-4 lg:p-6 md:p-8 max-w-5xl mx-auto space-y-6">
           <div>

@@ -272,7 +272,7 @@ export default function AdminChat() {
         <div className="min-h-screen w-full overflow-x-hidden bg-background">
             <AdminSidebar activePath="/admin/sellers/chat" />
             <div
-                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
+                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-[280px] ml-0"
             >
                 <AdminHeader />
 

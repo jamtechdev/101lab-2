@@ -1,10 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
     LayoutDashboard, Package, ShoppingCart, Store, BarChart3,
-    Settings, LogOut, X, Menu,
-    MessageCircle, User, Zap, Percent, Gavel,
-    UserCheck, Shield, Tag, Handshake, Megaphone,
-    BookOpen, FileText,
+    Settings, LogOut, X, MessageCircle, User, Zap, Percent, Gavel,
+    UserCheck, Tag, Handshake, Megaphone, BookOpen, FileText,
+    type LucideIcon,
 } from "lucide-react";
 import logo from "@/assets/greenbidz_logo.png";
 import { cn } from "@/lib/utils";
@@ -12,23 +12,76 @@ import { useTranslation } from "react-i18next";
 import { toastError, toastSuccess } from "@/helper/toasterNotification";
 import { useLogoutMutation } from "@/rtk/slices/apiSlice";
 import { useAdminSidebar } from "@/context/AdminSidebarContext";
+import {
+    sidebarAsideClass,
+    sidebarHeaderClass,
+    sidebarCloseButtonClass,
+    sidebarNavClass,
+    sidebarNavItemClass,
+    sidebarNavIconClass,
+    sidebarActiveBarClass,
+} from "./sidebar/sidebarStyles";
+import { SectionHeader } from "./sidebar/SectionHeader";
+import { computeAdminNavIsActive } from "./sidebar/helpers";
 
-const SectionHeader = ({ title }: { title: string }) => (
-    <div className="px-3 pt-4 pb-1">
-        <h3 className="text-[9px] font-semibold text-sidebar-foreground/30 uppercase tracking-widest">
-            {title}
-        </h3>
-    </div>
-);
+/**
+ * Admin sidebar deviates from SIDEBAR_DESIGN.md §0 decision #2 in two ways:
+ *  - Logout lives in the sidebar footer (no admin header user-menu exists).
+ *  - Uses its own `useAdminSidebar()` context rather than the unified
+ *    SidebarContext, because 23 admin pages already consume that hook.
+ *
+ * The visual tokens (dark slate, brand active state, label-caps section
+ * headers, 280px width) match the rest of the system.
+ */
 
-// activePath kept for backward compatibility — active state is now derived from useLocation()
-const AdminSidebar = (_props?: { activePath?: string }) => {
+interface NavItem {
+    icon: LucideIcon;
+    label: string;
+    path: string;
+}
+
+function AdminNavLink({
+    item,
+    onNavigate,
+    allPaths,
+}: {
+    item: NavItem;
+    onNavigate: () => void;
+    allPaths: string[];
+}) {
     const location = useLocation();
+    const Icon = item.icon;
+    const isActive = computeAdminNavIsActive(
+        item.path,
+        location.pathname,
+        allPaths
+    );
+
+    return (
+        <Link
+            to={item.path}
+            onClick={onNavigate}
+            aria-current={isActive ? "page" : undefined}
+            className={sidebarNavItemClass(isActive)}
+        >
+            {isActive && (
+                <span aria-hidden="true" className={sidebarActiveBarClass} />
+            )}
+            <span className={sidebarNavIconClass(isActive)}>
+                <Icon className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="flex-1 truncate">{item.label}</span>
+        </Link>
+    );
+}
+
+const AdminSidebar = (_props?: { activePath?: string }) => {
     const { t } = useTranslation();
     const { sidebarOpen, setSidebarOpen } = useAdminSidebar();
     const [logout] = useLogoutMutation();
+    const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-    const NAV_SECTIONS = [
+    const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
         {
             label: t("admin.sidebar.group.overview", "Overview"),
             items: [
@@ -51,7 +104,7 @@ const AdminSidebar = (_props?: { activePath?: string }) => {
                 { icon: User,          label: t("admin.sidebar.users", "All Users"),               path: "/admin/users" },
                 { icon: ShoppingCart,  label: t("admin.sidebar.buyers", "Buyers"),                 path: "/admin/buyers" },
                 { icon: Store,         label: t("admin.sidebar.sellers", "Sellers"),               path: "/admin/sellers" },
-                { icon: MessageCircle, label: t("admin.sidebar.chat", "Chat"),                     path: "/admin/sellers/chat" },
+                { icon: MessageCircle, label: t("admin.sidebar.chat", "Messages"),                     path: "/admin/sellers/chat" },
             ],
         },
         {
@@ -79,10 +132,12 @@ const AdminSidebar = (_props?: { activePath?: string }) => {
         },
     ];
 
+    const adminNavPaths = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.path));
+
     const handleLogout = async () => {
         try {
             const confirmLogout = window.confirm(
-                t("common.confirmLogout") || "Are you sure you want to logout?"
+                t("common.confirmLogout", "Are you sure you want to logout?")
             );
             if (!confirmLogout) return;
 
@@ -95,91 +150,92 @@ const AdminSidebar = (_props?: { activePath?: string }) => {
                 if (!keepKeys.has(key)) localStorage.removeItem(key);
             });
 
-            toastSuccess(t("common.logoutSuccess") || "Logged out successfully");
+            toastSuccess(t("common.logoutSuccess", "Logged out successfully"));
             window.location.href = "/auth?type=admin";
         } catch (error: any) {
             console.error("Logout failed:", error);
-            toastError(error?.data?.message || t("common.logoutFailed") || "Logout failed");
+            toastError(error?.data?.message || t("common.logoutFailed", "Logout failed"));
         }
     };
+
+    useEffect(() => {
+        if (!sidebarOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setSidebarOpen(false);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [sidebarOpen, setSidebarOpen]);
+
+    useEffect(() => {
+        if (sidebarOpen) closeBtnRef.current?.focus();
+    }, [sidebarOpen]);
 
     return (
         <>
             {/* Mobile backdrop */}
             {sidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
                     onClick={() => setSidebarOpen(false)}
+                    aria-hidden="true"
                 />
             )}
 
             <aside
+                id="primary-nav"
+                aria-label={t("nav.primaryNav", "Primary navigation")}
                 className={cn(
-                    "fixed top-0 left-0 z-50 h-screen w-56 bg-sidebar border-r border-sidebar-border transition-transform duration-300 flex flex-col",
+                    sidebarAsideClass,
                     sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
                 )}
             >
                 {/* Logo */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border shrink-0">
-                    <div className="flex items-center gap-2">
-                        <img src={logo} alt="GreenBidz" className="h-6 w-auto brightness-0 invert" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex items-center gap-1 bg-primary/15 rounded px-1.5 py-0.5">
-                            <Shield className="h-2.5 w-2.5 text-primary" />
-                            <span className="text-[9px] text-primary font-semibold uppercase tracking-wide">
-                                {t("admin.sidebar.adminBadge", "Admin")}
-                            </span>
-                        </div>
-                        <button
-                            className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
+                <div className={sidebarHeaderClass}>
+                    <img src={logo} alt="GreenBidz" className="h-9 w-auto brightness-0 invert" />
+                    <button
+                        ref={closeBtnRef}
+                        className={sidebarCloseButtonClass}
+                        onClick={() => setSidebarOpen(false)}
+                        aria-label={t("common.close", "Close navigation")}
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 overflow-y-auto sidebar-scroll">
-                    {NAV_SECTIONS.map((section) => (
-                        <div key={section.label}>
+                <nav className={sidebarNavClass}>
+                    {NAV_SECTIONS.map((section, i) => (
+                        <div key={section.label} className={i > 0 ? "mt-1" : undefined}>
                             <SectionHeader title={section.label} />
-                            <div className="px-2.5 space-y-0.5">
-                                {section.items.map((item) => {
-                                    const isActive =
-                                        location.pathname === item.path ||
-                                        (item.path !== "/admin" && location.pathname.startsWith(item.path + "/"));
-                                    return (
-                                        <Link
-                                            key={item.path}
-                                            to={item.path}
-                                            onClick={() => setSidebarOpen(false)}
-                                            className={cn(
-                                                "flex items-center gap-2 px-2.5 py-1.5 rounded text-[12px] font-medium transition-all duration-150",
-                                                isActive
-                                                    ? "bg-sidebar-foreground/10 text-sidebar-foreground"
-                                                    : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80"
-                                            )}
-                                        >
-                                            <item.icon className="w-3.5 h-3.5 shrink-0" />
-                                            <span className="flex-1 truncate">{item.label}</span>
-                                        </Link>
-                                    );
-                                })}
+                            <div className="space-y-0.5">
+                                {section.items.map((item) => (
+                                    <AdminNavLink
+                                        key={item.path}
+                                        item={item}
+                                        allPaths={adminNavPaths}
+                                        onNavigate={() => setSidebarOpen(false)}
+                                    />
+                                ))}
                             </div>
                         </div>
                     ))}
                 </nav>
 
-                {/* Logout */}
-                <div className="px-2.5 py-3 border-t border-sidebar-border shrink-0">
+                {/* Footer logout (admin-specific — no header user-menu) */}
+                <div className="px-3 py-3 border-t border-sidebar-border shrink-0">
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-[12px] font-medium text-sidebar-foreground/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150"
+                        aria-label={t("common.logout", "Logout")}
+                        className={cn(
+                            sidebarNavItemClass(false),
+                            "hover:text-destructive hover:bg-destructive/10"
+                        )}
                     >
-                        <LogOut className="w-3.5 h-3.5 shrink-0" />
-                        <span>{t("common.logout", "Logout")}</span>
+                        <span className={sidebarNavIconClass(false)}>
+                            <LogOut className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                        </span>
+                        <span className="flex-1 text-left truncate">{t("common.logout", "Logout")}</span>
                     </button>
                 </div>
             </aside>

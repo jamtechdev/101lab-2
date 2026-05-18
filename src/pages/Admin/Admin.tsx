@@ -149,7 +149,7 @@ const Admin = () => {
   // Skeleton while loading - preserves original design exactly
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 lg:pl-56">
+      <div className="min-h-screen bg-gray-50/50 lg:pl-[280px]">
         <div className="flex items-center justify-center h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-3" />
@@ -164,7 +164,7 @@ const Admin = () => {
     <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar />
 
-      <div className="lg:pl-56">
+      <div className="lg:pl-[280px]">
         {/* Header */}
         <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

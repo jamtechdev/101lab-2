@@ -275,7 +275,7 @@ export default function BuyerDetails() {
 
             {/* --- MAIN CONTENT --- */}
             <div
-                className="transition-all duration-300 p-4 lg:p-6 space-y-4 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
+                className="transition-all duration-300 p-4 lg:p-6 space-y-4 animate-in fade-in-50 duration-500 lg:pl-[280px] ml-0"
             >
 
                 <AdminHeader />

@@ -7,7 +7,7 @@
     "submissions": "提交",
     "reports": "報告",
     "settings": "設定",
-    "chat": "聊天",
+    "chat": "訊息",
     "users": "用戶",
     "permissions": "權限",
     "network": "用戶網絡",
@@ -28,6 +28,7 @@
     "bidsReceived": "收到的出價",
     "myListings": "我的刊登",
     "bidsAndWinners": "出價與得標",
+    "buyerActivity": "買家動態",
     "offersReceived": "收到的報價",
     "salesOrders": "銷售訂單",
     "buying": "採購",
@@ -49,7 +50,9 @@
     "pendingUserRole": "用戶管理請求",
     "offers": "報價",
     "orders": "訂單",
-    "ordersReceived": "收到的訂單"
+    "ordersReceived": "收到的訂單",
+    "seller": "賣家",
+    "buyer": "買家"
   },
 
   "publicHeader": {
@@ -827,6 +830,16 @@
     "viewAll": "查看全部",
     "noRecentActivity": "暫無最近活動",
     "quickActions": "快捷操作",
+    "quickAccess": "快速存取",
+    "myListingsNav": "我的刊登",
+    "myListingsNavSub": "管理所有提交",
+    "auctionBidsNav": "拍賣出價",
+    "auctionBidsNavSub": "進行中出價與得標",
+    "negotiatedOffersNav": "議價報價",
+    "negotiatedOffersNavSub": "買家議價申請",
+    "buyNowOrdersNav": "立即購買訂單",
+    "buyNowOrdersNavSub": "即時購買訂單",
+    "recentActivityList": "最新動態",
     "actions": {
       "submitScrap": "提交廢料",
       "sourceEquipment": "尋找設備",
@@ -1052,6 +1065,9 @@
     "sectionActivities": "我的活動",
     "sectionMarketplace": "市場",
     "sectionSupport": "支援",
+    "sectionAccount": "帳戶",
+    "watchlist": "關注清單",
+    "contactSupport": "聯絡支援",
     "myInspections": "我的現場查勘",
     "myBids": "我的出價",
     "winningBids": "得標出價",
@@ -1675,7 +1691,18 @@
     "tomorrow": "明天",
     "thisWeek": "本週",
     "thisMonth": "本月",
-    "thisYear": "今年"
+    "thisYear": "今年",
+    "logout": "登出",
+    "soon": "即將推出"
+  },
+  "account": {
+    "restricted": {
+      "incompleteTitle": "完成您的個人資料",
+      "incompleteBody": "請完成您的個人資料以解鎖所有儀表板功能。",
+      "completeCta": "完成個人資料",
+      "pendingTitle": "帳號待審核",
+      "pendingBody": "您的帳號正在審核中，審核通過後將通知您。"
+    }
   },
   "listingDetail": {
     "backToDashboard": "返回儀表板",
@@ -2367,7 +2394,8 @@
       "customSlot": "自訂時間",
       "paymentReceivedDesc": "付款已收到，現在可以安排取貨時間",
       "inspectionParticipants": "查驗參與公司",
-      "companiesStats": "共 {{registered}} 家公司註冊，{{attended}} 家完成查驗",
+      "companiesStats": "共 {registered} 家公司註冊，{attended} 家完成查驗",
+      "noInspectionParticipants": "此批次尚無查驗報名公司。",
       "columnCompany": "公司名稱",
       "columnContact": "聯絡人",
       "columnName": "姓名",
@@ -2558,7 +2586,7 @@
       "buyers": "買家",
       "sellers": "賣家",
       "analytics": "分析",
-      "chat": "與買家交談",
+      "chat": "訊息",
       "emailsettings": "電子郵件設定",
       "users": "使用者",
       "autoApproval": "自動審核",
@@ -3050,6 +3078,15 @@
     "documentsInfo": "文件與資訊",
     "viewDocument": "查看文件",
     "noDocument": "未附上文件"
+  },
+  "buyerActivity": {
+    "title": "買家動態",
+    "subtitle": "集中管理拍賣出價、議價報價與立即購買訂單",
+    "tabs": {
+      "auctionBids": "拍賣出價",
+      "negotiatedOffers": "議價報價",
+      "buyNowOrders": "立即購買訂單"
+    }
   },
   "sellerBidDashboard": {
     "title": "活躍出價",

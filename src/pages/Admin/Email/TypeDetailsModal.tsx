@@ -166,7 +166,7 @@ const EmailTypeDetailsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar activePath="/admin/settings/email" />
 
-      <div className="lg:pl-56">
+      <div className="lg:pl-[280px]">
         <AdminHeader />
         <Toaster position="top-right" toastOptions={{
           className: 'font-medium',

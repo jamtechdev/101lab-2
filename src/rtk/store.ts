@@ -29,11 +29,11 @@ export const store = configureStore({
     [roleApi.reducerPath]: roleApi.reducer,
     [permissionApi.reducerPath]: permissionApi.reducer,
     [sellerNetworkApi.reducerPath]: sellerNetworkApi.reducer,
-    [checkoutApi.reducerPath]:checkoutApi.reducer,
+    [checkoutApi.reducerPath]: checkoutApi.reducer,
     [auctionGroupApi.reducerPath]: auctionGroupApi.reducer,
     [batchGroupApi.reducerPath]: batchGroupApi.reducer,
     unread: unreadReducer,
-    sellerUnread:sellerUnreadReducer
+    sellerUnread: sellerUnreadReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(

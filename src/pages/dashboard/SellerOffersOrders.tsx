@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState } from "react";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useGetOwnerOffersQuery, useUpdateOfferStatusMutation } from "@/rtk/slices/bidApiSlice";
 import { useGetSellerCheckoutsQuery, useUpdateCheckoutStatusMutation } from "@/rtk/slices/checkoutApiSlice";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ const Pagination = ({ pagination, page, onPageChange }: any) => {
 };
 
 // ─── Make Offer tab ──────────────────────────────────────────────────────────
-const OffersTab = ({ sellerId }: { sellerId: string }) => {
+export const SellerNegotiatedOffersPanel = ({ sellerId }: { sellerId: string }) => {
   const [page, setPage]           = useState(1);
   const [statusFilter, setStatus] = useState("all");
   const [expanded, setExpanded]   = useState<Set<number>>(new Set());
@@ -201,7 +201,7 @@ const OffersTab = ({ sellerId }: { sellerId: string }) => {
 };
 
 // ─── Buy Now tab ─────────────────────────────────────────────────────────────
-const OrdersTab = ({ sellerId }: { sellerId: number }) => {
+export const SellerBuyNowOrdersPanel = ({ sellerId }: { sellerId: number }) => {
   const [page, setPage]           = useState(1);
   const [statusFilter, setStatus] = useState("all");
   const [expanded, setExpanded]   = useState<Set<number>>(new Set());
@@ -364,56 +364,13 @@ const OrdersTab = ({ sellerId }: { sellerId: number }) => {
   );
 };
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-const SellerOffersOrders = () => {
-  const sellerId   = localStorage.getItem("userId") || "";
-  const [tab, setTab] = useState<"offers" | "orders">("offers");
-
-  return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">Offers &amp; Orders</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage all make-offer and buy-now requests from buyers</p>
-        </div>
-
-        {/* Tab bar */}
-        <div className="flex gap-1 mb-0 border-b border-slate-200">
-          <button
-            onClick={() => setTab("offers")}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-              tab === "offers"
-                ? "border-primary text-primary"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <Tag className="h-4 w-4" />
-            Make Offer
-          </button>
-          <button
-            onClick={() => setTab("orders")}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
-              tab === "orders"
-                ? "border-primary text-primary"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Buy Now
-          </button>
-        </div>
-
-        {/* Panel */}
-        <div className="bg-white border border-slate-200 rounded-b-lg rounded-tr-lg overflow-hidden">
-          {tab === "offers" ? (
-            <OffersTab sellerId={sellerId} />
-          ) : (
-            <OrdersTab sellerId={Number(sellerId)} />
-          )}
-        </div>
-      </div>
-    </DashboardLayout>
-  );
-};
-
-export default SellerOffersOrders;
+/** @deprecated Use /dashboard/buyer-activity?tab=negotiated-offers or ?tab=buy-now-orders */
+export default function SellerOffersOrders() {
+  const [searchParams] = useSearchParams();
+  const legacy = searchParams.get("tab");
+  const tab =
+    legacy === "orders" || legacy === "buy-now-orders"
+      ? "buy-now-orders"
+      : "negotiated-offers";
+  return <Navigate to={`/dashboard/buyer-activity?tab=${tab}`} replace />;
+}

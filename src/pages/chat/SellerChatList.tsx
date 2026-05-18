@@ -2,6 +2,8 @@
 import axios from "axios";
 import { Inbox, Package, Search, Send, MessageSquareText, Loader2, ShieldCheck } from "lucide-react";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { sidebarFixedLeftClass } from "@/components/layouts/sidebar";
+import { cn } from "@/lib/utils";
 import { getSocket } from "@/services/socket";
 import { useLocation, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -359,10 +361,13 @@ export default function SellerChatPageList() {
 
     return (
         <DashboardLayout>
-            {/* Fixed-positioned chat shell — anchors below the sticky dashboard
-                header (~57px) and past the sidebar (224px on lg+) so the layout
-                never fights the parent padding. Only the messages area scrolls. */}
-            <div className="fixed top-[57px] left-0 lg:left-56 right-0 bottom-0 flex bg-white overflow-hidden z-10">
+            {/* Full-bleed below header; left offset matches sidebar width (280px). */}
+            <div
+              className={cn(
+                "fixed top-14 left-0 right-0 bottom-0 flex bg-white overflow-hidden z-10",
+                sidebarFixedLeftClass
+              )}
+            >
 
                 {/* ── LEFT: INBOX LIST ───────────────────────────────── */}
                 <aside className="w-full sm:w-[360px] bg-white border-r border-zinc-200 flex flex-col min-h-0">

@@ -126,7 +126,7 @@ export default function AdminSellerUpgradeRequests() {
     <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar />
 
-      <div className="lg:pl-56">
+      <div className="lg:pl-[280px]">
         <AdminHeader />
 
         <main className="p-4 md:p-6 space-y-5">

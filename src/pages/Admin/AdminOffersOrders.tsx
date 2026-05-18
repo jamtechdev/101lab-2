@@ -429,7 +429,7 @@ export default function AdminOffersOrders() {
   return (
     <div className="flex min-h-screen bg-gray-50/60">
       <AdminSidebar activePath="/admin/offers" />
-      <main className="flex-1 transition-all duration-300 lg:pl-56">
+      <main className="flex-1 transition-all duration-300 lg:pl-[280px]">
         <AdminHeader />
         <div className="p-6 max-w-[1700px] mx-auto space-y-5">
 

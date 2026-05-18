@@ -38,6 +38,7 @@ import CompanyUserManagement from "./pages/Seller/CompanyUserManagement.js";
 import SellerNetworkManagement from "./pages/Seller/SellerNetworkManagement.js";
 
 import SellerBidDashboard from "./pages/dashboard/SellerBidDashboard";
+import SellerBuyerActivity from "./pages/dashboard/SellerBuyerActivity";
 import BuyerBidsList from "./pages/dashboard/BuyerBidsList";
 
 import SellerChatTest from "./pages/chat/SellerChatTest";
@@ -271,6 +272,7 @@ const App = () => {
                   <Route path="/buyer-chat-test" element={<BuyerChatTest />} />
                 </Route>
 
+                <Route path="/dashboard/buyer-activity" element={<SellerBuyerActivity />} />
                 <Route path="/dashboard/bids" element={<SellerBidDashboard />} />
                 <Route path="/dashboard/bid/batch/:batchId" element={<BuyerBidsList />} />
                 <Route path="/dashboard/auction-groups" element={<AuctionGroups />} />

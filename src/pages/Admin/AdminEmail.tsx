@@ -35,7 +35,7 @@ const AdminEmail = () => {
     <div className="min-h-screen bg-muted/20">
       <AdminSidebar activePath="/admin/email" />
 
-      <div className="transition-all min-h-screen lg:pl-56">
+      <div className="transition-all min-h-screen lg:pl-[280px]">
         {/* <header className="lg:hidden sticky top-0 bg-card border-b p-3 flex justify-between">
           <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
             <Menu />
