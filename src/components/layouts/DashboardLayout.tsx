@@ -1,299 +1,202 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Package,
   ClipboardList,
-  TrendingUp,
   Settings,
   MessageCircle,
-  LogOut,
   Menu,
   X,
-  Users,
-  Shield,
   Store,
-  Clock,
-  Eye,
   Gavel,
-  Layers,
-  Trophy,
-  ShoppingCart,
+  Users,
   TableProperties,
-  BarChart3,
-  Tag,
-  Lock,
 } from "lucide-react";
-import { toast } from "sonner";
 import logo from "@/assets/greenbidz_logo.png";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher";
-import { useLogoutMutation, useVerifyUserQuery } from "@/rtk/slices/apiSlice";
-import { toastError, toastSuccess } from "@/helper/toasterNotification";
-import { useGetSellerBidsQuery } from "@/rtk/slices/batchApiSlice";
-import SellerNotificationListener from '../common/SellerNotificationListener.jsx'
-import { useSellerPermissions } from "@/hooks/useSellerPermissions";
+import SellerNotificationListener from "../common/SellerNotificationListener.jsx";
 import CompanySelector from "../common/CompanySelector";
-import NotificationBell from '../../services/NotificationBell.jsx'
-import CompanyOrganization from "../common/CompanyOrganization";
-import CompleteProfileForm from "../common/CompleteProfileForm";
+import NotificationBell from "../../services/NotificationBell.jsx";
 import RoleSwitcher from "../common/RoleSwitcher";
-import { pushLogoutEvent } from "@/utils/gtm";
+import {
+  SidebarProvider,
+  useSidebar,
+  NavItemLink,
+  SectionHeader,
+  UserMenu,
+  useFilterItems,
+  sidebarAsideClass,
+  sidebarHeaderClass,
+  sidebarCloseButtonClass,
+  sidebarMainOffsetClass,
+  sidebarRoleSwitcherWrapClass,
+  sidebarNavClass,
+  type NavSection,
+  type NavItem,
+} from "./sidebar";
+import { useSellerPermissions } from "@/hooks/useSellerPermissions";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   onNewBid?: () => void;
 }
 
-// Section header component
-const SectionHeader = ({ title }: { title: string }) => (
-  <div className="px-3 pt-4 pb-1">
-    <h3 className="text-[9px] font-semibold text-sidebar-foreground/30 uppercase tracking-widest">
-      {title}
-    </h3>
-  </div>
-);
-
-const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [restrictedModal, setRestrictedModal] = useState(false);
-  const location = useLocation();
-
+function DashboardShell({ children, onNewBid }: DashboardLayoutProps) {
+  const { sidebarOpen, setSidebarOpen } = useSidebar();
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
   const { t } = useTranslation();
-  const [logout, { isLoading }] = useLogoutMutation();
   const userId = localStorage.getItem("userId");
-  const userName = localStorage.getItem("userName");
 
-  // Get user permissions for navigation filtering
-  const { hasPermission, hasAnyPermission } = useSellerPermissions();
+  const filterItems = useFilterItems();
+  // Bulk Upload is a power-seller-only perk. The flag comes from
+  // jos_usermeta.is_power_seller — surfaced via useSellerPermissions().
+  // Backend must echo the meta key onto /user/verify-user for this to flip
+  // true for the seller themselves (see docs/POWER_SELLER.md).
+  const { isPowerSeller } = useSellerPermissions();
 
-  const { data: verifyData, refetch: refetchUser } = useVerifyUserQuery();
-  const accountStatus = verifyData?.user?.accountStatus;
-
-  // Check if user is in normal seller mode (not company mode)
-  const isCompanyMode = localStorage.getItem("isCompanyMode") === 'true';
-  const isNormalSellerMode = !isCompanyMode;
-
-  // RTK Query hook to refetch bids
-  const { refetch: refetchAllBids } = useGetSellerBidsQuery(
-    { userId: userId || '', page: 1, limit: 10 },
-    { skip: !userId }
-  );
-
-  // Sidebar structure
-  const navigationSections = [
+  const navigationSections: NavSection[] = [
     {
-      title: t('nav.marketplace'),
+      title: t("nav.marketplace", "Marketplace"),
       items: [
-        { name: t("buyerDashboard.browseMarketplace") || "Browse Marketplace", href: "/buyer-marketplace", icon: Store, target: "_blank" },
+        {
+          name: t("nav.browseMarketplace", "Browse Marketplace"),
+          href: "/buyer-marketplace",
+          icon: Store,
+          permission: null,
+          target: "_blank",
+        },
       ],
     },
     {
-      title: t('nav.selling'),
+      title: t("nav.selling", "Selling"),
       items: [
-        { name: t('nav.dashboard'), href: "/dashboard", icon: LayoutDashboard, permission: null },
-        { name: t('nav.listAnItem'), href: "/upload", icon: Package, permission: null },
-        { name: t('nav.bulkUpload'), href: "/dashboard/bulk-upload", icon: TableProperties, permission: null },
-        { name: t('nav.myListings'), href: "/dashboard/submissions", icon: ClipboardList, permission: null },
-        { name: t('nav.bidsAndWinners'), href: "/dashboard/bids", icon: TrendingUp, permission: "bidding.view" },
-        { name: "Auction Groups", href: "/dashboard/auction-groups", icon: Gavel, permission: null },
-        { name: "Offers & Orders", href: "/dashboard/seller/offers-orders", icon: Tag, permission: null },
-        // { name: "Batch Groups", href: "/dashboard/batch-groups", icon: Layers, permission: null },
-      ]
+        { name: t("nav.dashboard", "Dashboard"), href: "/dashboard", icon: LayoutDashboard, permission: null },
+        // { name: t("nav.listAnItem", "List an Item"), href: "/upload", icon: Package, permission: null },
+        // Bulk Upload — power-seller-only.
+        isPowerSeller && {
+          name: t("nav.bulkUpload", "Bulk Upload"),
+          href: "/dashboard/bulk-upload",
+          icon: TableProperties,
+          permission: null,
+        },
+        { name: t("nav.myListings", "My Listings"), href: "/dashboard/submissions", icon: ClipboardList, permission: null },
+        { name: t("nav.buyerActivity", "Buyer activity"), href: "/dashboard/buyer-activity", icon: Users, permission: null },
+        // Auction Groups — power-seller-only.
+        isPowerSeller && { name: "Auction Groups", href: "/dashboard/auction-groups", icon: Gavel, permission: null },
+      ].filter(Boolean) as NavItem[],
     },
     {
-      title: t('nav.intelligence'),
+      title: t("nav.intelligence", "Intelligence"),
       items: [
-        { name: t('nav.dealReports'), href: "/dashboard/reports", icon: ClipboardList, permission: "reports.view" },
-        { name: t('nav.chat'), href: "/dashboard/submission/message", icon: MessageCircle, permission: "chat.view" },
-        // { name: "Monday.com Data", href: "/dashboard/sales-sync", icon: BarChart3, permission: null },
-      ]
+        // Deal Reports — power-seller-only.
+        isPowerSeller && { name: t("nav.dealReports", "Deal Reports"), href: "/dashboard/reports", icon: ClipboardList, permission: "reports.view" },
+        { name: t("nav.chat", "Messages"), href: "/dashboard/submission/message", icon: MessageCircle, permission: "chat.view" },
+      ].filter(Boolean) as NavItem[],
     },
     {
-      title: t('nav.admin'),
+      title: t("buyerDashboard.sectionAccount", "Account"),
       items: [
-        { name: t('nav.settings'), href: "/dashboard/settings", icon: Settings, permission: "settings.view" },
-      ]
-    }
+        { name: t("nav.settings", "Settings"), href: "/dashboard/settings", icon: Settings, permission: "settings.view" },
+      ],
+    },
   ];
 
-  // Filter items based on permissions
-  const filterItems = (items: any[]) => {
-    return items.filter(item => {
-      if (!item.permission) return true;
-      if (item.permission === "settings.view" && isNormalSellerMode) return true;
-      if (item.permission === "userManagement.view") return hasPermission("userManagement.view") || hasPermission("userManagement.edit");
-      return hasPermission(item.permission);
-    });
-  };
+  // Esc closes the mobile drawer; bind at window so focus location doesn't matter
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen, setSidebarOpen]);
 
-  const handleLogout = async () => {
-    try {
-      const confirm = window.confirm("Are you sure you want to logout?");
-      if (!confirm) return;
-
-      try { pushLogoutEvent(); } catch {}
-      await logout().unwrap();
-
-      document.cookie = "accessToken=; Max-Age=0; path=/;";
-      document.cookie = "refreshToken=; Max-Age=0; path=/;";
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = "/";
-    } catch (err) {
-      console.error("Logout failed", err);
-    }
-  };
+  // Auto-focus close-X when drawer opens
+  useEffect(() => {
+    if (sidebarOpen) closeBtnRef.current?.focus();
+  }, [sidebarOpen]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F9FAFB' }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#F9FAFB" }}>
       {userId && (
         <SellerNotificationListener
           sellerId={userId}
-          onNewBid={() => {
-            if (onNewBid) onNewBid();
-          }}
+          onNewBid={() => onNewBid?.()}
         />
       )}
 
-      {/* Mobile sidebar backdrop */}
+      {/* Mobile backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — dark theme (only the sidebar; header + main stay light) */}
       <aside
+        id="primary-nav"
+        aria-label={t("nav.primaryNav", "Primary navigation")}
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen w-56 bg-sidebar border-r border-sidebar-border transition-transform duration-300",
+          sidebarAsideClass,
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-sidebar-border">
-            <img src={logo} alt="GreenBidz" className="h-6 w-auto brightness-0 invert" />
-            <button
-              className="lg:hidden text-sidebar-foreground"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Segmented Role Toggle at top */}
-          <div className="px-4 pt-4 pb-2">
-            <RoleSwitcher variant="segmented" />
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto sidebar-scroll">
-            {navigationSections.map((section, sectionIndex) => {
-              const filteredItems = filterItems(section.items);
-              if (filteredItems.length === 0) return null;
-
-              return (
-                <div key={sectionIndex}>
-                  {section.title && <SectionHeader title={section.title} />}
-                  <div className="px-2.5 space-y-0.5">
-                    {filteredItems.map((item) => {
-                      const Icon = item.icon;
-                      const isActive =
-                        location.pathname === item.href ||
-                        (item.href !== "/dashboard" && location.pathname.startsWith(item.href + "/"));
-
-                      const allowedWhenIncomplete = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
-                      const allowedWhenPending = ["/dashboard", "/dashboard/settings", "/buyer-dashboard"];
-                      const isRestricted = accountStatus === "profile_incomplete"
-                        ? !allowedWhenIncomplete.includes(item.href)
-                        : accountStatus && accountStatus !== "approved"
-                          ? !allowedWhenPending.includes(item.href)
-                          : false;
-
-                      return (
-                        <Link
-                          key={item.name}
-                          to={isRestricted ? "#" : item.href}
-                          className={cn(
-                            "flex items-center gap-2 px-2.5 py-1.5 rounded text-[12px] font-medium transition-all duration-150",
-                            isActive
-                              ? "bg-sidebar-foreground/10 text-sidebar-foreground"
-                              : "text-sidebar-foreground/50 hover:bg-sidebar-foreground/5 hover:text-sidebar-foreground/80",
-                            isRestricted && "opacity-50 cursor-not-allowed"
-                          )}
-                          onClick={(e) => {
-                            if (isRestricted) { e.preventDefault(); setRestrictedModal(true); return; }
-                            setSidebarOpen(false);
-                          }}
-                        >
-                          <Icon className="w-3.5 h-3.5" />
-                          <span className="flex-1">{item.name}</span>
-                          {isRestricted && <Lock className="w-3 h-3 opacity-40 shrink-0" />}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </nav>
+        {/* Logo */}
+        <div className={sidebarHeaderClass}>
+          <Link to="/" aria-label="GreenBidz home" className="flex items-center">
+            <img src={logo} alt="GreenBidz" className="h-9 w-auto brightness-0 invert" />
+          </Link>
+          <button
+            ref={closeBtnRef}
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            aria-label={t("common.close", "Close navigation")}
+            className={sidebarCloseButtonClass}
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
+
+        {/* Role switcher */}
+        <div className={sidebarRoleSwitcherWrapClass}>
+          <RoleSwitcher variant="segmented" />
+        </div>
+
+        {/* Navigation */}
+        <nav className={sidebarNavClass}>
+          {navigationSections.map((section, i) => {
+            const visible = filterItems(section.items);
+            if (visible.length === 0) return null;
+            return (
+              <div key={i} className={i > 0 ? "mt-1" : undefined}>
+                <SectionHeader title={section.title} />
+                <div className="space-y-0.5">
+                  {visible.map((item) => (
+                    <NavItemLink key={item.href} item={item} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </nav>
       </aside>
 
-      {/* Account restricted modal */}
-      {restrictedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                  {accountStatus === "profile_incomplete" ? <Lock className="w-4 h-4 text-amber-600" /> : <Clock className="w-4 h-4 text-amber-600" />}
-                </div>
-                <h2 className="text-sm font-semibold text-gray-900">
-                  {accountStatus === "profile_incomplete" ? "Complete Your Profile" : "Account Pending Approval"}
-                </h2>
-              </div>
-              <button onClick={() => setRestrictedModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-5 text-center">
-              <p className="text-sm text-gray-500 mb-5">
-                {accountStatus === "profile_incomplete"
-                  ? "Please complete your profile to unlock all dashboard features."
-                  : "Your account is under review. You'll be notified once approved."}
-              </p>
-              {accountStatus === "profile_incomplete" && (
-                <button
-                  className="w-full py-2.5 rounded-lg bg-green-700 text-white text-sm font-medium hover:bg-green-800 transition-colors mb-2"
-                  onClick={() => { setRestrictedModal(false); window.location.href = "/complete-google-profile"; }}
-                >
-                  Complete Profile
-                </button>
-              )}
-              <button
-                className="w-full py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                onClick={() => setRestrictedModal(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="lg:pl-56">
-        {/* Top bar */}
+      {/* Main column */}
+      <div className={sidebarMainOffsetClass}>
+        {/* Top bar — light theme; only the sidebar is dark per design directive */}
         <header className="sticky top-0 z-30 bg-card border-b border-border">
-          <div className="flex items-center justify-between px-4 lg:px-6 py-3">
+          <div className="flex h-14 items-center justify-between px-4 lg:px-6">
             <button
               className="lg:hidden text-foreground"
               onClick={() => setSidebarOpen(true)}
+              aria-label={t("nav.openNav", "Open navigation")}
+              aria-expanded={sidebarOpen}
+              aria-controls="primary-nav"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -301,32 +204,24 @@ const DashboardLayout = ({ children, onNewBid }: DashboardLayoutProps) => {
               <CompanySelector />
               <LanguageSwitcher />
               <NotificationBell />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-accent">
-                    {userName?.charAt(0)?.toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-foreground hidden sm:block">
-                  {userName}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <UserMenu />
             </div>
           </div>
         </header>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="p-4 lg:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
-};
+}
+
+const DashboardLayout = (props: DashboardLayoutProps) => (
+  <SidebarProvider>
+    <DashboardShell {...props} />
+  </SidebarProvider>
+);
 
 export default DashboardLayout;

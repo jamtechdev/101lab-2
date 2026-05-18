@@ -140,7 +140,7 @@ const AdminAnalytics = () => {
       <AdminSidebar activePath="/admin/analytics" />
 
       <div
-        className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-56 ml-0"
+        className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-[280px] ml-0"
       >
         {/* Mobile header with menu button */}
         <header className="sticky top-0 z-30 bg-card border-b border-border shadow-sm lg:hidden">

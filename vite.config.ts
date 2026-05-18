@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    target: "es2017", 
+    target: "es2017",
     polyfillDynamicImport: true, // optional: helps with older Safari versions
   },
 }));

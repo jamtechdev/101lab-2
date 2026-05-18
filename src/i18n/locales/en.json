@@ -7,7 +7,7 @@
     "submissions": "Submissions",
     "reports": "Reports",
     "settings": "Settings",
-    "chat": "Chat",
+    "chat": "Messages",
     "users": "Users",
     "permissions": "Permissions",
     "network": "User Network",
@@ -27,6 +27,7 @@
     "bidsReceived": "Bids Received",
     "myListings": "My Listings",
     "bidsAndWinners": "Bids & Winners",
+    "buyerActivity": "Buyer activity",
     "offersReceived": "Offers Received",
     "salesOrders": "Sales Orders",
     "buying": "BUYING",
@@ -47,7 +48,9 @@
     "pendingUserRole": "User Management Requests",
     "offers": "Offers",
     "orders": "Orders",
-    "ordersReceived": "Orders Received"
+    "ordersReceived": "Orders Received",
+    "seller": "Seller",
+    "buyer": "Buyer"
   },
   "publicHeader": {
     "faq": "FAQ",
@@ -915,6 +918,16 @@
     "viewAll": "View All",
     "noRecentActivity": "No recent activity",
     "quickActions": "Quick Actions",
+    "quickAccess": "Quick Access",
+    "myListingsNav": "My Listings",
+    "myListingsNavSub": "Track all submissions",
+    "auctionBidsNav": "Auction Bids",
+    "auctionBidsNavSub": "Live bids & winners",
+    "negotiatedOffersNav": "Negotiated Offers",
+    "negotiatedOffersNavSub": "Make-offer requests",
+    "buyNowOrdersNav": "Buy Now Orders",
+    "buyNowOrdersNavSub": "Instant purchase orders",
+    "recentActivityList": "Latest updates",
     "actions": {
       "submitScrap": "Submit Scrap",
       "sourceEquipment": "Source Equipment",
@@ -1163,6 +1176,9 @@
     "sectionActivities": "MY ACTIVITIES",
     "sectionMarketplace": "Marketplace",
     "sectionSupport": "Support",
+    "sectionAccount": "Account",
+    "watchlist": "Watchlist",
+    "contactSupport": "Contact Support",
     "myInspections": "My Inspections",
     "myBids": "My Bids",
     "winningBids": "Winning Bids",
@@ -1660,12 +1676,24 @@
     "confirmLogout": "Are you sure you want to logout?",
     "logoutSuccess": "Logged out successfully",
     "logoutFailed": "Logout failed",
+    "logout": "Logout",
     "all": "All",
     "email": "Email",
     "phone": "Phone",
     "country": "Country",
     "address": "Address",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "Close",
+    "soon": "Soon"
+  },
+  "account": {
+    "restricted": {
+      "incompleteTitle": "Complete Your Profile",
+      "incompleteBody": "Please complete your profile to unlock all dashboard features.",
+      "completeCta": "Complete Profile",
+      "pendingTitle": "Account Pending Approval",
+      "pendingBody": "Your account is under review. You'll be notified once approved."
+    }
   },
   "listingDetail": {
     "backToDashboard": "Back to Dashboard",
@@ -2221,7 +2249,8 @@
       "customSlot": "Custom Time",
       "paymentReceivedDesc": "Payment received, you can now arrange pickup",
       "inspectionParticipants": "Inspection Participants",
-      "companiesStats": "{{registered}} companies registered, {{attended}} attended inspection",
+      "companiesStats": "{registered} companies registered, {attended} attended inspection",
+      "noInspectionParticipants": "No companies registered for inspection on this listing.",
       "columnCompany": "Company",
       "columnContact": "Contact",
       "columnName": "Name",
@@ -2354,7 +2383,7 @@
       "dashboard": "Dashboard",
       "listings": "Listings",
       "buyers": "Buyers",
-      "chat": "Chat",
+      "chat": "Messages",
       "emailsettings": "Email Setting",
       "sellers": "Sellers",
       "analytics": "Analytics",
@@ -2902,6 +2931,15 @@
     "documentsInfo": "Documents & Info",
     "viewDocument": "View Document",
     "noDocument": "No document attached"
+  },
+  "buyerActivity": {
+    "title": "Buyer activity",
+    "subtitle": "Auction bids, negotiated offers, and buy-now orders from buyers",
+    "tabs": {
+      "auctionBids": "Auction bids",
+      "negotiatedOffers": "Negotiated offers",
+      "buyNowOrders": "Buy now orders"
+    }
   },
   "sellerBidDashboard": {
     "title": "Active Bids",

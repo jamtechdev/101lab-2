@@ -280,7 +280,7 @@ const AdminUsersAntd = () => {
     return (
         <div className="min-h-screen bg-gray-50/50">
             <AdminSidebar activePath="/admin/users" />
-            <div className="lg:pl-56">
+            <div className="lg:pl-[280px]">
                 <AdminHeader />
 
                 <div className="p-6 mx-auto space-y-6">

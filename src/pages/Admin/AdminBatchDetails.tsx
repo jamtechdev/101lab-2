@@ -104,7 +104,7 @@ const AdminBatchDetails = () => {
     return (
       <div className="min-h-screen bg-gray-50/50">
         <AdminSidebar activePath="/admin/listings" />
-        <div className="lg:pl-56">
+        <div className="lg:pl-[280px]">
           <AdminHeader />
           <div className="p-4 md:p-6 space-y-5">
             <Skeleton className="h-8 w-40 rounded-xl" />
@@ -122,7 +122,7 @@ const AdminBatchDetails = () => {
     return (
       <div className="min-h-screen bg-gray-50/50">
         <AdminSidebar activePath="/admin/listings" />
-        <div className="lg:pl-56">
+        <div className="lg:pl-[280px]">
           <AdminHeader />
           <div className="p-4 md:p-6 flex flex-col items-center justify-center min-h-[60vh]">
             <AlertCircle className="h-10 w-10 text-gray-300 mb-3" />
@@ -144,7 +144,7 @@ const AdminBatchDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <AdminSidebar activePath="/admin/listings" />
-      <div className="lg:pl-56">
+      <div className="lg:pl-[280px]">
         <AdminHeader />
         <main className="p-4 md:p-6 space-y-5">
 

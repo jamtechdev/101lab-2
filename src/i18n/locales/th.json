@@ -7,7 +7,7 @@
     "submissions": "การยื่น",
     "reports": "รายงาน",
     "settings": "การตั้งค่า",
-    "chat": "แชท",
+    "chat": "ข้อความ",
     "users": "ผู้ใช้",
     "permissions": "สิทธิ์",
     "network": "เครือข่ายผู้ใช้",
@@ -27,6 +27,7 @@
     "bidsReceived": "ราคาประมูลที่ได้รับ",
     "myListings": "รายการของฉัน",
     "bidsAndWinners": "ราคาประมูลและผู้ชนะ",
+    "buyerActivity": "กิจกรรมผู้ซื้อ",
     "offersReceived": "โอเฟอร์ที่ได้รับ",
     "salesOrders": "ใบสั่งขาย",
     "buying": "การซื้อ",
@@ -47,7 +48,9 @@
     "pendingUserRole": "ขอการจัดการผู้ใช้",
     "offers": "โอเฟอร์",
     "orders": "คำสั่ง",
-    "ordersReceived": "คำสั่งที่ได้รับ"
+    "ordersReceived": "คำสั่งที่ได้รับ",
+    "seller": "ผู้ขาย",
+    "buyer": "ผู้ซื้อ"
   },
   "publicHeader": {
     "faq": "คำถามที่พบบ่อย",
@@ -879,6 +882,16 @@
   "viewAll": "ดูสินค้าทั้งหมด",
   "noRecentActivity": "ไม่มีกิจกรรมล่าสุด",
   "quickActions": "การดำเนินการด่วน",
+  "quickAccess": "การเข้าถึงด่วน",
+  "myListingsNav": "รายการของฉัน",
+  "myListingsNavSub": "ติดตามการยื่นทั้งหมด",
+  "auctionBidsNav": "การประมูล",
+  "auctionBidsNavSub": "การประมูลสดและผู้ชนะ",
+  "negotiatedOffersNav": "ข้อเสนอต่อรอง",
+  "negotiatedOffersNavSub": "คำขอเสนอราคา",
+  "buyNowOrdersNav": "สั่งซื้อทันที",
+  "buyNowOrdersNavSub": "คำสั่งซื้อทันที",
+  "recentActivityList": "อัปเดตล่าสุด",
   "actions": {
     "submitScrap": "ยื่นเศษวัสดุ",
     "sourceEquipment": "จัดหาอุปกรณ์",
@@ -1127,6 +1140,9 @@
     "sectionActivities": "กิจกรรมของฉัน",
     "sectionMarketplace": "ตลาด",
     "sectionSupport": "การสนับสนุน",
+    "sectionAccount": "บัญชี",
+    "watchlist": "รายการติดตาม",
+    "contactSupport": "ติดต่อฝ่ายสนับสนุน",
     "myInspections": "การตรวจสถานที่ของฉัน",
     "myBids": "ราคาประมูลของฉัน",
     "winningBids": "ราคาประมูลที่ชนะ",
@@ -1625,6 +1641,7 @@
     "confirmLogout": "คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?",
     "logoutSuccess": "ออกจากระบบสำเร็จ",
     "logoutFailed": "การออกจากระบบล้มเหลว",
+    "logout": "ออกจากระบบ",
     "error": "เกิดข้อผิดพลาด",
     "goBack": "กลับ",
     "all": "ทั้งหมด",
@@ -1632,7 +1649,18 @@
     "phone": "โทรศัพท์",
     "country": "ประเทศ",
     "address": "ที่อยู่",
-    "cancel": "ยกเลิก"
+    "cancel": "ยกเลิก",
+    "close": "ปิด",
+    "soon": "เร็วๆ นี้"
+  },
+  "account": {
+    "restricted": {
+      "incompleteTitle": "กรอกข้อมูลโปรไฟล์ของคุณ",
+      "incompleteBody": "กรุณากรอกข้อมูลโปรไฟล์ของคุณเพื่อปลดล็อกฟีเจอร์ทั้งหมดในแดชบอร์ด",
+      "completeCta": "กรอกข้อมูลโปรไฟล์",
+      "pendingTitle": "บัญชีรอการอนุมัติ",
+      "pendingBody": "บัญชีของคุณกำลังอยู่ในระหว่างการตรวจสอบ คุณจะได้รับการแจ้งเตือนเมื่อได้รับการอนุมัติ"
+    }
   },
   "listingDetail": {
     "backToDashboard": "Back to Dashboard",
@@ -2284,7 +2312,7 @@
       "dashboard": "แดชบอร์ด",
       "listings": "Listings",
       "buyers": "Buyers",
-      "chat": "แชท",
+      "chat": "ข้อความ",
       "emailsettings": "Email Setting",
       "sellers": "Sellers",
       "analytics": "การวิเคราะห์",
@@ -2824,6 +2852,15 @@
     "documentsInfo": "Documents & Info",
     "viewDocument": "View Document",
     "noDocument": "No document attached"
+  },
+  "buyerActivity": {
+    "title": "กิจกรรมผู้ซื้อ",
+    "subtitle": "จัดการการประมูล ข้อเสนอต่อรอง และคำสั่งซื้อทันทีจากผู้ซื้อ",
+    "tabs": {
+      "auctionBids": "การประมูล",
+      "negotiatedOffers": "ข้อเสนอต่อรอง",
+      "buyNowOrders": "คำสั่งซื้อทันที"
+    }
   },
   "sellerBidDashboard": {
     "title": "ราคาประมูลที่กำลังดำเนินการ",

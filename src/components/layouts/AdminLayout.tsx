@@ -15,7 +15,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         <div className="min-h-screen" style={{ backgroundColor: '#F9FAFB' }}>
             <AdminSidebar />
 
-            <div className="lg:pl-56">
+            <div className="lg:pl-[280px]">
                 {/* Mobile header */}
                 <header className="sticky top-0 z-30 bg-card border-b border-border lg:hidden">
                     <div className="flex items-center px-4 py-3">

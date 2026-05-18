@@ -61,7 +61,7 @@ const EmailTypesPage = () => {
     <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20">
       <AdminSidebar activePath="/admin/settings/email" />
       <div
-        className="transition-all duration-300 p-4 lg:px-8 space-y-6 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
+        className="transition-all duration-300 p-4 lg:px-8 space-y-6 animate-in fade-in-50 duration-500 lg:pl-[280px] ml-0"
       >
         <AdminHeader />
 

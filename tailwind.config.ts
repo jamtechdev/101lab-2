@@ -74,6 +74,41 @@ export default {
           foreground: "hsl(var(--sidebar-foreground))",
           border: "hsl(var(--sidebar-border))",
         },
+        // ── Sidebar design system tokens (see src/components/layouts/SIDEBAR_DESIGN.md §2) ──
+        // Dark-only theme. Do not introduce light-mode variants here.
+        slate: {
+          950: "#060e20",
+          900: "#0b1326",
+          850: "#131b2e",
+          800: "#171f33",
+          750: "#222a3d",
+          700: "#2d3449",
+          600: "#31394d",
+        },
+        brand: {
+          DEFAULT: "#10b981",
+          glow: "#4edea3",
+          deep: "#003824",
+          soft: "rgba(78,222,163,0.08)",
+        },
+        ink: {
+          DEFAULT: "#dae2fd",
+          muted: "#bbcabf",
+          dim: "#86948a",
+        },
+        error: {
+          DEFAULT: "#ffb4ab",
+        },
+      },
+      fontSize: {
+        nav: ["14px", { lineHeight: "20px", fontWeight: "500" }],
+        "label-caps": ["12px", { lineHeight: "16px", fontWeight: "600", letterSpacing: "0.08em" }],
+      },
+      width: {
+        sidebar: "280px",
+      },
+      padding: {
+        sidebar: "280px",
       },
       backgroundImage: {
         "gradient-hero": "var(--gradient-hero)",
@@ -99,6 +134,7 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        card: "1rem", // sidebar design system §1.4 — large containers (role switcher, modal)
       },
       keyframes: {
         "accordion-down": {

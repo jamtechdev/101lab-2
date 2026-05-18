@@ -26,6 +26,8 @@ import { useTranslation } from "react-i18next";
 
 // RTK Query
 import { useGetBatchesBySellerQuery } from "@/rtk/slices/productSlice";
+import { useSetSellerPowerStatusMutation } from "@/rtk/slices/apiSlice";
+import { toastError, toastSuccess } from "@/helper/toasterNotification";
 
 import {
     ArrowLeft,
@@ -46,6 +48,7 @@ import {
     ShoppingCart,
     DollarSign,
     Loader2,
+    Crown,
 } from "lucide-react";
 import AdminHeader from "./AdminHeader";
 
@@ -130,9 +133,39 @@ const AdminSellersDetails = () => {
         email: batchResponse?.data?.seller?.email,
         phone: batchResponse?.data?.seller?.phone || "N/A",
         country: batchResponse?.data?.seller?.country || "N/A",
+        is_power_seller: !!(batchResponse?.data?.seller as any)?.is_power_seller,
         total_listings: batchResponse?.data?.stats?.total_listings || 0,
         total_sold: batchResponse?.data?.stats?.total_sold || 0,
         total_live: batchResponse?.data?.stats?.total_live || 0,
+    };
+
+    // ---- POWER SELLER TOGGLE ----
+    const [setPowerStatus, { isLoading: isSavingPower }] = useSetSellerPowerStatusMutation();
+    const handleTogglePowerSeller = async () => {
+        if (!id) return;
+        const next = !seller.is_power_seller;
+        const confirm = window.confirm(
+            next
+                ? t("admin.sellerDetails.confirmGrantPower", "Grant Power Seller status to this seller?")
+                : t("admin.sellerDetails.confirmRevokePower", "Revoke Power Seller status from this seller?")
+        );
+        if (!confirm) return;
+        try {
+            await setPowerStatus({ sellerId: id, is_power_seller: next }).unwrap();
+            toastSuccess(
+                next
+                    ? t("admin.sellerDetails.powerGranted", "Power Seller status granted")
+                    : t("admin.sellerDetails.powerRevoked", "Power Seller status revoked")
+            );
+            // refetch will happen when the parent batches query is invalidated;
+            // for now do a soft reload of the same query
+            window.location.reload();
+        } catch (err: any) {
+            toastError(
+                err?.data?.message ||
+                    t("admin.sellerDetails.powerFailed", "Failed to update Power Seller status")
+            );
+        }
     };
 
     // ---- Extract & Normalize Batch Info (supports multiple backend shapes) ----
@@ -211,7 +244,7 @@ const AdminSellersDetails = () => {
             <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
                 <AdminSidebar activePath="/admin/sellers" />
                 <div
-                    className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0"
+                    className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-[280px] ml-0"
                 >
                     <div className="w-16 h-16 border-4 border-accent/20 border-t-accent rounded-full animate-spin"></div>
                 </div>
@@ -224,7 +257,7 @@ const AdminSellersDetails = () => {
             <AdminSidebar activePath="/admin/sellers" />
 
             <div
-                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-56 ml-0"
+                className="transition-all duration-300 p-4 lg:p-6 space-y-6 animate-in fade-in-50 duration-500 lg:pl-[280px] ml-0"
             >
                 {/* Mobile header with menu button */}
                 {false &&
@@ -300,8 +333,16 @@ const AdminSellersDetails = () => {
                                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent to-accent-light flex items-center justify-center text-white text-xl font-bold shadow-lg">
                                             {getInitials(seller.name)}
                                         </div>
-                                        <div>
-                                            <h3 className="text-2xl font-bold text-foreground">{seller.name}</h3>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h3 className="text-2xl font-bold text-foreground">{seller.name}</h3>
+                                                {seller.is_power_seller && (
+                                                    <Badge className="bg-amber-500/15 text-amber-700 border border-amber-500/30 hover:bg-amber-500/20 gap-1">
+                                                        <Crown className="h-3 w-3" />
+                                                        {t("admin.sellerDetails.powerSeller", "Power Seller")}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                             {seller.company_name && seller.company_name !== "N/A" && (
                                                 <p className="text-muted-foreground flex items-center gap-2 mt-1">
                                                     <Building2 className="h-4 w-4" />
@@ -317,6 +358,46 @@ const AdminSellersDetails = () => {
                                         <DetailItem icon={Phone} label={t('admin.sellerDetails.phone')} value={seller.phone} />
                                         <DetailItem icon={Building2} label={t('admin.sellerDetails.company')} value={seller.company_name} />
                                         <DetailItem icon={MapPin} label={t('admin.sellerDetails.country')} value={seller.country} />
+                                    </div>
+
+                                    {/* Power Seller Toggle */}
+                                    <div className="mt-6 pt-6 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className={cn(
+                                                "p-2 rounded-lg",
+                                                seller.is_power_seller ? "bg-amber-500/10" : "bg-muted/50"
+                                            )}>
+                                                <Crown className={cn(
+                                                    "h-5 w-5",
+                                                    seller.is_power_seller ? "text-amber-600" : "text-muted-foreground"
+                                                )} />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold text-foreground">
+                                                    {t("admin.sellerDetails.powerSellerStatus", "Power Seller Status")}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {seller.is_power_seller
+                                                        ? t("admin.sellerDetails.powerActive", "This seller has Power Seller benefits enabled.")
+                                                        : t("admin.sellerDetails.powerInactive", "Standard seller. Grant to unlock Power Seller benefits.")}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant={seller.is_power_seller ? "outline" : "default"}
+                                            size="sm"
+                                            onClick={handleTogglePowerSeller}
+                                            disabled={isSavingPower}
+                                            className="shrink-0"
+                                        >
+                                            {isSavingPower ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : seller.is_power_seller ? (
+                                                t("admin.sellerDetails.revokePower", "Revoke")
+                                            ) : (
+                                                <><Crown className="h-4 w-4 mr-1.5" />{t("admin.sellerDetails.grantPower", "Grant Power Seller")}</>
+                                            )}
+                                        </Button>
                                     </div>
                                 </>
                             ) : (

@@ -110,7 +110,7 @@ export default function AdminSellerList() {
             <AdminSidebar activePath="/admin/sellers/chat" />
 
             <div
-                className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-56 ml-0"
+                className="transition-all duration-300 min-h-screen flex flex-col overflow-hidden lg:pl-[280px] ml-0"
             >
 
                 {loading &&

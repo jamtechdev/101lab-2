@@ -367,7 +367,7 @@ const AdminListings = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <AdminSidebar activePath="/admin/listings" />
         <div
-          className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
+          className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-[280px] ml-0"
         >
           <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
             <div className="space-y-2">
@@ -407,7 +407,7 @@ const AdminListings = () => {
       <div className="min-h-screen w-full overflow-x-hidden bg-background">
         <AdminSidebar activePath="/admin/listings" />
         <div
-          className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-56 ml-0"
+          className="transition-all duration-300 min-h-screen flex justify-center items-center lg:pl-[280px] ml-0"
         >
           <Card className="border-destructive">
             <CardHeader>
@@ -427,7 +427,7 @@ const AdminListings = () => {
       <AdminSidebar activePath="/admin/listings" />
 
       <div
-        className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-56 ml-0"
+        className="transition-all duration-300 min-h-screen overflow-y-auto lg:pl-[280px] ml-0"
       >
         {/* Mobile header with menu button */}
         {false &&

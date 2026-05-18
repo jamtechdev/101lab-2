@@ -412,23 +412,30 @@ const ReportStep = ({ batchId, onNext, onBack }) => {
               </TableHeader>
 
               <TableBody>
-                {inspectionCompanies.map((company) => (
-                  <TableRow key={company.companyName}>
-                    <TableCell>{company.companyName}</TableCell>
-                    {/* <TableCell>{company.country}</TableCell> */}
-                    <TableCell>{company.contactPerson}</TableCell>
-                    <TableCell>{company.email}</TableCell>
-                    <TableCell>
-                      {company.attended ? (
-                        <Badge className="bg-green-500">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />{t('steps.step5.badgeAttended')}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">{t('steps.step5.badgeNotAttended')}</Badge>
-                      )}
+                {inspectionCompanies.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      {t('steps.step5.noInspectionParticipants')}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  inspectionCompanies.map((company) => (
+                    <TableRow key={`${company.companyName}-${company.email}`}>
+                      <TableCell>{company.companyName}</TableCell>
+                      <TableCell>{company.contactPerson}</TableCell>
+                      <TableCell>{company.email}</TableCell>
+                      <TableCell>
+                        {company.attended ? (
+                          <Badge className="bg-green-500">
+                            <CheckCircle2 className="w-3 h-3 mr-1" />{t('steps.step5.badgeAttended')}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">{t('steps.step5.badgeNotAttended')}</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

@@ -245,13 +245,12 @@ const PaymentStatusBanner = ({ batchStep }: { batchStep: number }) => {
         <div className="flex items-center gap-1">
           {steps.map((s, i) => (
             <div key={i} className="flex items-center gap-1">
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                s.done
-                  ? "bg-emerald-100 text-emerald-700"
-                  : s.active
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${s.done
+                ? "bg-emerald-100 text-emerald-700"
+                : s.active
                   ? "bg-orange-200 text-orange-800 ring-1 ring-orange-400"
                   : "bg-muted text-muted-foreground/50"
-              }`}>
+                }`}>
                 {s.label}
               </span>
               {i < steps.length - 1 && (
@@ -577,8 +576,8 @@ const BuyerDashboard: React.FC = () => {
           {t("buyerDashboard.quickAccess")}
         </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <NavCard href="/buyer/inspections" icon={Eye} label={t("buyerDashboard.myInspectionsNav")} sub={t("buyerDashboard.myInspectionsNavSub")} colorClass="bg-blue-500" />
           <NavCard href="/buyer/bids" icon={Gavel} label={t("buyerDashboard.myBidsNav")} sub={t("buyerDashboard.myBidsNavSub")} colorClass="bg-violet-500" />
+          <NavCard href="/buyer/inspections" icon={Eye} label={t("buyerDashboard.myInspectionsNav")} sub={t("buyerDashboard.myInspectionsNavSub")} colorClass="bg-blue-500" />
           <NavCard href="/buyer/winning-bids" icon={Trophy} label={t("buyerDashboard.winningBidsNav")} sub={t("buyerDashboard.winningBidsNavSub")} colorClass="bg-amber-500" badge={paymentDueCount} />
           <NavCard href="/buyer/orders" icon={ShoppingCart} label={t("buyerDashboard.myOrdersNav")} sub={t("buyerDashboard.myOrdersNavSub")} colorClass="bg-emerald-500" badge={pickupReadyCount} />
         </div>

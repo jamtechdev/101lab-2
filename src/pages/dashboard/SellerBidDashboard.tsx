@@ -24,11 +24,11 @@ import {
 } from "lucide-react";
 
 import { useGetSellerBidsQuery } from "@/rtk/slices/batchApiSlice";
-import DashboardLayout from "@/components/layouts/DashboardLayout";
+import { Navigate } from "react-router-dom";
 
 const PLACEHOLDER_IMG = "/placeholder.png";
 
-const SellerBidDashboard = () => {
+export function SellerAuctionBidsPanel() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   // Use companySellerId for data (company-level), fallback to userId
@@ -107,22 +107,7 @@ const SellerBidDashboard = () => {
   const maxValue = Math.max(...summaryItems.map((i) => i.value ?? 0));
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 animate-in fade-in-50 duration-500">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-7 bg-gradient-to-b from-accent to-accent-light rounded-full"></div>
-              <h1 className="text-3xl font-bold text-foreground">{t('sellerBidDashboard.title')}</h1>
-
-            </div>
-            <p className="text-sm text-muted-foreground ml-3">
-              {t('sellerBidDashboard.subtitle')}
-            </p>
-          </div>
-        </div>
-
+    <div className="space-y-6 animate-in fade-in-50 duration-500 p-4 sm:p-6">
         {/* SUMMARY SECTION */}
         {summary && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -441,7 +426,6 @@ const SellerBidDashboard = () => {
             </Card>
           );
         })}
-      </div>
 
       {/* Pagination */}
       {data?.pagination && data.pagination.totalPages > 1 && (
@@ -469,9 +453,11 @@ const SellerBidDashboard = () => {
           </Button>
         </div>
       )}
-
-    </DashboardLayout>
+    </div>
   );
-};
+}
 
-export default SellerBidDashboard;
+/** @deprecated Use /dashboard/buyer-activity?tab=auction-bids */
+export default function SellerBidDashboard() {
+  return <Navigate to="/dashboard/buyer-activity?tab=auction-bids" replace />;
+}

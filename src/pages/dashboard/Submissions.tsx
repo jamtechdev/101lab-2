@@ -615,14 +615,17 @@ const Submissions = () => {
               {batches.length} {batches.length === 1 ? t("submissions.listing") : t("submissions.listings")} {t("submissions.total")}
             </p>
           </div>
-          <Button
-            onClick={() => navigate("/upload?type=surplus")}
-            size="sm"
-            className="h-9 px-4 bg-accent hover:bg-accent/90 text-white gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {t("submissions.newSubmission")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Bulk Upload button removed — now only available in the sidebar for power sellers. */}
+            <Button
+              onClick={() => navigate("/upload?type=surplus")}
+              size="sm"
+              className="h-9 px-4 bg-accent hover:bg-accent/90 text-white gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t("submissions.newSubmission")}
+            </Button>
+          </div>
         </div>
 
         {/* ── Stat Cards ── */}

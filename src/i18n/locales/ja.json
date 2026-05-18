@@ -7,7 +7,7 @@
     "submissions": "提出",
     "reports": "レポート",
     "settings": "設定",
-    "chat": "チャット",
+    "chat": "メッセージ",
     "users": "ユーザー",
     "permissions": "権限",
     "network": "ユーザーネットワーク",
@@ -27,6 +27,7 @@
     "bidsReceived": "受け取った入札",
     "myListings": "マイリスティング",
     "bidsAndWinners": "入札と落札者",
+    "buyerActivity": "バイヤーアクティビティ",
     "offersReceived": "受け取ったオファー",
     "salesOrders": "営業注文",
     "buying": "購入",
@@ -47,7 +48,9 @@
     "pendingUserRole": "ユーザー管理要求",
     "offers": "オファー",
     "orders": "注文",
-    "ordersReceived": "受け取った注文"
+    "ordersReceived": "受け取った注文",
+    "seller": "セラー",
+    "buyer": "バイヤー"
   },
   "publicHeader": {
     "faq": "FAQ",
@@ -891,6 +894,16 @@
     "viewAll": "View All",
     "noRecentActivity": "No recent activity",
     "quickActions": "Quick Actions",
+    "quickAccess": "クイックアクセス",
+    "myListingsNav": "マイリスティング",
+    "myListingsNavSub": "すべての出品を管理",
+    "auctionBidsNav": "オークション入札",
+    "auctionBidsNavSub": "入札と落札者",
+    "negotiatedOffersNav": "交渉オファー",
+    "negotiatedOffersNavSub": "価格交渉の申込",
+    "buyNowOrdersNav": "即購入注文",
+    "buyNowOrdersNavSub": "即時購入の注文",
+    "recentActivityList": "最新の更新",
     "actions": {
       "submitScrap": "Submit Scrap",
       "sourceEquipment": "Source Equipment",
@@ -1134,11 +1147,14 @@
   },
   "buyerDashboard": {
     "title": "マイダッシュボード",
-    "buyerAccount": "購入者アカウント",
+    "buyerAccount": "買い手アカウント",
     "sectionOverview": "概要",
     "sectionActivities": "マイアクティビティ",
     "sectionMarketplace": "マーケットプレイス",
     "sectionSupport": "サポート",
+    "sectionAccount": "アカウント",
+    "watchlist": "ウォッチリスト",
+    "contactSupport": "サポートに連絡",
     "myInspections": "現地視察",
     "myBids": "入札一覧",
     "winningBids": "落札済み入札",
@@ -1634,12 +1650,24 @@
     "confirmLogout": "Are you sure you want to logout?",
     "logoutSuccess": "Logged out successfully",
     "logoutFailed": "Logout failed",
+    "logout": "ログアウト",
     "all": "すべて",
     "email": "メール",
     "phone": "電話",
     "country": "国",
     "address": "Address",
-     "cancel": "Cancel"
+    "cancel": "Cancel",
+    "close": "閉じる",
+    "soon": "近日公開"
+  },
+  "account": {
+    "restricted": {
+      "incompleteTitle": "プロフィールを完成させてください",
+      "incompleteBody": "ダッシュボードのすべての機能をご利用いただくには、プロフィールを完成させてください。",
+      "completeCta": "プロフィールを完成させる",
+      "pendingTitle": "アカウント承認待ち",
+      "pendingBody": "アカウントは現在確認中です。承認されるとお知らせします。"
+    }
   },
   "listingDetail": {
     "backToDashboard": "Back to Dashboard",
@@ -2291,7 +2319,7 @@
       "dashboard": "ダッシュボード",
       "listings": "リスティング",
       "buyers": "買い手",
-      "chat": "チャット",
+      "chat": "メッセージ",
       "emailsettings": "メール設定",
       "sellers": "売り手",
       "analytics": "分析",
@@ -2831,6 +2859,15 @@
     "documentsInfo": "Documents & Info",
     "viewDocument": "View Document",
     "noDocument": "No document attached"
+  },
+  "buyerActivity": {
+    "title": "バイヤーアクティビティ",
+    "subtitle": "オークション入札、交渉オファー、即購入注文を一元管理",
+    "tabs": {
+      "auctionBids": "オークション入札",
+      "negotiatedOffers": "交渉オファー",
+      "buyNowOrders": "即購入注文"
+    }
   },
   "sellerBidDashboard": {
     "title": "アクティブな入札",

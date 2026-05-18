@@ -11,6 +11,7 @@ interface AuthUser {
   isCompanyAdmin?: boolean; // NEW: True if user is the company admin
   userType?: string; // NEW: "assigned_user" | "company_admin" | null
   accountStatus?: string; // "approved" | "pending" | "profile_incomplete" | etc.
+  is_power_seller?: boolean; // Platform-admin-granted premium seller tier
 }
 
 interface AuthContextType {
